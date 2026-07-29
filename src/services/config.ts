@@ -1,25 +1,14 @@
-import { Platform } from "react-native";
-
 /**
  * Central configuration for the mobile app's API layer.
  *
- * Priority order:
- * 1. Explicit hosted URL via `EXPO_PUBLIC_API_URL`.
- * 2. Device-specific local fallback for simulators/emulators.
+ * Production backend: https://kudinode.onrender.com
+ *
+ * Override at dev time by setting EXPO_PUBLIC_API_URL in a local .env file:
+ *   EXPO_PUBLIC_API_URL=http://192.168.x.x:4000
  */
-function getDefaultApiBaseUrl() {
-  if (Platform.OS === "android") {
-    return "http://10.0.2.2:4000";
-  }
-
-  if (Platform.OS === "ios" || Platform.OS === "web") {
-    return "http://localhost:4000";
-  }
-
-  return "http://localhost:4000";
-}
-
-export const API_BASE_URL =
-  process.env.EXPO_PUBLIC_API_URL?.replace(/\/$/, "") || getDefaultApiBaseUrl();
+export const API_BASE_URL = (
+  process.env.EXPO_PUBLIC_API_URL?.replace(/\/$/, "") ||
+  "https://kudinode.onrender.com"
+);
 
 export const API_PREFIX = "/api";
