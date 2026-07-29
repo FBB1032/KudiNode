@@ -23,6 +23,7 @@ import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "../context/AuthContext";
+import { FloatingLabelInput } from "../components/FloatingLabelInput";
 import {
   updateProfile,
   uploadDocument,
@@ -305,7 +306,7 @@ export function RegisterKYCScreen() {
       </View>
 
       <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={{ flex: 1 }}
       >
         <ScrollView
@@ -337,128 +338,70 @@ export function RegisterKYCScreen() {
                 </View>
               )}
 
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Email Address</Text>
-                <View style={styles.inputWrapper}>
-                  <Icon name="mail" size={18} color={colors.textMuted} />
-                  <TextInput
-                    style={styles.textInput}
-                    placeholder="you@example.com"
-                    placeholderTextColor={colors.textMuted}
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                    editable={!accountCreated}
-                    value={email}
-                    onChangeText={setEmail}
-                  />
-                </View>
-              </View>
+              <FloatingLabelInput
+                label="Email Address"
+                leadingIcon="mail"
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoCorrect={false}
+                editable={!accountCreated}
+                value={email}
+                onChangeText={setEmail}
+              />
 
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>
-                  Password (min. 8 characters)
-                </Text>
-                <View style={styles.inputWrapper}>
-                  <Icon name="lock" size={18} color={colors.textMuted} />
-                  <TextInput
-                    style={[styles.textInput, { flex: 1 }]}
-                    placeholder="••••••••"
-                    placeholderTextColor={colors.textMuted}
-                    secureTextEntry={!showPassword}
-                    editable={!accountCreated}
-                    value={password}
-                    onChangeText={setPassword}
-                  />
-                  <TouchableOpacity
-                    onPress={() => setShowPassword((p) => !p)}
-                    style={{ padding: 4 }}
-                  >
-                    <Icon
-                      name={showPassword ? "eye-off" : "eye"}
-                      size={18}
-                      color={colors.textMuted}
-                    />
-                  </TouchableOpacity>
-                </View>
-                <Text style={styles.hintText}>
-                  You'll use your phone number + a 4-digit PIN to sign in.
-                </Text>
-              </View>
+              <FloatingLabelInput
+                label="Password (min. 8 characters)"
+                leadingIcon="lock"
+                secureTextEntry={!showPassword}
+                editable={!accountCreated}
+                value={password}
+                onChangeText={setPassword}
+                trailingIcon={showPassword ? "eye-off" : "eye"}
+                onTrailingIconPress={() => setShowPassword((p) => !p)}
+              />
 
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Full Legal Name</Text>
-                <View style={styles.inputWrapper}>
-                  <TextInput
-                    style={styles.textInput}
-                    placeholder="e.g. Amina Babangida"
-                    placeholderTextColor={colors.textMuted}
-                    value={fullName}
-                    onChangeText={setFullName}
-                  />
-                  <Icon name="person" size={18} color={colors.textMuted} />
-                </View>
-              </View>
+              <FloatingLabelInput
+                label="Full Legal Name"
+                leadingIcon="person"
+                value={fullName}
+                onChangeText={setFullName}
+              />
 
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>
-                  Mobile Phone Number (OTP Linked)
-                </Text>
-                <View style={styles.inputWrapper}>
-                  <Text style={styles.prefixText}>+234</Text>
-                  <TextInput
-                    style={styles.textInput}
-                    placeholder="801 234 5678"
-                    placeholderTextColor={colors.textMuted}
-                    keyboardType="phone-pad"
-                    value={phone}
-                    onChangeText={setPhone}
-                    maxLength={11}
-                  />
-                  <Icon name="call" size={18} color={colors.textMuted} />
-                </View>
-              </View>
+              <FloatingLabelInput
+                label="Mobile Phone Number"
+                prefix="+234"
+                keyboardType="phone-pad"
+                value={phone}
+                onChangeText={setPhone}
+                maxLength={11}
+                trailingIcon="call"
+              />
 
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>
-                  Bank Verification Number (11-Digit BVN)
-                </Text>
-                <View style={styles.inputWrapper}>
-                  <TextInput
-                    style={styles.textInput}
-                    placeholder="221 984 567 10"
-                    placeholderTextColor={colors.textMuted}
-                    keyboardType="number-pad"
-                    secureTextEntry
-                    value={bvn}
-                    onChangeText={setBvn}
-                    maxLength={11}
-                  />
+              <FloatingLabelInput
+                label="Bank Verification Number (11-Digit BVN)"
+                leadingIcon="card"
+                keyboardType="number-pad"
+                secureTextEntry
+                value={bvn}
+                onChangeText={setBvn}
+                maxLength={11}
+                trailingIcon={
                   <Icon
                     name="shield-checkmark"
                     size={18}
                     color={colors.successGreen}
                   />
-                </View>
-              </View>
+                }
+              />
 
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>
-                  National Identification Number (11-Digit NIN)
-                </Text>
-                <View style={styles.inputWrapper}>
-                  <TextInput
-                    style={styles.textInput}
-                    placeholder="709 123 456 89"
-                    placeholderTextColor={colors.textMuted}
-                    keyboardType="number-pad"
-                    value={nin}
-                    onChangeText={setNin}
-                    maxLength={11}
-                  />
-                  <Icon name="card" size={18} color={colors.textMuted} />
-                </View>
-              </View>
+              <FloatingLabelInput
+                label="National Identification Number (11-Digit NIN)"
+                leadingIcon="card"
+                keyboardType="number-pad"
+                value={nin}
+                onChangeText={setNin}
+                maxLength={11}
+              />
 
               <View style={styles.inputGroup}>
                 <Text style={styles.inputLabel}>
@@ -587,60 +530,35 @@ export function RegisterKYCScreen() {
                 </View>
               </View>
 
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>
-                  Market Association / Esusu Co-op Name (Optional)
-                </Text>
-                <View style={styles.inputWrapper}>
-                  <TextInput
-                    style={styles.textInput}
-                    placeholder="e.g. Mushin Traders Progressive Esusu"
-                    placeholderTextColor={colors.textMuted}
-                    value={esusuCoopName}
-                    onChangeText={setEsusuCoopName}
-                  />
-                  <Icon name="people" size={18} color={colors.textMuted} />
-                </View>
-              </View>
+              <FloatingLabelInput
+                label="Market Association / Esusu Co-op Name (Optional)"
+                leadingIcon="people"
+                value={esusuCoopName}
+                onChangeText={setEsusuCoopName}
+              />
 
               {/* Wema Bank Account Details for Settlement */}
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>
-                  Wema Bank Account Number (10 Digits)
-                </Text>
-                <View style={styles.inputWrapper}>
-                  <TextInput
-                    style={styles.textInput}
-                    placeholder="0123456789"
-                    placeholderTextColor={colors.textMuted}
-                    keyboardType="number-pad"
-                    value={wemaAccountNumber}
-                    onChangeText={setWemaAccountNumber}
-                    maxLength={10}
-                  />
-                  <Icon name="bank" size={18} color={colors.primaryDeep} />
-                </View>
-              </View>
+              <FloatingLabelInput
+                label="Wema Bank Account Number (10 Digits)"
+                leadingIcon="bank"
+                keyboardType="number-pad"
+                value={wemaAccountNumber}
+                onChangeText={setWemaAccountNumber}
+                maxLength={10}
+              />
 
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>
-                  Wema Account Name (Verified via NIP)
-                </Text>
-                <View style={styles.inputWrapper}>
-                  <TextInput
-                    style={styles.textInput}
-                    placeholder="e.g. Amina Babangida Bello"
-                    placeholderTextColor={colors.textMuted}
-                    value={wemaAccountName}
-                    onChangeText={setWemaAccountName}
-                  />
+              <FloatingLabelInput
+                label="Wema Account Name (Verified via NIP)"
+                value={wemaAccountName}
+                onChangeText={setWemaAccountName}
+                trailingIcon={
                   <Icon
                     name="checkmark-circle"
                     size={18}
                     color={colors.successGreen}
                   />
-                </View>
-              </View>
+                }
+              />
 
               <View style={styles.settlementBanner}>
                 <Icon name="bank" size={24} color={colors.primaryDeep} />

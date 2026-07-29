@@ -4,7 +4,7 @@ import {
   parseVoiceTransferIntent,
   extractReceiptItems,
 } from "../controllers/aiController.js";
-import { requireAuth } from "../middleware/auth.js";
+import { optionalAuth } from "../middleware/auth.js";
 
 const router = Router();
 
@@ -12,36 +12,43 @@ const memoryStorage = multer.memoryStorage();
 
 const audioUpload = multer({
   storage: memoryStorage,
-  limits: { fileSize: 20 * 1024 * 1024 },
+  limits: { fileSize: 25 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
-    const allowed = [
-      "audio/webm",
-      "audio/wav",
-      "audio/x-wav",
-      "audio/mpeg",
-      "audio/mp3",
-      "audio/mp4",
-      "audio/x-m4a",
-      "audio/aac",
-      "audio/ogg",
-    ];
+    const mime = (file.mimetype || "").toLowerCase();
+    const name = (file.originalname || "").toLowerCase();
 
-    if (allowed.includes(file.mimetype)) return cb(null, true);
-    cb(new Error("Only common audio formats are allowed"));
+    if (
+      mime.startsWith("audio/") ||
+      mime === "application/octet-stream" ||
+      mime === "binary/octet-stream" ||
+      name.endsWith(".m4a") ||
+      name.endsWith(".mp4") ||
+      name.endsWith(".wav") ||
+      name.endsWith(".mp3") ||
+      name.endsWith(".3gp") ||
+      name.endsWith(".aac") ||
+      name.endsWith(".webm")
+    ) {
+      return cb(null, true);
+    }
+
+    cb(new Error("Only audio formats (m4a, wav, mp3, webm, aac) are allowed"));
   },
 });
 
 const imageUpload = multer({
   storage: memoryStorage,
-  limits: { fileSize: 10 * 1024 * 1024 },
+  limits: { fileSize: 15 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
-    const allowed = ["image/jpeg", "image/png", "image/webp"];
-    if (allowed.includes(file.mimetype)) return cb(null, true);
+    const mime = (file.mimetype || "").toLowerCase();
+    if (mime.startsWith("image/") || mime === "application/octet-stream") {
+      return cb(null, true);
+    }
     cb(new Error("Only JPEG, PNG, and WEBP receipt images are allowed"));
   },
 });
 
-router.use(requireAuth);
+router.use(optionalAuth);
 
 router.post(
   "/voice-transfer",

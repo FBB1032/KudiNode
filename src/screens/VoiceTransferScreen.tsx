@@ -186,8 +186,7 @@ export function VoiceTransferScreen() {
       }, 450);
     } catch (error: any) {
       setPhase("idle");
-      const errorMessage = error?.message || "Unknown error occurred";
-      
+      const errorMessage = error?.message || "Could not process voice input clearly.";
       if (errorMessage.includes("AI features are temporarily unavailable") || 
           errorMessage.includes("GEMINI_API_KEY")) {
         Alert.alert(
@@ -198,7 +197,8 @@ export function VoiceTransferScreen() {
       } else {
         Alert.alert(
           "Voice Parse Failed",
-          "Could not understand the recording clearly. Please try again or use Manual Transfer.",
+          errorMessage,
+          [{ text: "Use Manual Transfer", onPress: () => nav.replace("ManualTransfer") }, { text: "Try Again" }]
         );
       }
     }

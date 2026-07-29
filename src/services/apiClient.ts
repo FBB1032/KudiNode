@@ -48,11 +48,17 @@ async function request<T>(path: string, opts: RequestOptions = {}): Promise<T> {
   });
 
   const text = await res.text();
-  const json = text ? JSON.parse(text) : {};
+  let json: any = {};
+  try {
+    json = text ? JSON.parse(text) : {};
+  } catch {
+    json = { error: { message: text || `HTTP ${res.status}` } };
+  }
 
   if (!res.ok) {
-    const message = json?.error?.message || `Request failed (${res.status})`;
-    throw new ApiError(res.status, message, json?.error?.details);
+    const message =
+      json?.error?.message || json?.message || `Request failed (${res.status})`;
+    throw new ApiError(res.status, message, json?.error?.details || json);
   }
   return json as T;
 }

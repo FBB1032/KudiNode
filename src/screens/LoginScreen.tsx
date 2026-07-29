@@ -19,6 +19,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { RootStackParamList } from "../AppNavigator";
 import { KudiNodeLogo } from "../components/KudiNodeLogo";
 import { useAuth } from "../context/AuthContext";
+import { FloatingLabelInput } from "../components/FloatingLabelInput";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -54,7 +55,7 @@ export function LoginScreen() {
   return (
     <KeyboardAvoidingView
       style={{ flex: 1 }}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <StatusBar
         barStyle="light-content"
@@ -96,50 +97,26 @@ export function LoginScreen() {
         )}
 
         {/* Phone number */}
-        <View style={styles.fieldGroup}>
-          <Text style={styles.fieldLabel}>Phone Number</Text>
-          <View style={styles.inputRow}>
-            <View style={styles.codeBox}>
-              <Text style={styles.codeText}>+234</Text>
-            </View>
-            <TextInput
-              style={styles.input}
-              placeholder="801 234 5678"
-              placeholderTextColor={colors.textMuted}
-              keyboardType="phone-pad"
-              value={phone}
-              onChangeText={setPhone}
-              maxLength={11}
-            />
-            <Icon name="call" size={18} color={colors.textMuted} />
-          </View>
-        </View>
+        <FloatingLabelInput
+          label="Phone Number"
+          prefix="+234"
+          keyboardType="phone-pad"
+          value={phone}
+          onChangeText={setPhone}
+          maxLength={11}
+          trailingIcon="call"
+        />
 
         {/* Password */}
-        <View style={styles.fieldGroup}>
-          <Text style={styles.fieldLabel}>Password</Text>
-          <View style={styles.inputRow}>
-            <TextInput
-              style={[styles.input, { flex: 1 }]}
-              placeholder="Enter your password"
-              placeholderTextColor={colors.textMuted}
-              secureTextEntry={!showPassword}
-              value={password}
-              onChangeText={setPassword}
-              autoCapitalize="none"
-            />
-            <TouchableOpacity
-              onPress={() => setShowPassword((p) => !p)}
-              style={{ padding: 4 }}
-            >
-              <Icon
-                name={showPassword ? "eye-off" : "eye"}
-                size={18}
-                color={colors.textMuted}
-              />
-            </TouchableOpacity>
-          </View>
-        </View>
+        <FloatingLabelInput
+          label="Password"
+          secureTextEntry={!showPassword}
+          value={password}
+          onChangeText={setPassword}
+          autoCapitalize="none"
+          trailingIcon={showPassword ? "eye-off" : "eye"}
+          onTrailingIconPress={() => setShowPassword((p) => !p)}
+        />
 
         {/* Sign in button */}
         <TouchableOpacity
