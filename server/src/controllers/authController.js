@@ -117,14 +117,38 @@ export const login = asyncHandler(async (req, res) => {
   const { phone, password } = req.body;
   const normalizedPhone = normalizePhone(phone);
 
-  // Find profile by phone to get email
-  const { data: profile, error: pErr } = await supabaseAdmin
+  // Try to find profile by phone - check multiple formats for compatibility
+  let profile = null;
+  let pErr = null;
+
+  // Try normalized format first (234XXXXXXXXXX)
+  const result1 = await supabaseAdmin
     .from("profiles")
     .select(
       "id, email, approval_status, rejection_reason, role, full_name, kyc_tier, phone",
     )
     .eq("phone", normalizedPhone)
     .maybeSingle();
+
+  if (result1.data) {
+    profile = result1.data;
+  } else {
+    // Try without 234 prefix (10 digits)
+    const phoneWithout234 = normalizedPhone.replace(/^234/, "");
+    const result2 = await supabaseAdmin
+      .from("profiles")
+      .select(
+        "id, email, approval_status, rejection_reason, role, full_name, kyc_tier, phone",
+      )
+      .eq("phone", phoneWithout234)
+      .maybeSingle();
+
+    if (result2.data) {
+      profile = result2.data;
+    } else {
+      pErr = result2.error;
+    }
+  }
 
   if (pErr || !profile || !profile.email) {
     throw unauthorized("No account found for this phone number");
