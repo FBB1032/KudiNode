@@ -19,7 +19,7 @@ const router = Router();
 // Throttle auth endpoints to blunt credential-stuffing / brute force.
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 20,
+  max: process.env.NODE_ENV === "development" ? 100 : 20, // Higher limit in dev
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: { message: "Too many attempts. Try again later." } },

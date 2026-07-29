@@ -56,7 +56,7 @@ function tryParseJson(text) {
 async function callGeminiJson({ prompt, inlineParts = [] }) {
   if (!env.geminiApiKey) {
     throw badRequest(
-      "Missing GEMINI_API_KEY on backend. Add it to server/.env first.",
+      "AI features are temporarily unavailable. The GEMINI_API_KEY environment variable is not configured on the backend server. Please contact support or check the server configuration.",
     );
   }
 
@@ -83,7 +83,7 @@ async function callGeminiJson({ prompt, inlineParts = [] }) {
   const rawText = await response.text();
   if (!response.ok) {
     throw badRequest(
-      `Gemini API request failed (${response.status}): ${rawText.slice(0, 300)}`,
+      `AI service request failed (${response.status}): ${rawText.slice(0, 300)}`,
     );
   }
 
@@ -91,7 +91,7 @@ async function callGeminiJson({ prompt, inlineParts = [] }) {
   try {
     data = JSON.parse(rawText);
   } catch {
-    throw badRequest("Gemini API returned non-JSON output");
+    throw badRequest("AI service returned invalid response format");
   }
 
   const outputText =
@@ -102,7 +102,7 @@ async function callGeminiJson({ prompt, inlineParts = [] }) {
 
   const parsed = tryParseJson(outputText);
   if (!parsed) {
-    throw badRequest("Gemini output was not valid JSON");
+    throw badRequest("AI service output could not be parsed");
   }
 
   return parsed;

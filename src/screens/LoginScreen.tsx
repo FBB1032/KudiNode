@@ -27,20 +27,20 @@ export function LoginScreen() {
   const insets = useSafeAreaInsets();
   const { signIn } = useAuth();
   const [phone, setPhone] = useState("");
-  const [pin, setPin] = useState("");
-  const [showPin, setShowPin] = useState(false);
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleLogin = async () => {
-    if (!phone.trim() || pin.length !== 4) {
-      setError("Please enter your phone number and 4-digit PIN.");
+    if (!phone.trim() || !password.trim()) {
+      setError("Please enter your phone number and password.");
       return;
     }
     setError(null);
     setLoading(true);
     try {
-      await signIn(phone.trim(), pin);
+      await signIn(phone.trim(), password);
       // Only approved merchants reach here — the backend blocks
       // pending/rejected/suspended accounts and returns a 403 with a message.
       nav.reset({ index: 0, routes: [{ name: "MainTabs" }] });
@@ -84,7 +84,7 @@ export function LoginScreen() {
         <View style={styles.sheetHandle} />
         <Text style={styles.sheetTitle}>Merchant Sign In</Text>
         <Text style={styles.sheetSub}>
-          Enter your registered phone number and 4-digit PIN
+          Enter your registered phone number and password
         </Text>
 
         {/* Approval / error banner */}
@@ -115,26 +115,25 @@ export function LoginScreen() {
           </View>
         </View>
 
-        {/* 4-digit PIN */}
+        {/* Password */}
         <View style={styles.fieldGroup}>
-          <Text style={styles.fieldLabel}>4-Digit PIN</Text>
+          <Text style={styles.fieldLabel}>Password</Text>
           <View style={styles.inputRow}>
             <TextInput
-              style={[styles.input, { flex: 1, letterSpacing: 8 }]}
-              placeholder="••••"
+              style={[styles.input, { flex: 1 }]}
+              placeholder="Enter your password"
               placeholderTextColor={colors.textMuted}
-              keyboardType="number-pad"
-              secureTextEntry={!showPin}
-              value={pin}
-              onChangeText={(t) => setPin(t.replace(/\D/g, "").slice(0, 4))}
-              maxLength={4}
+              secureTextEntry={!showPassword}
+              value={password}
+              onChangeText={setPassword}
+              autoCapitalize="none"
             />
             <TouchableOpacity
-              onPress={() => setShowPin((p) => !p)}
+              onPress={() => setShowPassword((p) => !p)}
               style={{ padding: 4 }}
             >
               <Icon
-                name={showPin ? "eye-off" : "eye"}
+                name={showPassword ? "eye-off" : "eye"}
                 size={18}
                 color={colors.textMuted}
               />

@@ -109,15 +109,15 @@ export const signup = asyncHandler(async (req, res) => {
 
 /**
  * POST /auth/login
- * Merchant sign in with phone + 4-digit PIN. The phone number is the real
- * sign-in identifier; the PIN is a lightweight 4-digit app factor (validated
- * for shape by the schema). Enforces the approval gate: only 'approved'
- * merchants receive a session.
+ * Merchant sign in with phone + password. The phone number is the
+ * sign-in identifier and password is authenticated via Supabase Auth.
+ * Enforces the approval gate: only 'approved' merchants receive a session.
  */
 export const login = asyncHandler(async (req, res) => {
-  const { phone } = req.body;
+  const { phone, password } = req.body;
   const normalizedPhone = normalizePhone(phone);
 
+  // Find profile by phone to get email
   const { data: profile, error: pErr } = await supabaseAdmin
     .from("profiles")
     .select(
@@ -130,6 +130,7 @@ export const login = asyncHandler(async (req, res) => {
     throw unauthorized("No account found for this phone number");
   }
 
+  // Check approval status before attempting authentication
   if (profile.approval_status !== "approved") {
     const messages = {
       pending:
@@ -142,13 +143,22 @@ export const login = asyncHandler(async (req, res) => {
     throw forbidden(messages[profile.approval_status] || "Access denied");
   }
 
-  const session = await mintSessionForEmail(profile.email);
+  // Authenticate with email and password via Supabase Auth
+  const anon = anonClient();
+  const { data, error } = await anon.auth.signInWithPassword({
+    email: profile.email,
+    password,
+  });
+
+  if (error || !data?.session) {
+    throw unauthorized("Invalid phone number or password");
+  }
 
   res.json({
     session: {
-      access_token: session.access_token,
-      refresh_token: session.refresh_token,
-      expires_at: session.expires_at,
+      access_token: data.session.access_token,
+      refresh_token: data.session.refresh_token,
+      expires_at: data.session.expires_at,
     },
     user: {
       id: profile.id,

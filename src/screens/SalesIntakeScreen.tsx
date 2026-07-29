@@ -89,11 +89,21 @@ export function SalesIntakeScreen() {
 
       const result = await extractReceiptFromImage(photo.uri);
       nav.navigate("Verification", { parsedReceipt: result.parsed });
-    } catch (_error) {
-      Alert.alert(
-        "Scan Failed",
-        "Could not parse this receipt. Please retake with better lighting.",
-      );
+    } catch (error: any) {
+      const errorMessage = error?.message || "Unknown error occurred";
+      
+      if (errorMessage.includes("AI features are temporarily unavailable") || 
+          errorMessage.includes("GEMINI_API_KEY")) {
+        Alert.alert(
+          "AI Service Unavailable",
+          "Receipt scanning AI is currently unavailable. Please contact support or try again later.",
+        );
+      } else {
+        Alert.alert(
+          "Scan Failed",
+          "Could not parse this receipt. Please retake with better lighting or contact support if this persists.",
+        );
+      }
     } finally {
       setIsProcessingPhoto(false);
     }
