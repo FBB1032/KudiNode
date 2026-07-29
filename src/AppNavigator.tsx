@@ -48,7 +48,7 @@ export type RootStackParamList = {
   Login:           undefined;
   RegisterKYC:     undefined;
   MainTabs:        undefined;
-  SalesIntake:     undefined;
+  SalesIntake: { initialMode?: 'VOICE' | 'PHOTO' } | undefined;
   Verification:    undefined;
   TransferPin: {
     prefilledAccount?: string;
@@ -109,7 +109,7 @@ function MainTabsNavigator() {
           listeners={({ navigation }) => ({
             tabPress: (e) => {
               e.preventDefault();
-              navigation.navigate('SalesIntake');
+              navigation.navigate('SalesIntake', { initialMode: 'VOICE' });
             },
           })}
         />

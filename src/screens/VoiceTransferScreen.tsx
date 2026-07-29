@@ -134,14 +134,6 @@ export function VoiceTransferScreen() {
       {/* Main content */}
       <View style={styles.body}>
 
-        {/* Example hint bubble */}
-        <View style={styles.hintBubble}>
-          <Icon name="mic" size={14} color={colors.successGreen} />
-          <Text style={styles.hintText}>
-            "Send ₦15,000 to Musa at Wema Bank, account 0123456789"
-          </Text>
-        </View>
-
         {/* Sound-wave bars (visible while recording) */}
         <View style={styles.waveRow}>
           {waveAnims.map((anim, i) => (

@@ -89,11 +89,6 @@ export function VerificationScreen() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        {/* AI parsed label */}
-        <View style={styles.aiBadge}>
-          <Icon name="shield-checkmark" size={14} color={colors.primaryMid} />
-          <Text style={styles.aiText}>AI-parsed from voice/scan · Review and correct if needed</Text>
-        </View>
 
         {/* Sale Items Card */}
         <View style={[styles.card, shadows.card]}>

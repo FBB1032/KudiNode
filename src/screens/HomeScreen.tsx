@@ -15,10 +15,10 @@ import { RootStackParamList } from '../AppNavigator';
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 const QUICK_ACTIONS = [
-  { icon: 'send' as const, label: 'Transfer', color: '#4A1D7A', bg: '#F3EBFB', route: 'VoiceTransfer' as const },
-  { icon: 'mic' as const, label: 'Log Voice', color: '#1FA84C', bg: '#E8FFF2', route: 'SalesIntake' as const },
-  { icon: 'camera' as const, label: 'Scan', color: '#E8A93A', bg: '#FFF8E7', route: 'SalesIntake' as const },
-  { icon: 'receipt' as const, label: 'Ledger', color: '#1565C0', bg: '#EBF5FF', route: 'Ledger' as const },
+  { icon: 'send' as const, label: 'Transfer', color: '#4A1D7A', bg: '#F3EBFB', route: 'VoiceTransfer' as const, params: undefined },
+  { icon: 'mic' as const, label: 'Log Voice', color: '#1FA84C', bg: '#E8FFF2', route: 'SalesIntake' as const, params: { initialMode: 'VOICE' as const } },
+  { icon: 'camera' as const, label: 'Scan', color: '#E8A93A', bg: '#FFF8E7', route: 'SalesIntake' as const, params: { initialMode: 'PHOTO' as const } },
+  { icon: 'receipt' as const, label: 'Ledger', color: '#1565C0', bg: '#EBF5FF', route: 'Ledger' as const, params: undefined },
 ];
 
 const RECENT_TXN = [
@@ -166,7 +166,7 @@ export function HomeScreen() {
             <TouchableOpacity
               key={action.label}
               style={[styles.quickTile, shadows.card]}
-              onPress={() => nav.navigate(action.route as any)}
+              onPress={() => nav.navigate(action.route as any, action.params as any)}
               activeOpacity={0.82}
             >
               <View style={[styles.quickTileIcon, { backgroundColor: action.bg }]}>

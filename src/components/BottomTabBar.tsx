@@ -37,12 +37,16 @@ export function BottomTabBar({ state, descriptors, navigation }: BottomTabBarPro
           };
 
           if (config.center) {
+            const handleCenterPress = () => {
+              (navigation as any).navigate('SalesIntake', { initialMode: 'VOICE' });
+            };
+
             return (
               <View key={route.key} style={styles.centerSlot}>
                 <TouchableOpacity
                   accessibilityRole="button"
                   accessibilityState={focused ? { selected: true } : {}}
-                  onPress={onPress}
+                  onPress={handleCenterPress}
                   activeOpacity={0.85}
                   style={styles.centerBtn}
                 >

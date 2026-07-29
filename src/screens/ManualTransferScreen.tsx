@@ -54,11 +54,13 @@ export function ManualTransferScreen() {
   const [note, setNote]                   = useState('');
 
   // Modals & PIN
-  const [showBankPicker, setShowBankPicker]     = useState(false);
-  const [showPinModal, setShowPinModal]         = useState(false);
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [isVerifyingPin, setIsVerifyingPin]     = useState(false);
-  const [pin, setPin]                           = useState('');
+  const [showBankPicker, setShowBankPicker]         = useState(false);
+  const [showPinModal, setShowPinModal]             = useState(false);
+  const [showProcessingModal, setShowProcessingModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal]     = useState(false);
+  const [isVerifyingPin, setIsVerifyingPin]         = useState(false);
+  const [processStep, setProcessStep]               = useState(1);
+  const [pin, setPin]                               = useState('');
 
   const [bankSearch, setBankSearch] = useState('');
   const [errors, setErrors]         = useState<Record<string, string>>({});
@@ -85,13 +87,25 @@ export function ManualTransferScreen() {
     setShowPinModal(true);
   };
 
+  const startTransferProcessing = () => {
+    setShowPinModal(false);
+    setShowProcessingModal(true);
+    setProcessStep(1);
+    setTimeout(() => setProcessStep(2), 600);
+    setTimeout(() => setProcessStep(3), 1200);
+    setTimeout(() => {
+      setShowProcessingModal(false);
+      setShowSuccessModal(true);
+    }, 1800);
+  };
+
   const handleKeypadPress = (val: string) => {
     if (isVerifyingPin) return;
     if (val === 'DEL') {
       setPin(prev => prev.slice(0, -1));
     } else if (val === 'BIO') {
-      // Simulate Biometric Success
-      triggerPinSuccess();
+      // Simulate Biometric Success -> trigger loading steps
+      startTransferProcessing();
     } else if (pin.length < 4) {
       const nextPin = pin + val;
       setPin(nextPin);
@@ -99,15 +113,10 @@ export function ManualTransferScreen() {
         setIsVerifyingPin(true);
         setTimeout(() => {
           setIsVerifyingPin(false);
-          triggerPinSuccess();
-        }, 600);
+          startTransferProcessing();
+        }, 400);
       }
     }
-  };
-
-  const triggerPinSuccess = () => {
-    setShowPinModal(false);
-    setShowSuccessModal(true);
   };
 
   const handleUssdFallback = async () => {
@@ -142,34 +151,22 @@ export function ManualTransferScreen() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        {/* ── Banner: AI Voice Parsed (only when coming from voice) ── */}
-        {fromVoice && (
-          <View style={styles.voiceBanner}>
-            <View style={styles.voiceBannerIcon}>
-              <Icon name="mic" size={18} color={colors.white} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.voiceBannerTitle}>Voice Transfer Parsed ✓</Text>
-              <Text style={styles.voiceBannerSub}>
-                KudiBot AI extracted these details from your voice command. Review and correct if needed before authorizing.
-              </Text>
-            </View>
-          </View>
-        )}
-
-        {/* ── Info banner (manual mode only) ── */}
-        {!fromVoice && (
-          <View style={styles.infoBanner}>
-            <Icon name="info" size={16} color={colors.primaryMid} />
-            <Text style={styles.infoText}>
-              All fields are required. Tap "Proceed" to open security PIN authorization.
-            </Text>
-          </View>
-        )}
-
         {/* ── Transfer Form Card ── */}
         <View style={[styles.card, shadows.card]}>
           <Text style={styles.cardTitle}>Transfer Details</Text>
+
+          {/* Fixed Non-Editable Sender / From Account */}
+          <View style={styles.fieldGroup}>
+            <Text style={styles.fieldLabel}>From Account (Fixed)</Text>
+            <View style={styles.fixedFromWrap}>
+              <Icon name="bank" size={18} color={colors.primaryDeep} />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.fixedFromTitle}>Wema Bank PLC</Text>
+                <Text style={styles.fixedFromSub}>Settlement Account · 0129384756 (Amina Bello)</Text>
+              </View>
+              <Icon name="lock-closed" size={14} color={colors.textMuted} />
+            </View>
+          </View>
 
           {/* Recipient */}
           <View style={styles.fieldGroup}>
@@ -447,6 +444,37 @@ export function ManualTransferScreen() {
         </View>
       </Modal>
 
+      {/* ── ⏳ TRANSFER PROCESSING LOADING MODAL ── */}
+      <Modal visible={showProcessingModal} transparent animationType="fade">
+        <View style={styles.processingOverlay}>
+          <View style={[styles.processingCard, shadows.cardLg]}>
+            <View style={styles.processingSpinnerCircle}>
+              <ActivityIndicator size="large" color={colors.primaryDeep} />
+            </View>
+
+            <Text style={styles.processingTitle}>Processing Transfer…</Text>
+            <Text style={styles.processingSub}>
+              Sending ₦{Number(amount.replace(/,/g, '') || 0).toLocaleString()} to {recipientName}
+            </Text>
+
+            <View style={styles.processingStepsBox}>
+              <View style={styles.stepRow}>
+                <Icon name={processStep >= 1 ? "checkmark-circle" : "radio-button-off"} size={16} color={processStep >= 1 ? colors.successGreen : colors.textMuted} />
+                <Text style={[styles.stepText, processStep >= 1 && styles.stepTextDone]}>1. Security PIN Verified</Text>
+              </View>
+              <View style={styles.stepRow}>
+                <Icon name={processStep >= 2 ? "checkmark-circle" : "radio-button-off"} size={16} color={processStep >= 2 ? colors.successGreen : colors.textMuted} />
+                <Text style={[styles.stepText, processStep >= 2 && styles.stepTextDone]}>2. Connecting to NIP Handoff Gateway</Text>
+              </View>
+              <View style={styles.stepRow}>
+                <Icon name={processStep >= 3 ? "checkmark-circle" : "radio-button-off"} size={16} color={processStep >= 3 ? colors.successGreen : colors.textMuted} />
+                <Text style={[styles.stepText, processStep >= 3 && styles.stepTextDone]}>3. Debiting Merchant Settlement Account</Text>
+              </View>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
       {/* ── 🎉 TRANSFER SUCCESS MODAL ── */}
       <Modal visible={showSuccessModal} transparent animationType="fade">
         <View style={styles.successOverlay}>
@@ -522,6 +550,14 @@ const styles = StyleSheet.create({
   fieldGroup: { gap: 4 },
   fieldLabel: { fontSize: typography.sizes.small, fontWeight: '700', color: colors.textMuted },
   fieldError: { fontSize: typography.sizes.tiny, color: '#EF4444', fontWeight: '600' },
+
+  fixedFromWrap: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    backgroundColor: '#F3EBFB', borderWidth: 1, borderColor: 'rgba(74, 29, 122, 0.2)',
+    borderRadius: radius.lg, paddingHorizontal: spacing.md, paddingVertical: 10,
+  },
+  fixedFromTitle: { fontSize: typography.sizes.body, fontWeight: '800', color: colors.primaryDeep },
+  fixedFromSub:   { fontSize: 11, color: colors.textMuted, marginTop: 1 },
 
   inputWrap: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
@@ -605,4 +641,15 @@ const styles = StyleSheet.create({
   successDetailVal:  { fontSize: typography.sizes.tiny, fontWeight: '700', color: colors.textDark, flexShrink: 1, textAlign: 'right' },
   successDoneBtn:    { backgroundColor: colors.primaryDeep, borderRadius: radius.xl, paddingVertical: 14, width: '100%', alignItems: 'center' },
   successDoneText:   { color: colors.white, fontWeight: '800', fontSize: typography.sizes.body },
+
+  // ── Processing Loading Modal ──
+  processingOverlay:       { flex: 1, backgroundColor: 'rgba(0,0,0,0.75)', justifyContent: 'center', alignItems: 'center', padding: spacing.xl },
+  processingCard:          { backgroundColor: colors.white, borderRadius: radius.xxl, padding: spacing.xl, alignItems: 'center', width: '100%', gap: spacing.xs },
+  processingSpinnerCircle: { width: 72, height: 72, borderRadius: 36, backgroundColor: '#F3EBFB', alignItems: 'center', justifyContent: 'center', marginBottom: spacing.sm },
+  processingTitle:         { fontSize: typography.sizes.h4, fontWeight: '800', color: colors.textDark },
+  processingSub:           { fontSize: typography.sizes.small, color: colors.textMuted, textAlign: 'center', marginBottom: spacing.md },
+  processingStepsBox:      { backgroundColor: colors.grayBG, borderRadius: radius.xl, padding: spacing.md, width: '100%', gap: 10 },
+  stepRow:                 { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  stepText:                { fontSize: typography.sizes.tiny, color: colors.textMuted, fontWeight: '600' },
+  stepTextDone:            { color: colors.textDark, fontWeight: '800' },
 });

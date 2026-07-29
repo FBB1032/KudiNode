@@ -8,17 +8,20 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing, radius, typography, shadows } from '../theme/theme';
 import { Icon } from '../components/Icon';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../AppNavigator';
 
-type Nav  = NativeStackNavigationProp<RootStackParamList>;
-type Mode = 'PHOTO' | 'VOICE';
+type Nav   = NativeStackNavigationProp<RootStackParamList>;
+type Route = RouteProp<RootStackParamList, 'SalesIntake'>;
+type Mode  = 'PHOTO' | 'VOICE';
 
 export function SalesIntakeScreen() {
-  const nav  = useNavigation<Nav>();
+  const nav    = useNavigation<Nav>();
+  const route  = useRoute<Route>();
   const insets = useSafeAreaInsets();
-  const [mode, setMode]             = useState<Mode>('PHOTO');
+  const initialMode = route.params?.initialMode ?? 'PHOTO';
+  const [mode, setMode]             = useState<Mode>(initialMode);
   const [isRecording, setIsRecording] = useState(false);
   const [flashOn, setFlashOn]         = useState(false);
   const [permission, requestPermission] = useCameraPermissions();

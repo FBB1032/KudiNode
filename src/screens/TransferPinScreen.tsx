@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  Animated, TextInput, Modal, StatusBar, Alert, FlatList,
+  Animated, TextInput, Modal, StatusBar, Alert, FlatList, ActivityIndicator,
 } from 'react-native';
 import { colors, spacing, radius, typography, shadows } from '../theme/theme';
 import { TopHeader } from '../components/TopHeader';
@@ -109,12 +109,28 @@ export function TransferPinScreen() {
     b.name.toLowerCase().includes(bankSearchQuery.toLowerCase())
   );
 
+  const [showProcessingModal, setShowProcessingModal] = useState(false);
+  const [processStep, setProcessStep]               = useState(1);
+
+  const startTransferProcessing = () => {
+    setShowProcessingModal(true);
+    setProcessStep(1);
+    setTimeout(() => setProcessStep(2), 600);
+    setTimeout(() => setProcessStep(3), 1200);
+    setTimeout(() => {
+      setShowProcessingModal(false);
+      setTransferSuccess(true);
+      setShowResultModal(true);
+    }, 1800);
+  };
+
   const handlePinPress = (digit: string) => {
     if (pin.length < pinMax) {
       const next = pin + digit;
       setPin(next);
       if (next.length === pinMax) {
         setAuthorized(true);
+        setTimeout(() => startTransferProcessing(), 200);
       }
     }
   };
@@ -124,6 +140,7 @@ export function TransferPinScreen() {
   const handleFingerprint = () => {
     setPin('1234');
     setAuthorized(true);
+    setTimeout(() => startTransferProcessing(), 200);
   };
 
   const handleAuthorize = () => {
@@ -137,10 +154,7 @@ export function TransferPinScreen() {
       ]).start();
     } else {
       setAuthorized(true);
-      setTimeout(() => {
-        setTransferSuccess(true);
-        setShowResultModal(true);
-      }, 500);
+      startTransferProcessing();
     }
   };
 
@@ -205,117 +219,6 @@ export function TransferPinScreen() {
           </View>
           <Icon name="chevron-forward" size={16} color={colors.warningOrange} />
         </TouchableOpacity>
-
-        {/* ── STAGE 1 vs STAGE 2 VOICE INTENT CARD ── */}
-        {!hasCapturedVoice ? (
-          <View style={[styles.voiceCard, shadows.card]}>
-            <View style={styles.voiceCardHeader}>
-              <View style={styles.voiceTitleLeft}>
-                <View style={styles.micBadgeCircle}>
-                  <Icon name="mic" size={14} color={colors.white} />
-                </View>
-                <Text style={styles.voiceCardTitle}>Record Voice Transfer</Text>
-              </View>
-
-              <View style={styles.initialTag}>
-                <Text style={styles.initialTagText}>Voice AI Ready</Text>
-              </View>
-            </View>
-
-            <View style={styles.recorderControlsRow}>
-              <TouchableOpacity onPress={handleMicClick} activeOpacity={0.85}>
-                <Animated.View
-                  style={[
-                    styles.recordMicBtn,
-                    isVoiceRecording && styles.recordMicBtnActive,
-                    { transform: [{ scale: pulseAnim }] },
-                  ]}
-                >
-                  <Icon
-                    name={isVoiceRecording ? 'checkmark' : 'mic'}
-                    size={20}
-                    color={colors.white}
-                  />
-                </Animated.View>
-              </TouchableOpacity>
-
-              <View style={styles.waveformWrap}>
-                {Array.from({ length: 26 }).map((_, i) => {
-                  const h = isVoiceRecording
-                    ? 6 + Math.abs(Math.sin(i * 0.65)) * 20 + (i % 3) * 3
-                    : 6;
-                  return (
-                    <View
-                      key={i}
-                      style={{
-                        width: 3.5,
-                        height: h,
-                        backgroundColor: isVoiceRecording ? colors.warningOrange : colors.border,
-                        borderRadius: 2,
-                      }}
-                    />
-                  );
-                })}
-              </View>
-
-              <Text style={styles.recStatusText}>
-                {isVoiceRecording ? `REC 0:0${recSeconds}` : 'TAP MIC'}
-              </Text>
-            </View>
-
-            <Text style={styles.voiceInstructionText}>
-              {isVoiceRecording
-                ? 'Listening... Speak recipient name & amount, then tap checkmark.'
-                : 'Click the mic button to speak your transfer command in English, Pidgin, Hausa, Yoruba, or Igbo.'}
-            </Text>
-          </View>
-        ) : (
-          <View style={[styles.voiceCard, styles.voiceCardCaptured, shadows.card]}>
-            <View style={styles.voiceCardHeader}>
-              <View style={styles.voiceTitleLeft}>
-                <View style={[styles.micBadgeCircle, { backgroundColor: colors.successGreen }]}>
-                  <Icon name="checkmark" size={14} color={colors.white} />
-                </View>
-                <View>
-                  <Text style={styles.voiceCardTitle}>Voice Intent Captured</Text>
-                  <Text style={styles.voiceCardMeta}>Audio Length 0:04</Text>
-                </View>
-              </View>
-
-              <View style={styles.aiTag}>
-                <Icon name="shield-checkmark" size={11} color={colors.successGreen} />
-                <Text style={styles.aiTagText}>AI Verified</Text>
-              </View>
-            </View>
-
-            <View style={styles.recorderControlsRow}>
-              <TouchableOpacity onPress={() => { setHasCapturedVoice(false); setIsVoiceRecording(true); }} activeOpacity={0.85}>
-                <View style={[styles.recordMicBtn, { backgroundColor: colors.primaryMid }]}>
-                  <Icon name="refresh" size={16} color={colors.white} />
-                </View>
-              </TouchableOpacity>
-
-              <View style={styles.waveformWrap}>
-                {Array.from({ length: 26 }).map((_, i) => {
-                  const h = 6 + Math.abs(Math.sin(i * 0.65)) * 20 + (i % 3) * 3;
-                  return (
-                    <View
-                      key={i}
-                      style={{
-                        width: 3.5,
-                        height: h,
-                        backgroundColor: colors.successGreen,
-                        borderRadius: 2,
-                      }}
-                    />
-                  );
-                })}
-              </View>
-
-              <Text style={[styles.recStatusText, { color: colors.successGreen }]}>CAPTURED</Text>
-            </View>
-          </View>
-        )}
 
         {/* DETAILS CARD */}
         {!isEditingDetails ? (
@@ -562,7 +465,7 @@ export function TransferPinScreen() {
                   <View style={styles.bankIconCircle}>
                     <Icon name="bank" size={16} color={colors.primaryDeep} />
                   </View>
-                  <Text style={[styles.bankItemName, bankName === item.name && styles.bankItemNameSelected]}>
+                  <Text style={[styles.bankItemText, bankName === item.name && styles.bankItemTextSelected]}>
                     {item.name}
                   </Text>
                   {bankName === item.name && (
@@ -646,6 +549,37 @@ export function TransferPinScreen() {
                 </TouchableOpacity>
               </>
             )}
+          </View>
+        </View>
+      </Modal>
+
+      {/* ── ⏳ TRANSFER PROCESSING LOADING MODAL ── */}
+      <Modal visible={showProcessingModal} transparent animationType="fade">
+        <View style={styles.processingOverlay}>
+          <View style={[styles.processingCard, shadows.cardLg]}>
+            <View style={styles.processingSpinnerCircle}>
+              <ActivityIndicator size="large" color={colors.primaryDeep} />
+            </View>
+
+            <Text style={styles.processingTitle}>Processing Transfer…</Text>
+            <Text style={styles.processingSub}>
+              Sending ₦{amount} to {recipientName} ({bankName})
+            </Text>
+
+            <View style={styles.processingStepsBox}>
+              <View style={styles.stepRow}>
+                <Icon name={processStep >= 1 ? "checkmark-circle" : "radio-button-off"} size={16} color={processStep >= 1 ? colors.successGreen : colors.textMuted} />
+                <Text style={[styles.stepText, processStep >= 1 && styles.stepTextDone]}>1. Security PIN Verified</Text>
+              </View>
+              <View style={styles.stepRow}>
+                <Icon name={processStep >= 2 ? "checkmark-circle" : "radio-button-off"} size={16} color={processStep >= 2 ? colors.successGreen : colors.textMuted} />
+                <Text style={[styles.stepText, processStep >= 2 && styles.stepTextDone]}>2. Connecting to NIP Handoff Gateway</Text>
+              </View>
+              <View style={styles.stepRow}>
+                <Icon name={processStep >= 3 ? "checkmark-circle" : "radio-button-off"} size={16} color={processStep >= 3 ? colors.successGreen : colors.textMuted} />
+                <Text style={[styles.stepText, processStep >= 3 && styles.stepTextDone]}>3. Debiting Merchant Settlement Account</Text>
+              </View>
+            </View>
           </View>
         </View>
       </Modal>
@@ -752,8 +686,19 @@ const styles = StyleSheet.create({
   bankItemRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.border },
   bankItemRowSelected: { backgroundColor: '#F0FDF4' },
   bankIconCircle: { width: 32, height: 32, borderRadius: 16, backgroundColor: colors.accentLight, alignItems: 'center', justifyContent: 'center' },
-  bankItemName: { flex: 1, fontSize: typography.sizes.body, fontWeight: '600', color: colors.textDark },
-  bankItemNameSelected: { color: colors.successGreen, fontWeight: '800' },
+  bankItemText: { flex: 1, fontSize: typography.sizes.body, fontWeight: '600', color: colors.textDark },
+  bankItemTextSelected: { color: colors.successGreen, fontWeight: '800' },
+
+  // ── Processing Loading Modal ──
+  processingOverlay:       { flex: 1, backgroundColor: 'rgba(0,0,0,0.75)', justifyContent: 'center', alignItems: 'center', padding: spacing.xl },
+  processingCard:          { backgroundColor: colors.white, borderRadius: radius.xxl, padding: spacing.xl, alignItems: 'center', width: '100%', gap: spacing.xs },
+  processingSpinnerCircle: { width: 72, height: 72, borderRadius: 36, backgroundColor: '#F3EBFB', alignItems: 'center', justifyContent: 'center', marginBottom: spacing.sm },
+  processingTitle:         { fontSize: typography.sizes.h4, fontWeight: '800', color: colors.textDark },
+  processingSub:           { fontSize: typography.sizes.small, color: colors.textMuted, textAlign: 'center', marginBottom: spacing.md },
+  processingStepsBox:      { backgroundColor: colors.grayBG, borderRadius: radius.xl, padding: spacing.md, width: '100%', gap: 10 },
+  stepRow:                 { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  stepText:                { fontSize: typography.sizes.tiny, color: colors.textMuted, fontWeight: '600' },
+  stepTextDone:            { color: colors.textDark, fontWeight: '800' },
 
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', padding: spacing.lg },
   modalCard: { width: '100%', maxWidth: 360, backgroundColor: colors.white, borderRadius: radius.xxl, padding: spacing.xl, alignItems: 'center' },
