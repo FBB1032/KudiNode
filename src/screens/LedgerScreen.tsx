@@ -261,7 +261,7 @@ const styles = StyleSheet.create({
   cardDate:   { fontSize: typography.sizes.body, fontWeight: '700', color: colors.textDark },
   cardBadge:  { marginTop: 3 },
   cardBadgeText: { fontSize: typography.sizes.tiny, fontWeight: '700' },
-  cardRight:  { alignItems: 'flex-end', gap: 4 },
+  cardRight:  { flexDirection: 'row', alignItems: 'center', gap: 6 },
   cardTotal:  { fontSize: typography.sizes.h4, fontWeight: '800', color: colors.textDark },
   // Items table
   itemsWrap: {

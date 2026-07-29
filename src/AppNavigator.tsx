@@ -39,6 +39,8 @@ import { SecuritySettingsScreen } from './screens/SecuritySettingsScreen';
 import { KYCDocumentsScreen }     from './screens/KYCDocumentsScreen';
 import { HelpSupportScreen }      from './screens/HelpSupportScreen';
 import { ApplyLoanScreen }        from './screens/ApplyLoanScreen';
+import { VoiceTransferScreen }    from './screens/VoiceTransferScreen';
+import { ManualTransferScreen }   from './screens/ManualTransferScreen';
 
 export type RootStackParamList = {
   Splash:          undefined;
@@ -65,6 +67,15 @@ export type RootStackParamList = {
   KYCDocuments:    undefined;
   HelpSupport:     undefined;
   ApplyLoan:       undefined;
+  VoiceTransfer:   undefined;
+  ManualTransfer:  {
+    prefilled?: {
+      prefilledRecipient?: string;
+      prefilledBank?: string;
+      prefilledAccount?: string;
+      prefilledAmount?: string;
+    };
+  } | undefined;
 };
 
 export type MainTabsParamList = {
@@ -161,6 +172,8 @@ export default function AppNavigator() {
 
             {/* Finance */}
             <Stack.Screen name="TransferPin"     component={TransferPinScreen} />
+            <Stack.Screen name="VoiceTransfer"   component={VoiceTransferScreen} options={{ animation: 'slide_from_bottom' }} />
+            <Stack.Screen name="ManualTransfer"  component={ManualTransferScreen} options={{ animation: 'slide_from_right' }} />
             <Stack.Screen name="TrustScore"      component={TrustScoreScreen} />
             <Stack.Screen name="AllTransactions" component={AllTransactionsScreen} />
             <Stack.Screen name="Ledger"          component={LedgerScreen} />

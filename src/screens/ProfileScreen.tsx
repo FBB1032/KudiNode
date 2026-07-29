@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Modal, Alert,
+  View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Modal, Alert, TextInput,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -48,8 +48,9 @@ const MENU_SECTIONS = [
     title: 'Account & Settings',
     items: [
       { icon: 'globe'      as const, label: 'Voice & Language',     sub: 'Hausa, Yoruba, Igbo, Pidgin, EN', route: 'LANG_MODAL' as const },
+      { icon: 'lock'       as const, label: 'Set Transfer PIN',     sub: 'Set or change 4-digit security PIN', route: 'PIN_SETUP_MODAL' as const },
       { icon: 'bell'       as const, label: 'Notifications',        sub: 'Manage alerts & SMS',        route: 'Notifications'   as const },
-      { icon: 'shield'     as const, label: 'Security & PIN',       sub: 'Change PIN, biometrics',     route: 'SecuritySettings'as const },
+      { icon: 'shield'     as const, label: 'Security & PIN',       sub: 'Biometrics & login security', route: 'SecuritySettings'as const },
       { icon: 'id-card'    as const, label: 'KYC Documents',        sub: 'Uploaded ID & liveness',     route: 'KYCDocuments'    as const },
       { icon: 'help'       as const, label: 'Help & Support',       sub: 'Chat, FAQ, call centre',     route: 'HelpSupport'     as const },
     ],
@@ -65,8 +66,28 @@ const MENU_SECTIONS = [
 export function ProfileScreen() {
   const nav = useNavigation<Nav>();
   const { language, setLanguage, t } = useLanguage();
-  const [showLangModal, setShowLangModal] = useState(false);
+  const [showLangModal, setShowLangModal]       = useState(false);
   const [showAdvisorModal, setShowAdvisorModal] = useState(false);
+  const [showPinSetupModal, setShowPinSetupModal] = useState(false);
+  const [newPinVal, setNewPinVal]               = useState('');
+  const [confirmPinVal, setConfirmPinVal]       = useState('');
+  const [pinError, setPinError]                 = useState('');
+
+  const handleSavePin = () => {
+    if (newPinVal.length !== 4) {
+      setPinError('PIN must be exactly 4 digits');
+      return;
+    }
+    if (newPinVal !== confirmPinVal) {
+      setPinError('PINs do not match');
+      return;
+    }
+    setPinError('');
+    setShowPinSetupModal(false);
+    setNewPinVal('');
+    setConfirmPinVal('');
+    Alert.alert('Transfer PIN Updated', 'Your 4-digit security transfer PIN has been updated successfully!');
+  };
 
   const handlePress = (route: string | null, danger?: boolean) => {
     if (danger) {
@@ -79,6 +100,10 @@ export function ProfileScreen() {
     }
     if (route === 'AI_BOT_MODAL') {
       setShowAdvisorModal(true);
+      return;
+    }
+    if (route === 'PIN_SETUP_MODAL') {
+      setShowPinSetupModal(true);
       return;
     }
     if (route) nav.navigate(route as any);
@@ -259,6 +284,58 @@ export function ProfileScreen() {
         </TouchableOpacity>
       </Modal>
 
+      {/* 🔒 Set Transfer PIN Modal 🔒 */}
+      <Modal visible={showPinSetupModal} transparent animationType="slide">
+        <View style={styles.modalOverlay}>
+          <View style={[styles.pinSetupCard, shadows.cardLg]}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Set Transfer PIN</Text>
+              <TouchableOpacity onPress={() => setShowPinSetupModal(false)} activeOpacity={0.8}>
+                <Icon name="close" size={22} color={colors.textDark} />
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.pinSetupSub}>
+              Set a secret 4-digit PIN to authorize transfers and Esusu contributions.
+            </Text>
+
+            <View style={styles.pinInputWrap}>
+              <Text style={styles.pinInputLabel}>New 4-Digit Security PIN</Text>
+              <TextInput
+                style={styles.pinInputField}
+                value={newPinVal}
+                onChangeText={v => { setNewPinVal(v); setPinError(''); }}
+                keyboardType="numeric"
+                secureTextEntry
+                maxLength={4}
+                placeholder="••••"
+                placeholderTextColor={colors.textMuted}
+              />
+            </View>
+
+            <View style={styles.pinInputWrap}>
+              <Text style={styles.pinInputLabel}>Confirm 4-Digit PIN</Text>
+              <TextInput
+                style={styles.pinInputField}
+                value={confirmPinVal}
+                onChangeText={v => { setConfirmPinVal(v); setPinError(''); }}
+                keyboardType="numeric"
+                secureTextEntry
+                maxLength={4}
+                placeholder="••••"
+                placeholderTextColor={colors.textMuted}
+              />
+            </View>
+
+            {pinError ? <Text style={styles.pinErrorText}>{pinError}</Text> : null}
+
+            <TouchableOpacity style={styles.savePinBtn} onPress={handleSavePin} activeOpacity={0.88}>
+              <Text style={styles.savePinBtnText}>Save Security PIN</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
       {/* 🤖 AI Financial Advisor Modal 🤖 */}
       <AiAdvisorModal visible={showAdvisorModal} onClose={() => setShowAdvisorModal(false)} />
     </View>
@@ -371,5 +448,29 @@ const styles = StyleSheet.create({
   langItemSelected: { backgroundColor: '#F0FDF4', borderColor: colors.successGreen },
   langFlag: { fontSize: 20 },
   langItemLabel: { flex: 1, fontSize: typography.sizes.body, fontWeight: '700', color: colors.textDark },
-  langItemTextSelected: { color: colors.successGreen },
+  langItemTextSelected: { color: colors.successGreen, fontWeight: '800' },
+
+  // Set Transfer PIN Modal
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
+  modalHeader:  { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', width: '100%', marginBottom: spacing.sm },
+  modalTitle:   { fontSize: typography.sizes.h4, fontWeight: '800', color: colors.textDark },
+  pinSetupCard: {
+    backgroundColor: colors.white, borderTopLeftRadius: radius.xxl, borderTopRightRadius: radius.xxl,
+    padding: spacing.xl, width: '100%', gap: spacing.md,
+  },
+  pinSetupSub: { fontSize: typography.sizes.small, color: colors.textMuted, lineHeight: 18 },
+  pinInputWrap: { gap: 4 },
+  pinInputLabel: { fontSize: typography.sizes.tiny, fontWeight: '700', color: colors.textMuted },
+  pinInputField: {
+    backgroundColor: colors.grayBG, borderRadius: radius.lg,
+    paddingHorizontal: spacing.md, height: 48,
+    borderWidth: 1, borderColor: colors.border,
+    fontSize: 20, color: colors.textDark, fontWeight: '800', letterSpacing: 8,
+  },
+  pinErrorText: { fontSize: typography.sizes.tiny, color: '#EF4444', fontWeight: '700' },
+  savePinBtn: {
+    backgroundColor: colors.primaryDeep, borderRadius: radius.xl,
+    paddingVertical: 14, alignItems: 'center', justifyContent: 'center', marginTop: 4,
+  },
+  savePinBtnText: { color: colors.white, fontWeight: '800', fontSize: typography.sizes.body },
 });

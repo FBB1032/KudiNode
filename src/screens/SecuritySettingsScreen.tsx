@@ -42,7 +42,7 @@ export function SecuritySettingsScreen() {
               <View style={styles.iconBox}>
                 <Icon name="fingerprint" size={20} color={colors.primaryMid} />
               </View>
-              <View>
+              <View style={{ flex: 1, minWidth: 0 }}>
                 <Text style={styles.rowTitle}>Biometric Authentication</Text>
                 <Text style={styles.rowSub}>Use fingerprint or Face ID for fast login</Text>
               </View>
@@ -60,7 +60,7 @@ export function SecuritySettingsScreen() {
               <View style={styles.iconBox}>
                 <Icon name="lock" size={20} color={colors.primaryMid} />
               </View>
-              <View>
+              <View style={{ flex: 1, minWidth: 0 }}>
                 <Text style={styles.rowTitle}>Two-Factor Authentication (2FA)</Text>
                 <Text style={styles.rowSub}>Require SMS code for transfers over ₦50,000</Text>
               </View>
@@ -86,7 +86,7 @@ export function SecuritySettingsScreen() {
               <View style={styles.iconBox}>
                 <Icon name="lock-closed" size={20} color={colors.primaryMid} />
               </View>
-              <View>
+              <View style={{ flex: 1, minWidth: 0 }}>
                 <Text style={styles.rowTitle}>Change 4-Digit Security PIN</Text>
                 <Text style={styles.rowSub}>Last updated 30 days ago</Text>
               </View>
@@ -139,7 +139,7 @@ export function SecuritySettingsScreen() {
               <View style={styles.iconBox}>
                 <Icon name="bell" size={20} color={colors.primaryMid} />
               </View>
-              <View>
+              <View style={{ flex: 1, minWidth: 0 }}>
                 <Text style={styles.rowTitle}>Instant SMS Alerts</Text>
                 <Text style={styles.rowSub}>Receive real-time SMS for all transfers</Text>
               </View>
@@ -157,7 +157,7 @@ export function SecuritySettingsScreen() {
               <View style={styles.iconBox}>
                 <Icon name="card" size={20} color={colors.primaryMid} />
               </View>
-              <View>
+              <View style={{ flex: 1, minWidth: 0 }}>
                 <Text style={styles.rowTitle}>Daily Transfer Limit</Text>
                 <Text style={styles.rowSub}>Current limit: ₦500,000 / day</Text>
               </View>
@@ -189,13 +189,13 @@ const styles = StyleSheet.create({
     padding: spacing.lg, gap: spacing.md,
   },
   borderTop: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
-  rowLeft: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, flex: 1 },
+  rowLeft: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, flex: 1, minWidth: 0 },
   iconBox: {
     width: 42, height: 42, borderRadius: 12,
     backgroundColor: colors.accentLight, alignItems: 'center', justifyContent: 'center',
   },
-  rowTitle: { fontSize: typography.sizes.body, fontWeight: '700', color: colors.textDark },
-  rowSub:   { fontSize: typography.sizes.tiny, color: colors.textMuted, marginTop: 2 },
+  rowTitle: { fontSize: typography.sizes.body, fontWeight: '700', color: colors.textDark, flexShrink: 1 },
+  rowSub:   { fontSize: typography.sizes.tiny, color: colors.textMuted, marginTop: 2, flexShrink: 1 },
   pinForm:  { padding: spacing.lg, paddingTop: 0, gap: spacing.md, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
   inputGroup: { gap: 4 },
   inputLabel: { fontSize: typography.sizes.tiny, fontWeight: '700', color: colors.textMuted },

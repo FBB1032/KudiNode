@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  StatusBar, Modal, FlatList,
+  StatusBar, Modal,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, spacing, radius, typography, shadows } from '../theme/theme';
@@ -14,8 +14,8 @@ import { RootStackParamList } from '../AppNavigator';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
-// User's Enrolled Co-op Groups / Contributions
-const MY_CONTRIBUTIONS = [
+// Each Co-op group has its own list of members
+const COOP_GROUPS = [
   {
     id: 'grp-1',
     title: 'Mushin Grains Traders Esusu',
@@ -25,7 +25,16 @@ const MY_CONTRIBUTIONS = [
     bankName: 'Wema Bank PLC',
     recipientName: 'Mushin Grains Esusu Pool',
     status: 'Due Jul 31',
-    membersCount: 32,
+    members: [
+      { id: 1, name: 'Amina Bello',    role: 'Coordinator', paid: true,  amount: '₦5,000' },
+      { id: 2, name: 'Emeka Eze',      role: 'Member',      paid: true,  amount: '₦5,000' },
+      { id: 3, name: 'Fatima Usman',   role: 'Member',      paid: false, amount: 'Pending' },
+      { id: 4, name: 'Chidi Okafor',   role: 'Treasurer',   paid: true,  amount: '₦5,000' },
+      { id: 5, name: 'Ngozi Adeyemi',  role: 'Member',      paid: false, amount: 'Pending' },
+      { id: 6, name: 'Tunde Adesanya', role: 'Member',      paid: true,  amount: '₦5,000' },
+      { id: 7, name: 'Bisi Akande',    role: 'Member',      paid: true,  amount: '₦5,000' },
+      { id: 8, name: 'Kabeer Sani',    role: 'Member',      paid: false, amount: 'Pending' },
+    ],
   },
   {
     id: 'grp-2',
@@ -36,7 +45,13 @@ const MY_CONTRIBUTIONS = [
     bankName: 'GTBank PLC',
     recipientName: 'Ketu Traders Esusu Pool',
     status: 'Paid Jul 01',
-    membersCount: 15,
+    members: [
+      { id: 1, name: 'Ngozi Chukwu',   role: 'Coordinator', paid: true,  amount: '₦10,000' },
+      { id: 2, name: 'Taiwo Adeyemi',  role: 'Member',      paid: true,  amount: '₦10,000' },
+      { id: 3, name: 'Amina Bello',    role: 'Member',      paid: true,  amount: '₦10,000' },
+      { id: 4, name: 'Musa Lawal',     role: 'Treasurer',   paid: false, amount: 'Pending' },
+      { id: 5, name: 'Sola Adewumi',   role: 'Member',      paid: true,  amount: '₦10,000' },
+    ],
   },
   {
     id: 'grp-3',
@@ -47,19 +62,15 @@ const MY_CONTRIBUTIONS = [
     bankName: 'Zenith Bank PLC',
     recipientName: 'Yaba Syndicate Collection',
     status: 'Due Aug 15',
-    membersCount: 20,
+    members: [
+      { id: 1, name: 'Kolade Balogun', role: 'Coordinator', paid: true,  amount: '₦15,000' },
+      { id: 2, name: 'Chioma Nwosu',   role: 'Member',      paid: false, amount: 'Pending' },
+      { id: 3, name: 'Amina Bello',    role: 'Member',      paid: false, amount: 'Pending' },
+      { id: 4, name: 'Gbemi Afolabi',  role: 'Treasurer',   paid: true,  amount: '₦15,000' },
+      { id: 5, name: 'Ahmed Gana',     role: 'Member',      paid: true,  amount: '₦15,000' },
+      { id: 6, name: 'Patience Obi',   role: 'Member',      paid: false, amount: 'Pending' },
+    ],
   },
-];
-
-const MEMBERS = [
-  { id: 1, name: 'Amina Bello',      role: 'Coordinator', paid: true,  amount: '₦5,000' },
-  { id: 2, name: 'Emeka Eze',        role: 'Member',      paid: true,  amount: '₦5,000' },
-  { id: 3, name: 'Fatima Usman',     role: 'Member',      paid: false, amount: 'Pending' },
-  { id: 4, name: 'Chidi Okafor',     role: 'Member',      paid: true,  amount: '₦5,000' },
-  { id: 5, name: 'Ngozi Adeyemi',    role: 'Member',      paid: false, amount: 'Pending' },
-  { id: 6, name: 'Tunde Adesanya',   role: 'Treasurer',   paid: true,  amount: '₦5,000' },
-  { id: 7, name: 'Bisi Akande',      role: 'Member',      paid: true,  amount: '₦5,000' },
-  { id: 8, name: 'Kabeer Sani',      role: 'Member',      paid: false, amount: 'Pending' },
 ];
 
 const ROUNDS = [
@@ -72,8 +83,12 @@ export function CoopEsusuScreen() {
   const nav = useNavigation<Nav>();
   const [tab, setTab] = useState<'overview' | 'groups' | 'members' | 'rounds'>('overview');
   const [showPayModal, setShowPayModal] = useState(false);
+  // Track which group's members are expanded (null = all collapsed)
+  const [expandedGroupId, setExpandedGroupId] = useState<string | null>(null);
+  // Selected group for detailed view in groups tab
+  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
 
-  const handleSelectContributionToPay = (group: typeof MY_CONTRIBUTIONS[0]) => {
+  const handleSelectContributionToPay = (group: typeof COOP_GROUPS[0]) => {
     setShowPayModal(false);
     nav.navigate('TransferPin', {
       prefilledAccount: group.accountNumber,
@@ -83,13 +98,17 @@ export function CoopEsusuScreen() {
     });
   };
 
+  const toggleGroupExpand = (id: string) => {
+    setExpandedGroupId(prev => (prev === id ? null : id));
+  };
+
   return (
     <View style={styles.root}>
       <StatusBar barStyle="light-content" backgroundColor={colors.primaryDeep} translucent={false} />
       <TopHeader
         showBack
         title="Co-op Esusu"
-        subtitle="Mushin Market Node · 32 Members"
+        subtitle="My Savings Groups"
         rightSlot={
           <TouchableOpacity style={styles.headerBtn} onPress={() => nav.navigate('CoopCreate')}>
             <Icon name="plus" size={20} color={colors.white} />
@@ -105,18 +124,20 @@ export function CoopEsusuScreen() {
         style={styles.statsStrip}
       >
         <View style={styles.stripStat}>
-          <Text style={styles.stripValue}>₦160,000</Text>
-          <Text style={styles.stripLabel}>Pool This Round</Text>
+          <Text style={styles.stripValue}>{COOP_GROUPS.length}</Text>
+          <Text style={styles.stripLabel}>My Groups</Text>
         </View>
         <View style={styles.stripSep} />
         <View style={styles.stripStat}>
-          <Text style={styles.stripValue}>32</Text>
-          <Text style={styles.stripLabel}>Active Members</Text>
+          <Text style={styles.stripValue}>
+            {COOP_GROUPS.reduce((s, g) => s + g.members.length, 0)}
+          </Text>
+          <Text style={styles.stripLabel}>Total Members</Text>
         </View>
         <View style={styles.stripSep} />
         <View style={styles.stripStat}>
-          <Text style={styles.stripValue}>₦5,000</Text>
-          <Text style={styles.stripLabel}>Monthly Contrib.</Text>
+          <Text style={styles.stripValue}>₦30,000</Text>
+          <Text style={styles.stripLabel}>Monthly Total</Text>
         </View>
       </LinearGradient>
 
@@ -149,8 +170,8 @@ export function CoopEsusuScreen() {
               <Text style={styles.cardTitle}>My Contribution Status</Text>
               <View style={styles.contribRow}>
                 <View style={styles.contribStat}>
-                  <Text style={styles.contribAmount}>₦20,000</Text>
-                  <Text style={styles.contribLabel}>Total Paid (4 cycles)</Text>
+                  <Text style={styles.contribAmount}>₦60,000</Text>
+                  <Text style={styles.contribLabel}>Total Paid Across All Groups</Text>
                 </View>
                 <View style={styles.contribBadge}>
                   <Icon name="checkmark-circle" size={16} color={colors.successGreen} />
@@ -163,7 +184,7 @@ export function CoopEsusuScreen() {
               <Text style={styles.progressNote}>Next payout in 3 rounds · Estimated Oct 2026</Text>
             </View>
 
-            {/* Pay now CTA (Triggers Modal to select group contribution) */}
+            {/* Pay now CTA */}
             <TouchableOpacity
               style={[styles.payBtn, shadows.button]}
               onPress={() => setShowPayModal(true)}
@@ -180,10 +201,10 @@ export function CoopEsusuScreen() {
               </LinearGradient>
             </TouchableOpacity>
 
-            {/* Enrolled Co-op Groups List */}
+            {/* Groups listed with quick member count */}
             <Text style={styles.sectionHeaderTitle}>My Active Contributions</Text>
             <View style={styles.groupsList}>
-              {MY_CONTRIBUTIONS.map(grp => (
+              {COOP_GROUPS.map(grp => (
                 <TouchableOpacity
                   key={grp.id}
                   style={[styles.groupCard, shadows.card]}
@@ -199,7 +220,7 @@ export function CoopEsusuScreen() {
                       {grp.accountNumber} ({grp.bankName})
                     </Text>
                     <Text style={styles.groupCardMeta}>
-                      {grp.membersCount} members · {grp.cycle}
+                      {grp.members.length} members · {grp.cycle}
                     </Text>
                   </View>
                   <View style={{ alignItems: 'flex-end' }}>
@@ -218,7 +239,7 @@ export function CoopEsusuScreen() {
         {tab === 'groups' && (
           <View style={{ gap: spacing.md }}>
             <Text style={styles.sectionHeaderTitle}>All Enrolled Co-op Groups</Text>
-            {MY_CONTRIBUTIONS.map(grp => (
+            {COOP_GROUPS.map(grp => (
               <View key={grp.id} style={[styles.groupDetailCard, shadows.card]}>
                 <View style={styles.groupDetailHeader}>
                   <View style={styles.groupCardIcon}>
@@ -251,45 +272,90 @@ export function CoopEsusuScreen() {
           </View>
         )}
 
-        {/* ── Members Tab ── */}
+        {/* ── Members Tab ── Groups first, then members of each group ── */}
         {tab === 'members' && (
-          <View style={[styles.card, shadows.card]}>
-            <View style={styles.membersHeader}>
-              <Text style={styles.cardTitle}>Mushin Node Roster</Text>
-              <Text style={styles.membersCountBadge}>32 Active Members</Text>
-            </View>
-            {MEMBERS.map((m, i) => (
-              <View
-                key={m.id}
-                style={[styles.memberRow, i < MEMBERS.length - 1 && styles.borderBottom]}
-              >
-                <Avatar size={38} initials={m.name.substring(0, 2).toUpperCase()} />
-                <View style={styles.memberInfo}>
-                  <View style={styles.memberNameRow}>
-                    <Text style={styles.memberName}>{m.name}</Text>
-                    {m.role !== 'Member' && (
-                      <View style={styles.roleBadge}>
-                        <Text style={styles.roleText}>{m.role}</Text>
-                      </View>
-                    )}
-                  </View>
-                  <Text style={styles.memberSub}>
-                    {m.paid ? 'July Contribution Paid' : 'Pending July Payment'}
-                  </Text>
-                </View>
+          <View style={{ gap: spacing.md }}>
+            <Text style={styles.sectionHeaderTitle}>Members by Contribution Group</Text>
+            {COOP_GROUPS.map(grp => {
+              const isExpanded = expandedGroupId === grp.id;
+              const paidCount = grp.members.filter(m => m.paid).length;
 
-                <View style={{ alignItems: 'flex-end' }}>
-                  <Text style={[styles.memberAmount, { color: m.paid ? colors.successGreen : colors.warningOrange }]}>
-                    {m.amount}
-                  </Text>
-                  <View style={[styles.statusPill, { backgroundColor: m.paid ? '#E8FFF2' : '#FFF3E8' }]}>
-                    <Text style={[styles.statusPillText, { color: m.paid ? colors.successGreen : colors.warningOrange }]}>
-                      {m.paid ? 'PAID' : 'PENDING'}
-                    </Text>
-                  </View>
+              return (
+                <View key={grp.id} style={[styles.card, shadows.card, { padding: 0, overflow: 'hidden' }]}>
+                  {/* ── Group header row (tap to expand / collapse) ── */}
+                  <TouchableOpacity
+                    style={styles.groupMemberHeader}
+                    onPress={() => toggleGroupExpand(grp.id)}
+                    activeOpacity={0.8}
+                  >
+                    <View style={styles.groupMemberHeaderLeft}>
+                      <View style={styles.groupMemberIconCircle}>
+                        <Icon name="people" size={18} color={colors.white} />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.groupMemberTitle} numberOfLines={1}>
+                          {grp.title}
+                        </Text>
+                        <Text style={styles.groupMemberMeta}>
+                          {grp.members.length} members · ₦{grp.amount}/month
+                        </Text>
+                      </View>
+                    </View>
+                    <View style={styles.groupMemberHeaderRight}>
+                      <View style={styles.paidBadge}>
+                        <Text style={styles.paidBadgeText}>{paidCount}/{grp.members.length} Paid</Text>
+                      </View>
+                      <Icon
+                        name={isExpanded ? 'chevron-up' : 'chevron-down'}
+                        size={16}
+                        color={colors.primaryDeep}
+                      />
+                    </View>
+                  </TouchableOpacity>
+
+                  {/* ── Members list (only visible when expanded) ── */}
+                  {isExpanded && (
+                    <View style={styles.membersListWrap}>
+                      {grp.members.map((m, i) => (
+                        <View
+                          key={m.id}
+                          style={[
+                            styles.memberRow,
+                            i < grp.members.length - 1 && styles.borderBottom,
+                          ]}
+                        >
+                          <Avatar size={38} initials={m.name.substring(0, 2).toUpperCase()} />
+                          <View style={styles.memberInfo}>
+                            <View style={styles.memberNameRow}>
+                              <Text style={styles.memberName}>{m.name}</Text>
+                              {m.role !== 'Member' && (
+                                <View style={styles.roleBadge}>
+                                  <Text style={styles.roleText}>{m.role}</Text>
+                                </View>
+                              )}
+                            </View>
+                            <Text style={styles.memberSub}>
+                              {m.paid ? 'July Contribution Paid' : 'Pending July Payment'}
+                            </Text>
+                          </View>
+
+                          <View style={{ alignItems: 'flex-end' }}>
+                            <Text style={[styles.memberAmount, { color: m.paid ? colors.successGreen : colors.warningOrange }]}>
+                              {m.amount}
+                            </Text>
+                            <View style={[styles.statusPill, { backgroundColor: m.paid ? '#E8FFF2' : '#FFF3E8' }]}>
+                              <Text style={[styles.statusPillText, { color: m.paid ? colors.successGreen : colors.warningOrange }]}>
+                                {m.paid ? 'PAID' : 'PENDING'}
+                              </Text>
+                            </View>
+                          </View>
+                        </View>
+                      ))}
+                    </View>
+                  )}
                 </View>
-              </View>
-            ))}
+              );
+            })}
           </View>
         )}
 
@@ -334,7 +400,7 @@ export function CoopEsusuScreen() {
             </Text>
 
             <View style={{ gap: spacing.md, width: '100%', marginVertical: spacing.md }}>
-              {MY_CONTRIBUTIONS.map(grp => (
+              {COOP_GROUPS.map(grp => (
                 <TouchableOpacity
                   key={grp.id}
                   style={styles.modalGrpTile}
@@ -411,7 +477,6 @@ const styles = StyleSheet.create({
   payGrad: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm, paddingVertical: 15 },
   payText: { fontSize: typography.sizes.body, fontWeight: '800', color: colors.white },
 
-  // Groups list
   groupsList: { gap: spacing.md },
   groupCard: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.md,
@@ -438,9 +503,27 @@ const styles = StyleSheet.create({
   },
   payGroupBtnText: { fontSize: typography.sizes.small, fontWeight: '800', color: colors.white },
 
-  // Members
-  membersHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.md },
-  membersCountBadge: { fontSize: typography.sizes.tiny, color: colors.primaryMid, fontWeight: '700', backgroundColor: colors.accentLight, paddingHorizontal: spacing.sm, paddingVertical: 3, borderRadius: radius.pill },
+  // ── Members Tab: Group Header Row ──
+  groupMemberHeader: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    padding: spacing.lg, backgroundColor: colors.white,
+  },
+  groupMemberHeaderLeft: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, flex: 1 },
+  groupMemberIconCircle: {
+    width: 40, height: 40, borderRadius: 20,
+    backgroundColor: colors.primaryDeep,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  groupMemberTitle: { fontSize: typography.sizes.body, fontWeight: '800', color: colors.textDark },
+  groupMemberMeta:  { fontSize: typography.sizes.tiny, color: colors.textMuted, marginTop: 1 },
+  groupMemberHeaderRight: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  paidBadge: { backgroundColor: '#E8FFF2', paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.pill },
+  paidBadgeText: { fontSize: 10, fontWeight: '800', color: colors.successGreen },
+
+  membersListWrap: {
+    borderTopWidth: 1, borderTopColor: colors.border,
+    paddingHorizontal: spacing.lg,
+  },
   memberRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: spacing.md, gap: spacing.md },
   borderBottom: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
   memberInfo: { flex: 1 },
