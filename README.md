@@ -1,7 +1,7 @@
 # KudiNode AI
 
 > **Hackaholics 7.0 — Team Alafia**  
-> Empowering Nigerian informal-sector merchants with AI-driven financial tools — voice transfers, smart ledger capture, cooperative savings, and a tiered trust system — built to work for everyone, even in low-literacy environments.
+> Empowering Nigerian informal-sector merchants with AI-driven financial tools voice transfers, smart ledger capture, cooperative savings, and a tiered trust system built to work for everyone, even in low-literacy environments.
 
 ---
 
@@ -15,9 +15,8 @@
 ---
 
 ##  Live Demo
-
-- **Live Application:** https://kudinode.onrender.com
 - **Admin Dashboard:** https://kudinode-admin.vercel.app/
+- **Admin login details** : email=fahdbadamasi320@gmail.com  password=*FahdBad2026#
 - **Backend API:** https://kudinode.onrender.com
 - **Recorded Demo:** [Link to recorded Loom demo explaining how KudiNode works]
 
@@ -25,11 +24,11 @@
 
 ##  The Problem
 
-> **How might we help Nigerian informal-sector merchants — traders, artisans, and cooperative members — manage their finances, access credit, and make transfers when they face barriers of low digital literacy, language diversity, and limited banking infrastructure?**
+> **How might we help Nigerian informal-sector merchants traders, artisans, and cooperative members manage their finances, access credit, and make transfers when they face barriers of low digital literacy, language diversity, and limited banking infrastructure?**
 
 Millions of Nigerian small-business owners operate entirely outside the formal financial system. They keep accounts in paper ledgers, describe transactions verbally in Yoruba, Hausa, Igbo, or Pidgin, and belong to informal cooperative savings groups (Esusu) that run without any digital trail. Without a verifiable financial history, they cannot access credit, and without credit, they cannot grow.
 
-At the same time, transferring money still requires navigating complex bank apps in a language many users are not comfortable with — a process that is slow, error-prone, and exclusionary.
+At the same time, transferring money still requires navigating complex bank apps in a language many users are not comfortable with a process that is slow, error-prone, and exclusionary.
 
 ---
 
@@ -37,11 +36,11 @@ At the same time, transferring money still requires navigating complex bank apps
 
 **KudiNode AI** is a full-stack mobile-first fintech platform purpose-built for Nigerian informal merchants. It combines a React Native (Expo) mobile app, a Node.js secure backend, a Supabase PostgreSQL database, and Google Gemini AI to deliver three transformational capabilities:
 
-1. **Voice-First Banking** — Users speak a transfer command in *any* Nigerian language or Pidgin (e.g., *"Send five thousand naira to Emeka, GTBank, zero-eight-zero-one..."*). Gemini AI transcribes and parses the speech into structured transfer fields — recipient name, bank, account number, and amount — before routing to a PIN confirmation screen. No typing required.
+1. **Voice-First Banking**: Users speak a transfer command in *any* Nigerian language or Pidgin (e.g., *"Send five thousand naira to Emeka, GTBank, zero-eight-zero-one..."*). Gemini AI transcribes and parses the speech into structured transfer fields recipient name, bank, account number, and amount before routing to a PIN confirmation screen. No typing required.
 
-2. **AI Receipt & Sales Logging** — Merchants point their phone camera at a paper receipt or speak their daily sales aloud. Gemini's vision and audio models extract itemized transaction data (merchant name, items, quantities, unit prices, totals in NGN) and post entries directly to the merchant's in-app ledger.
+2. **AI Receipt & Sales Logging**: Merchants point their phone camera at a paper receipt or speak their daily sales aloud. Gemini's vision and audio models extract itemized transaction data (merchant name, items, quantities, unit prices, totals in NGN) and post entries directly to the merchant's in-app ledger.
 
-3. **Cooperative (Esusu) Management** — Members can create and join Esusu savings circles digitally. Contribution schedules, payout queues, and balances are tracked in real time, giving cooperative groups the digital infrastructure they have always lacked.
+3. **Cooperative (Esusu) Management**: Members can create and join Esusu savings circles digitally. Contribution schedules, payout queues, and balances are tracked in real time, giving cooperative groups the digital infrastructure they have always lacked.
 
 Underpinning everything is a **KYC Tier System** (Tier 0 → Tier 3) and a **Trust Score** that grow as merchants upload identity documents (NIN, BVN, driver's licence, passport, selfie), enabling progressive access to credit and higher transaction limits through a dedicated Admin Dashboard used by KudiNode staff.
 
@@ -304,7 +303,7 @@ Node.js Backend (Express)
 
 ---
 
-## 🔒 Security Highlights
+##  Security Highlights
 
 - **Helmet** — sets production-grade HTTP security headers (CSP, HSTS, X-Frame-Options, etc.)
 - **Rate Limiting** — global 120 req/min cap via `express-rate-limit`; tighter limits on auth endpoints
@@ -313,6 +312,7 @@ Node.js Backend (Express)
 - **JWT Auth** — tokens issued by Supabase Auth, stored encrypted on-device via `expo-secure-store`
 - **In-memory file processing** — Multer holds uploaded files in RAM and streams them to Supabase Storage or Gemini; nothing is ever written to the server's disk
 
+**Admin login details** : email=fahdbadamasi320@gmail.com  password=*FahdBad2026#
 ---
 
-*Built with 💜 by Team Alafia — Hackaholics 7.0*
+*Built by Team Alafia — Hackaholics 7.0*
