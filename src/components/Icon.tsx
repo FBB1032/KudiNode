@@ -592,6 +592,22 @@ export function Icon({ name, size = 20, color = '#FFFFFF', style }: IconProps) {
         </>
       );
 
+    // ── PENCIL / EDIT ─────────────────────────────────────────────────
+    case 'pencil':
+    case 'edit':
+      return container(
+        <>
+          {/* Pencil body (rotated rectangle) */}
+          <View style={{ position: 'absolute', top: w(0.1), left: w(0.28), width: w(0.42), height: w(0.14), backgroundColor: c, borderRadius: 2, transform: [{ rotate: '-45deg' }] }} />
+          {/* Pencil shaft */}
+          <View style={{ position: 'absolute', top: w(0.28), left: w(0.12), width: w(0.46), height: w(0.42), backgroundColor: c, opacity: 0.85, borderRadius: 2, transform: [{ rotate: '-45deg' }] }} />
+          {/* Pencil tip */}
+          <View style={{ position: 'absolute', bottom: w(0.04), left: w(0.06), width: 0, height: 0, borderLeftWidth: w(0.1), borderRightWidth: w(0.1), borderTopWidth: w(0.18), borderLeftColor: 'transparent', borderRightColor: 'transparent', borderTopColor: c, transform: [{ rotate: '45deg' }] }} />
+          {/* Eraser */}
+          <View style={{ position: 'absolute', top: w(0.06), right: w(0.06), width: w(0.16), height: w(0.16), borderRadius: 3, backgroundColor: c, opacity: 0.7 }} />
+        </>
+      );
+
     // ── FALLBACK ──────────────────────────────────────────────────────
     default:
       return container(

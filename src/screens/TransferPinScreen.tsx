@@ -320,6 +320,18 @@ export function TransferPinScreen() {
         {/* DETAILS CARD */}
         {!isEditingDetails ? (
           <View style={[styles.detailsCard, shadows.card]}>
+            {/* Card header with Edit button */}
+            <View style={styles.detailsCardHeader}>
+              <Text style={styles.detailsCardTitle}>Transfer Details</Text>
+              <TouchableOpacity
+                style={styles.editBtn}
+                onPress={() => setIsEditingDetails(true)}
+                activeOpacity={0.75}
+              >
+                <Icon name="pencil" size={14} color={colors.primaryDeep} />
+                <Text style={styles.editBtnText}>Edit</Text>
+              </TouchableOpacity>
+            </View>
             <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>From Account</Text>
               <View style={styles.wemaAccountBadge}>
@@ -682,6 +694,10 @@ const styles = StyleSheet.create({
   voiceInstructionText: { fontSize: typography.sizes.tiny, color: colors.textMuted, lineHeight: 16 },
 
   detailsCard: { backgroundColor: colors.white, borderRadius: radius.xxl, padding: spacing.lg, marginBottom: spacing.lg },
+  detailsCardHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.md, paddingBottom: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.border },
+  detailsCardTitle: { fontSize: typography.sizes.body, fontWeight: '800', color: colors.textDark },
+  editBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: colors.accentLight, paddingHorizontal: spacing.sm, paddingVertical: 5, borderRadius: radius.pill },
+  editBtnText: { fontSize: typography.sizes.tiny, fontWeight: '800', color: colors.primaryDeep },
   detailRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 8 },
   detailRowBordered: { borderTopWidth: 1, borderTopColor: colors.border },
   detailLabel: { fontSize: typography.sizes.small, color: colors.textMuted, fontWeight: '600' },
