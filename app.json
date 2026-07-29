@@ -14,10 +14,16 @@
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#4A1D7A"
-      }
+      },
+      "package": "com.abkgami.kudinodeai"
     },
     "plugins": [
       "expo-secure-store"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "3fe993b1-7648-46fc-9745-c820b82453ac"
+      }
+    }
   }
 }
