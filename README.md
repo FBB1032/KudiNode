@@ -149,11 +149,7 @@ LEDGER_BUCKET=ledger-images
 GEMINI_API_KEY=
 GEMINI_MODEL=gemini-2.0-flash
 
-# Optional faster-whisper sidecar
-FAST_WHISPER_URL=
-FAST_WHISPER_API_KEY=
-FAST_WHISPER_LANGUAGE_HINT=
-```
+
 
 Run the dev server:
 
@@ -215,14 +211,6 @@ npm run dev
 
 Dashboard available at `https://kudinode.vercel.app/`.
 
----
-
-### 6. (Optional) Seed Admin Users
-
-```bash
-cd server
-npm run seed:admins
-```
 
 ---
 
