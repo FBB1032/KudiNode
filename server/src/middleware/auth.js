@@ -37,3 +37,24 @@ export const requireAdmin = asyncHandler(async (req, _res, next) => {
   req.role = data.role;
   next();
 });
+
+/**
+ * Optional authentication middleware. Attaches user if token is valid,
+ * but allows request to proceed if missing or invalid.
+ */
+export const optionalAuth = asyncHandler(async (req, _res, next) => {
+  const header = req.headers.authorization || "";
+  const token = header.startsWith("Bearer ") ? header.slice(7) : null;
+  if (token) {
+    try {
+      const { data } = await supabaseAdmin.auth.getUser(token);
+      if (data?.user) {
+        req.user = data.user;
+        req.accessToken = token;
+      }
+    } catch {
+      // Ignore invalid token in optional auth
+    }
+  }
+  next();
+});
