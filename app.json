@@ -16,8 +16,7 @@
       "package": "com.teamalafia.kudinode",
       "adaptiveIcon": {
         "backgroundColor": "#4A1D7A"
-      },
-      "package": "com.abkgami.kudinodeai"
+      }
     },
     "plugins": [
       "expo-dev-client",
@@ -25,15 +24,9 @@
     ],
     "extra": {
       "eas": {
-<<<<<<< HEAD
         "projectId": "3fe993b1-7648-46fc-9745-c820b82453ac"
-      }
-    }
-=======
-        "projectId": "eeeb1265-dbe7-41c2-8996-3454c76e3f59"
       }
     },
     "owner": "fahd320"
->>>>>>> 452d4a0304d0beb6fcc88910e7c20abcae7ff688
   }
 }
