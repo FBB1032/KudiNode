@@ -7,31 +7,26 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
-  StatusBar, Animated, Easing,
+  StatusBar, Animated, Easing, Alert,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Audio } from 'expo-av';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing, radius, typography, shadows } from '../theme/theme';
 import { Icon } from '../components/Icon';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../AppNavigator';
+import { parseVoiceTransferFromAudio } from '../services/aiApi';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
-
-// Simulated AI-parsed voice result
-const PARSED_VOICE_RESULT = {
-  prefilledRecipient: 'Supplier Musa',
-  prefilledBank:      'Wema Bank PLC',
-  prefilledAccount:   '0123456789',
-  prefilledAmount:    '15,000',
-};
 
 export function VoiceTransferScreen() {
   const nav        = useNavigation<Nav>();
   const insets     = useSafeAreaInsets();
   const [phase, setPhase] = useState<'idle' | 'recording' | 'processing' | 'done'>('idle');
   const [seconds, setSeconds] = useState(0);
+  const recordingRef = useRef<Audio.Recording | null>(null);
 
   // Pulse animation for mic ring
   const pulseAnim = useRef(new Animated.Value(1)).current;
@@ -75,21 +70,90 @@ export function VoiceTransferScreen() {
     return () => clearInterval(timer);
   }, [phase]);
 
-  const handleMicPress = () => {
-    if (phase === 'idle') {
+  useEffect(() => {
+    return () => {
+      if (recordingRef.current) {
+        recordingRef.current.stopAndUnloadAsync().catch(() => {});
+      }
+    };
+  }, []);
+
+  const startRecording = async () => {
+    try {
+      const permission = await Audio.requestPermissionsAsync();
+      if (!permission.granted) {
+        Alert.alert('Microphone Required', 'Please grant microphone permission to use voice transfer.');
+        return;
+      }
+
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: true,
+        playsInSilentModeIOS: true,
+      });
+
+      const recording = new Audio.Recording();
+      await recording.prepareToRecordAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY);
+      await recording.startAsync();
+      recordingRef.current = recording;
       setPhase('recording');
-    } else if (phase === 'recording') {
+    } catch (error) {
+      Alert.alert('Recording Error', 'Unable to start recording. Please try again.');
+      setPhase('idle');
+    }
+  };
+
+  const stopAndParse = async () => {
+    try {
       setPhase('processing');
-      // Simulate AI processing delay (1.2s)
+      const recording = recordingRef.current;
+      if (!recording) {
+        throw new Error('No active recording found');
+      }
+
+      await recording.stopAndUnloadAsync();
+      const uri = recording.getURI();
+      recordingRef.current = null;
+
+      if (!uri) {
+        throw new Error('No audio file generated');
+      }
+
+      const result = await parseVoiceTransferFromAudio(uri);
+      const amount = result.parsed.amount;
+
+      const prefilled = {
+        prefilledRecipient: result.parsed.recipientName ?? '',
+        prefilledBank: result.parsed.bankName ?? '',
+        prefilledAccount: result.parsed.accountNumber ?? '',
+        prefilledAmount: amount != null ? amount.toLocaleString() : '',
+      };
+
+      setPhase('done');
       setTimeout(() => {
-        setPhase('done');
-        // Replace screen with ManualTransfer fallback to review prefilled details
-        setTimeout(() => {
-          nav.replace('ManualTransfer', {
-            prefilled: PARSED_VOICE_RESULT,
-          });
-        }, 600);
-      }, 1200);
+        nav.replace('ManualTransfer', {
+          prefilled,
+          aiMeta: {
+            confidence: result.parsed.confidence,
+            languageDetected: result.parsed.languageDetected,
+            transcript: result.transcript,
+            transcriptionProvider: result.meta.transcriptionProvider,
+          },
+        });
+      }, 450);
+    } catch (_error) {
+      setPhase('idle');
+      Alert.alert(
+        'Voice Parse Failed',
+        'Could not understand the recording clearly. Please try again or use Manual Transfer.'
+      );
+    }
+  };
+
+  const handleMicPress = async () => {
+    if (phase === 'idle') {
+      await startRecording();
+    } else if (phase === 'recording') {
+      await stopAndParse();
     }
   };
 

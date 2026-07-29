@@ -1,33 +1,38 @@
-import React, { useState } from 'react'
-import { AnimatePresence, motion } from 'framer-motion'
-import { ThemeProvider } from './context/ThemeContext'
-import Sidebar, { NavView } from './components/Sidebar'
-import TopHeader from './components/TopHeader'
-import AdminLoginScreen from './screens/AdminLoginScreen'
-import DashboardScreen from './screens/DashboardScreen'
-import MerchantsScreen from './screens/MerchantsScreen'
-import CreditScreen from './screens/CreditScreen'
-import CoopScreen from './screens/CoopScreen'
-import RiskScreen from './screens/RiskScreen'
-import ReportsScreen from './screens/ReportsScreen'
-import SettingsScreen from './screens/SettingsScreen'
+import React, { useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { ThemeProvider } from "./context/ThemeContext";
+import Sidebar, { NavView } from "./components/Sidebar";
+import TopHeader from "./components/TopHeader";
+import AdminLoginScreen from "./screens/AdminLoginScreen";
+import DashboardScreen from "./screens/DashboardScreen";
+import MerchantsScreen from "./screens/MerchantsScreen";
+import CreditScreen from "./screens/CreditScreen";
+import CoopScreen from "./screens/CoopScreen";
+import RiskScreen from "./screens/RiskScreen";
+import ReportsScreen from "./screens/ReportsScreen";
+import SettingsScreen from "./screens/SettingsScreen";
+import { adminToken, adminLogout } from "./services/api";
 
 function AppShell({ onLogout }: { onLogout: () => void }) {
-  const [activeView, setActiveView] = useState<NavView>('dashboard')
+  const [activeView, setActiveView] = useState<NavView>("dashboard");
 
   const views: Record<NavView, React.ReactNode> = {
-    dashboard:   <DashboardScreen />,
-    merchants:   <MerchantsScreen />,
-    credit:      <CreditScreen />,
-    coop:        <CoopScreen />,
-    risk:        <RiskScreen />,
-    reports:     <ReportsScreen />,
-    settings:    <SettingsScreen />,
-  }
+    dashboard: <DashboardScreen />,
+    merchants: <MerchantsScreen />,
+    credit: <CreditScreen />,
+    coop: <CoopScreen />,
+    risk: <RiskScreen />,
+    reports: <ReportsScreen />,
+    settings: <SettingsScreen />,
+  };
 
   return (
     <div className="flex h-screen overflow-hidden bg-slate-100 dark:bg-[#080D14]">
-      <Sidebar active={activeView} onChange={setActiveView} onLogout={onLogout} />
+      <Sidebar
+        active={activeView}
+        onChange={setActiveView}
+        onLogout={onLogout}
+      />
       <div className="flex-1 flex flex-col min-w-0 ml-[260px]">
         <TopHeader activeView={activeView} />
         <main className="flex-1 overflow-y-auto pt-16">
@@ -38,7 +43,7 @@ function AppShell({ onLogout }: { onLogout: () => void }) {
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -6 }}
-                transition={{ duration: 0.16, ease: 'easeOut' }}
+                transition={{ duration: 0.16, ease: "easeOut" }}
               >
                 {views[activeView]}
               </motion.div>
@@ -47,19 +52,27 @@ function AppShell({ onLogout }: { onLogout: () => void }) {
         </main>
       </div>
     </div>
-  )
+  );
 }
 
 export default function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  // Restore session from a persisted admin token so refreshes keep you logged in.
+  const [isAuthenticated, setIsAuthenticated] = useState(
+    () => !!adminToken.get(),
+  );
+
+  const handleLogout = () => {
+    adminLogout();
+    setIsAuthenticated(false);
+  };
 
   return (
     <ThemeProvider>
       {isAuthenticated ? (
-        <AppShell onLogout={() => setIsAuthenticated(false)} />
+        <AppShell onLogout={handleLogout} />
       ) : (
         <AdminLoginScreen onLoginSuccess={() => setIsAuthenticated(true)} />
       )}
     </ThemeProvider>
-  )
+  );
 }

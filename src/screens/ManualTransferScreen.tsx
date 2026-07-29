@@ -21,6 +21,7 @@ import { UssdFallbackModule } from '../services/UssdFallbackModule';
 
 type Nav   = NativeStackNavigationProp<RootStackParamList>;
 type Route = RouteProp<RootStackParamList, 'ManualTransfer'>;
+const LOW_CONFIDENCE_THRESHOLD = 0.75;
 
 const NIGERIAN_BANKS = [
   'Wema Bank PLC',
@@ -45,7 +46,10 @@ export function ManualTransferScreen() {
   const nav   = useNavigation<Nav>();
   const route = useRoute<Route>();
   const prefilled = route.params?.prefilled;
+  const aiMeta = route.params?.aiMeta;
   const fromVoice = !!prefilled;
+  const aiConfidence = aiMeta?.confidence ?? null;
+  const isLowConfidence = aiConfidence !== null && aiConfidence < LOW_CONFIDENCE_THRESHOLD;
 
   const [recipientName, setRecipientName] = useState(prefilled?.prefilledRecipient ?? '');
   const [accountNum, setAccountNum]       = useState(prefilled?.prefilledAccount   ?? '');
@@ -83,6 +87,26 @@ export function ManualTransferScreen() {
 
   const handleProceed = () => {
     if (!validate()) return;
+
+    if (isLowConfidence) {
+      Alert.alert(
+        'Low AI Confidence',
+        'The voice parse confidence is low. Review recipient, bank, account number and amount carefully before authorizing.',
+        [
+          { text: 'Review Again', style: 'cancel' },
+          {
+            text: 'Proceed Anyway',
+            style: 'destructive',
+            onPress: () => {
+              setPin('');
+              setShowPinModal(true);
+            },
+          },
+        ]
+      );
+      return;
+    }
+
     setPin('');
     setShowPinModal(true);
   };
@@ -151,6 +175,34 @@ export function ManualTransferScreen() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
+        {fromVoice ? (
+          <View style={styles.voiceBanner}>
+            <View style={styles.voiceBannerIcon}>
+              <Icon name="mic" size={18} color={colors.white} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.voiceBannerTitle}>Voice Command Parsed</Text>
+              <Text style={styles.voiceBannerSub}>
+                {`Transcription: ${aiMeta?.transcriptionProvider || 'unknown'} · Language: ${aiMeta?.languageDetected || 'unknown'}`}
+              </Text>
+              {aiConfidence !== null ? (
+                <Text style={styles.voiceBannerSub}>
+                  Confidence: {(aiConfidence * 100).toFixed(0)}%
+                </Text>
+              ) : null}
+            </View>
+          </View>
+        ) : null}
+
+        {isLowConfidence ? (
+          <View style={styles.infoBanner}>
+            <Icon name="info" size={16} color={colors.warningOrange} />
+            <Text style={styles.infoText}>
+              AI confidence is low for this voice command. Please verify all details manually before you authorize transfer.
+            </Text>
+          </View>
+        ) : null}
+
         {/* ── Transfer Form Card ── */}
         <View style={[styles.card, shadows.card]}>
           <Text style={styles.cardTitle}>Transfer Details</Text>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
-  Animated, Alert, StatusBar,
+  Animated, Alert, StatusBar, ActivityIndicator,
 } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -11,6 +11,7 @@ import { Icon } from '../components/Icon';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../AppNavigator';
+import { extractReceiptFromImage } from '../services/aiApi';
 
 type Nav   = NativeStackNavigationProp<RootStackParamList>;
 type Route = RouteProp<RootStackParamList, 'SalesIntake'>;
@@ -25,9 +26,11 @@ export function SalesIntakeScreen() {
   const [isRecording, setIsRecording] = useState(false);
   const [flashOn, setFlashOn]         = useState(false);
   const [permission, requestPermission] = useCameraPermissions();
+  const [isProcessingPhoto, setIsProcessingPhoto] = useState(false);
 
   const pulseAnim   = useRef(new Animated.Value(1)).current;
   const pulseLoop   = useRef<Animated.CompositeAnimation | null>(null);
+  const cameraRef = useRef<CameraView | null>(null);
 
   // Recording pulse animation
   useEffect(() => {
@@ -54,8 +57,25 @@ export function SalesIntakeScreen() {
     }
   };
 
-  const handleSnap = () => {
-    nav.navigate('Verification');
+  const handleSnap = async () => {
+    if (isProcessingPhoto) return;
+    if (!cameraRef.current) {
+      Alert.alert('Camera Not Ready', 'Please wait a moment and try again.');
+      return;
+    }
+
+    try {
+      setIsProcessingPhoto(true);
+      const photo = await cameraRef.current.takePictureAsync({ quality: 0.7 });
+      if (!photo?.uri) throw new Error('No photo URI returned from camera');
+
+      const result = await extractReceiptFromImage(photo.uri);
+      nav.navigate('Verification', { parsedReceipt: result.parsed });
+    } catch (_error) {
+      Alert.alert('Scan Failed', 'Could not parse this receipt. Please retake with better lighting.');
+    } finally {
+      setIsProcessingPhoto(false);
+    }
   };
 
   // Permission check
@@ -91,6 +111,7 @@ export function SalesIntakeScreen() {
       {/* ── CAMERA VIEWFINDER (full screen) ── */}
       {mode === 'PHOTO' && (
         <CameraView
+          ref={cameraRef}
           style={StyleSheet.absoluteFill}
           facing="back"
           flash={flashOn ? 'on' : 'off'}
@@ -221,9 +242,15 @@ export function SalesIntakeScreen() {
               /* Camera shutter */
               <TouchableOpacity style={styles.shutter} onPress={handleSnap} activeOpacity={0.85}>
                 <View style={styles.shutterOuter}>
-                  <View style={styles.shutterInner} />
+                  {isProcessingPhoto ? (
+                    <ActivityIndicator color={colors.primaryDeep} size="small" />
+                  ) : (
+                    <View style={styles.shutterInner} />
+                  )}
                 </View>
-                <Text style={styles.actionCaption}>Tap to capture receipt</Text>
+                <Text style={styles.actionCaption}>
+                  {isProcessingPhoto ? 'Extracting receipt...' : 'Tap to capture receipt'}
+                </Text>
               </TouchableOpacity>
             ) : (
               /* Mic record button */

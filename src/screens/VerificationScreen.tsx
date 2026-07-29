@@ -11,12 +11,13 @@ import { colors, spacing, radius, typography, shadows } from '../theme/theme';
 import { TopHeader } from '../components/TopHeader';
 import { Icon } from '../components/Icon';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../AppNavigator';
 import { useLanguage } from '../context/LanguageContext';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
+type Route = RouteProp<RootStackParamList, 'Verification'>;
 
 interface Row {
   id: number;
@@ -40,7 +41,25 @@ function parseN(s: string) {
 export function VerificationScreen() {
   const { t } = useLanguage();
   const nav = useNavigation<Nav>();
-  const [rows, setRows] = useState<Row[]>(INITIAL_ROWS);
+  const route = useRoute<Route>();
+  const parsedReceipt = route.params?.parsedReceipt;
+
+  const initialRows: Row[] = parsedReceipt?.items?.length
+    ? parsedReceipt.items.map((item, idx) => {
+      const qty = item.quantity ?? 1;
+      const unitPrice = item.unitPrice ?? 0;
+      const lineTotal = item.lineTotal ?? qty * unitPrice;
+      return {
+        id: Date.now() + idx,
+        item: item.name,
+        qty,
+        price: `₦${unitPrice.toLocaleString()}`,
+        amount: `₦${lineTotal.toLocaleString()}`,
+      };
+    })
+    : INITIAL_ROWS;
+
+  const [rows, setRows] = useState<Row[]>(initialRows);
   const [editId, setEditId] = useState<number | null>(null);
   const [editVals, setEditVals] = useState<Partial<Row>>({});
 
@@ -89,6 +108,14 @@ export function VerificationScreen() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
+        {parsedReceipt ? (
+          <View style={styles.aiBadge}>
+            <Icon name="checkmark-circle" size={16} color={colors.primaryMid} />
+            <Text style={styles.aiText}>
+              AI parsed receipt{parsedReceipt.confidence > 0 ? ` · Confidence ${(parsedReceipt.confidence * 100).toFixed(0)}%` : ''}
+            </Text>
+          </View>
+        ) : null}
 
         {/* Sale Items Card */}
         <View style={[styles.card, shadows.card]}>

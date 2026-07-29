@@ -49,7 +49,23 @@ export type RootStackParamList = {
   RegisterKYC:     undefined;
   MainTabs:        undefined;
   SalesIntake: { initialMode?: 'VOICE' | 'PHOTO' } | undefined;
-  Verification:    undefined;
+  Verification: {
+    parsedReceipt?: {
+      merchantName: string | null;
+      date: string | null;
+      currency: 'NGN';
+      items: Array<{
+        name: string;
+        quantity: number | null;
+        unitPrice: number | null;
+        lineTotal: number | null;
+      }>;
+      subtotal: number | null;
+      tax: number | null;
+      total: number | null;
+      confidence: number;
+    };
+  } | undefined;
   TransferPin: {
     prefilledAccount?: string;
     prefilledBank?: string;
@@ -74,6 +90,12 @@ export type RootStackParamList = {
       prefilledBank?: string;
       prefilledAccount?: string;
       prefilledAmount?: string;
+    };
+    aiMeta?: {
+      confidence?: number;
+      languageDetected?: string | null;
+      transcript?: string;
+      transcriptionProvider?: string;
     };
   } | undefined;
 };
