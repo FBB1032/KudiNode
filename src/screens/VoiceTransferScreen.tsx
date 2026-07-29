@@ -184,12 +184,23 @@ export function VoiceTransferScreen() {
           },
         });
       }, 450);
-    } catch (_error) {
+    } catch (error: any) {
       setPhase("idle");
-      Alert.alert(
-        "Voice Parse Failed",
-        "Could not understand the recording clearly. Please try again or use Manual Transfer.",
-      );
+      const errorMessage = error?.message || "Unknown error occurred";
+      
+      if (errorMessage.includes("AI features are temporarily unavailable") || 
+          errorMessage.includes("GEMINI_API_KEY")) {
+        Alert.alert(
+          "AI Service Unavailable",
+          "Voice transfer AI is currently unavailable. Please use Manual Transfer instead or contact support.",
+          [{ text: "Use Manual Transfer", onPress: () => nav.replace("ManualTransfer") }]
+        );
+      } else {
+        Alert.alert(
+          "Voice Parse Failed",
+          "Could not understand the recording clearly. Please try again or use Manual Transfer.",
+        );
+      }
     }
   };
 

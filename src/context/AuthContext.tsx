@@ -26,7 +26,7 @@ interface AuthState {
 }
 
 interface AuthContextValue extends AuthState {
-  signIn: (phone: string, pin: string) => Promise<SessionUser>;
+  signIn: (phone: string, password: string) => Promise<SessionUser>;
   register: (input: {
     email: string;
     password: string;
@@ -77,8 +77,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     })();
   }, []);
 
-  const signIn = useCallback(async (phone: string, pin: string) => {
-    const user = await apiLogin(phone, pin);
+  const signIn = useCallback(async (phone: string, password: string) => {
+    const user = await apiLogin(phone, password);
     let profile: Profile | null = null;
     try {
       profile = (await getProfile()).profile;
