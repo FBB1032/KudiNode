@@ -15,11 +15,25 @@
  *   0801 234 5678  -> 2348012345678
  *   +2348012345678 -> 2348012345678
  *   8012345678     -> 2348012345678
+ *   08012345678    -> 2348012345678
  */
 export function normalizePhone(raw) {
   let p = String(raw || "").replace(/\D/g, "");
-  if (p.startsWith("234")) return p;
-  if (p.startsWith("0")) return "234" + p.slice(1);
+  
+  // Already in correct format
+  if (p.startsWith("234") && p.length === 13) return p;
+  
+  // Has leading 0 (e.g., 08012345678)
+  if (p.startsWith("0") && p.length === 11) return "234" + p.slice(1);
+  
+  // Missing 234 prefix, 10 digits (e.g., 8012345678)
   if (p.length === 10) return "234" + p;
+  
+  // Already 10 digits without leading 0 (e.g., 8012345678)
+  if (!p.startsWith("0") && !p.startsWith("234") && p.length === 10) {
+    return "234" + p;
+  }
+  
+  // Return as-is if we can't normalize (will likely fail validation)
   return p;
 }
