@@ -29,13 +29,12 @@ export const signupSchema = z.object({
 });
 
 /**
- * POST /auth/login — merchant sign in with phone + 4-digit PIN.
- * The phone resolves the account; the PIN is a lightweight app factor
- * (validated for shape only, per product spec).
+ * POST /auth/login — merchant sign in with phone + password.
+ * The phone resolves the account, password is authenticated via Supabase Auth.
  */
 export const loginSchema = z.object({
   phone,
-  pin,
+  password: z.string().min(1, "Password is required"),
 });
 
 /** POST /auth/admin/login — admin dashboard sign in with email + password */

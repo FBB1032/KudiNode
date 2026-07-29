@@ -51,7 +51,7 @@ export interface SessionUser {
 
 // ── Auth ────────────────────────────────────────────────
 // Merchants register with email + password + phone; they later sign in with
-// their phone number + a 4-digit PIN.
+// their phone number + password.
 export async function signup(input: {
   email: string;
   password: string;
@@ -72,11 +72,11 @@ export async function signup(input: {
   return res;
 }
 
-export async function login(phone: string, pin: string): Promise<SessionUser> {
+export async function login(phone: string, password: string): Promise<SessionUser> {
   const res = await api.post<{
     session: { access_token: string; refresh_token: string };
     user: SessionUser;
-  }>("/auth/login", { phone, pin }, false);
+  }>("/auth/login", { phone, password }, false);
 
   await tokenStore.save(res.session.access_token, res.session.refresh_token);
   return res.user;
