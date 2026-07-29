@@ -44,28 +44,22 @@ export async function parseVoiceTransferFromText(transcript: string) {
 
 export async function parseVoiceTransferFromAudio(audioUri: string) {
   const form = new FormData();
-  form.append(
-    "audio",
-    {
-      uri: audioUri,
-      name: `voice-${Date.now()}.m4a`,
-      type: "audio/x-m4a",
-    } as any,
-  );
+  form.append("audio", {
+    uri: audioUri,
+    name: `voice-${Date.now()}.m4a`,
+    type: "audio/x-m4a",
+  } as any);
 
   return api.postForm<VoiceTransferResponse>("/ai/voice-transfer", form);
 }
 
 export async function extractReceiptFromImage(imageUri: string) {
   const form = new FormData();
-  form.append(
-    "image",
-    {
-      uri: imageUri,
-      name: `receipt-${Date.now()}.jpg`,
-      type: "image/jpeg",
-    } as any,
-  );
+  form.append("image", {
+    uri: imageUri,
+    name: `receipt-${Date.now()}.jpg`,
+    type: "image/jpeg",
+  } as any);
 
   return api.postForm<ReceiptExtractionResponse>("/ai/receipt-extract", form);
 }

@@ -7,7 +7,9 @@ export const parseVoiceTransferIntent = asyncHandler(async (req, res) => {
   const audioFile = req.file;
 
   if (!transcript && !audioFile) {
-    throw badRequest("Provide transcript text or an audio file in field 'audio'");
+    throw badRequest(
+      "Provide transcript text or an audio file in field 'audio'",
+    );
   }
 
   const result = await parseVoiceTransfer({ transcript, audioFile });

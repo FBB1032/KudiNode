@@ -28,7 +28,9 @@ function tryParseJson(text) {
     // Fall through.
   }
 
-  const fenced = trimmed.match(/```json\s*([\s\S]*?)```/i) || trimmed.match(/```\s*([\s\S]*?)```/i);
+  const fenced =
+    trimmed.match(/```json\s*([\s\S]*?)```/i) ||
+    trimmed.match(/```\s*([\s\S]*?)```/i);
   if (fenced?.[1]) {
     try {
       return JSON.parse(fenced[1].trim());
@@ -53,7 +55,9 @@ function tryParseJson(text) {
 
 async function callGeminiJson({ prompt, inlineParts = [] }) {
   if (!env.geminiApiKey) {
-    throw badRequest("Missing GEMINI_API_KEY on backend. Add it to server/.env first.");
+    throw badRequest(
+      "Missing GEMINI_API_KEY on backend. Add it to server/.env first.",
+    );
   }
 
   const url = `${GEMINI_API_BASE}/models/${env.geminiModel}:generateContent?key=${env.geminiApiKey}`;
@@ -78,7 +82,9 @@ async function callGeminiJson({ prompt, inlineParts = [] }) {
 
   const rawText = await response.text();
   if (!response.ok) {
-    throw badRequest(`Gemini API request failed (${response.status}): ${rawText.slice(0, 300)}`);
+    throw badRequest(
+      `Gemini API request failed (${response.status}): ${rawText.slice(0, 300)}`,
+    );
   }
 
   let data;
@@ -130,7 +136,9 @@ async function transcribeWithFastWhisper(audioFile) {
 
   const rawText = await response.text();
   if (!response.ok) {
-    throw badRequest(`Whisper endpoint failed (${response.status}): ${rawText.slice(0, 300)}`);
+    throw badRequest(
+      `Whisper endpoint failed (${response.status}): ${rawText.slice(0, 300)}`,
+    );
   }
 
   let data;
@@ -239,7 +247,8 @@ export async function parseVoiceTransfer({ transcript, audioFile }) {
       accountNumber: normalizeAccountNumber(parsed?.accountNumber),
       amount: asNumberOrNull(parsed?.amount),
       narration: parsed?.narration || null,
-      languageDetected: parsed?.languageDetected || transcriptResult.languageDetected || null,
+      languageDetected:
+        parsed?.languageDetected || transcriptResult.languageDetected || null,
       confidence: asNumberOrNull(parsed?.confidence) ?? 0,
     },
     meta: {

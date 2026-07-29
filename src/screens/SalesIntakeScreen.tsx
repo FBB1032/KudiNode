@@ -1,35 +1,41 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from "react";
 import {
-  View, Text, StyleSheet, TouchableOpacity,
-  Animated, Alert, StatusBar, ActivityIndicator,
-} from 'react-native';
-import { CameraView, useCameraPermissions } from 'expo-camera';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors, spacing, radius, typography, shadows } from '../theme/theme';
-import { Icon } from '../components/Icon';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../AppNavigator';
-import { extractReceiptFromImage } from '../services/aiApi';
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Animated,
+  Alert,
+  StatusBar,
+  ActivityIndicator,
+} from "react-native";
+import { CameraView, useCameraPermissions } from "expo-camera";
+import { LinearGradient } from "expo-linear-gradient";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { colors, spacing, radius, typography, shadows } from "../theme/theme";
+import { Icon } from "../components/Icon";
+import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { RootStackParamList } from "../AppNavigator";
+import { extractReceiptFromImage } from "../services/aiApi";
 
-type Nav   = NativeStackNavigationProp<RootStackParamList>;
-type Route = RouteProp<RootStackParamList, 'SalesIntake'>;
-type Mode  = 'PHOTO' | 'VOICE';
+type Nav = NativeStackNavigationProp<RootStackParamList>;
+type Route = RouteProp<RootStackParamList, "SalesIntake">;
+type Mode = "PHOTO" | "VOICE";
 
 export function SalesIntakeScreen() {
-  const nav    = useNavigation<Nav>();
-  const route  = useRoute<Route>();
+  const nav = useNavigation<Nav>();
+  const route = useRoute<Route>();
   const insets = useSafeAreaInsets();
-  const initialMode = route.params?.initialMode ?? 'PHOTO';
-  const [mode, setMode]             = useState<Mode>(initialMode);
+  const initialMode = route.params?.initialMode ?? "PHOTO";
+  const [mode, setMode] = useState<Mode>(initialMode);
   const [isRecording, setIsRecording] = useState(false);
-  const [flashOn, setFlashOn]         = useState(false);
+  const [flashOn, setFlashOn] = useState(false);
   const [permission, requestPermission] = useCameraPermissions();
   const [isProcessingPhoto, setIsProcessingPhoto] = useState(false);
 
-  const pulseAnim   = useRef(new Animated.Value(1)).current;
-  const pulseLoop   = useRef<Animated.CompositeAnimation | null>(null);
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const pulseLoop = useRef<Animated.CompositeAnimation | null>(null);
   const cameraRef = useRef<CameraView | null>(null);
 
   // Recording pulse animation
@@ -37,21 +43,33 @@ export function SalesIntakeScreen() {
     if (isRecording) {
       pulseLoop.current = Animated.loop(
         Animated.sequence([
-          Animated.timing(pulseAnim, { toValue: 1.22, duration: 480, useNativeDriver: true }),
-          Animated.timing(pulseAnim, { toValue: 1.0,  duration: 480, useNativeDriver: true }),
-        ])
+          Animated.timing(pulseAnim, {
+            toValue: 1.22,
+            duration: 480,
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseAnim, {
+            toValue: 1.0,
+            duration: 480,
+            useNativeDriver: true,
+          }),
+        ]),
       );
       pulseLoop.current.start();
     } else {
       pulseLoop.current?.stop();
-      Animated.timing(pulseAnim, { toValue: 1, duration: 200, useNativeDriver: true }).start();
+      Animated.timing(pulseAnim, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      }).start();
     }
   }, [isRecording, pulseAnim]);
 
   const handleMicPress = () => {
     if (isRecording) {
       setIsRecording(false);
-      setTimeout(() => nav.navigate('Verification'), 300);
+      setTimeout(() => nav.navigate("Verification"), 300);
     } else {
       setIsRecording(true);
     }
@@ -60,19 +78,22 @@ export function SalesIntakeScreen() {
   const handleSnap = async () => {
     if (isProcessingPhoto) return;
     if (!cameraRef.current) {
-      Alert.alert('Camera Not Ready', 'Please wait a moment and try again.');
+      Alert.alert("Camera Not Ready", "Please wait a moment and try again.");
       return;
     }
 
     try {
       setIsProcessingPhoto(true);
       const photo = await cameraRef.current.takePictureAsync({ quality: 0.7 });
-      if (!photo?.uri) throw new Error('No photo URI returned from camera');
+      if (!photo?.uri) throw new Error("No photo URI returned from camera");
 
       const result = await extractReceiptFromImage(photo.uri);
-      nav.navigate('Verification', { parsedReceipt: result.parsed });
+      nav.navigate("Verification", { parsedReceipt: result.parsed });
     } catch (_error) {
-      Alert.alert('Scan Failed', 'Could not parse this receipt. Please retake with better lighting.');
+      Alert.alert(
+        "Scan Failed",
+        "Could not parse this receipt. Please retake with better lighting.",
+      );
     } finally {
       setIsProcessingPhoto(false);
     }
@@ -95,7 +116,11 @@ export function SalesIntakeScreen() {
         <Text style={styles.permSub}>
           KudiNode needs camera access to scan receipts and sales ledgers.
         </Text>
-        <TouchableOpacity style={styles.permBtn} onPress={requestPermission} activeOpacity={0.85}>
+        <TouchableOpacity
+          style={styles.permBtn}
+          onPress={requestPermission}
+          activeOpacity={0.85}
+        >
           <Text style={styles.permBtnText}>Grant Camera Access</Text>
         </TouchableOpacity>
       </View>
@@ -106,22 +131,26 @@ export function SalesIntakeScreen() {
 
   return (
     <View style={styles.root}>
-      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+      <StatusBar
+        barStyle="light-content"
+        backgroundColor="transparent"
+        translucent
+      />
 
       {/* ── CAMERA VIEWFINDER (full screen) ── */}
-      {mode === 'PHOTO' && (
+      {mode === "PHOTO" && (
         <CameraView
           ref={cameraRef}
           style={StyleSheet.absoluteFill}
           facing="back"
-          flash={flashOn ? 'on' : 'off'}
+          flash={flashOn ? "on" : "off"}
         />
       )}
 
       {/* ── VOICE MODE BACKGROUND ── */}
-      {mode === 'VOICE' && (
+      {mode === "VOICE" && (
         <LinearGradient
-          colors={['#0D0B14', colors.primaryDeep]}
+          colors={["#0D0B14", colors.primaryDeep]}
           style={StyleSheet.absoluteFill}
         />
       )}
@@ -142,13 +171,13 @@ export function SalesIntakeScreen() {
           </TouchableOpacity>
 
           <Text style={styles.topTitle}>
-            {mode === 'PHOTO' ? 'Receipt Scanner' : 'Voice Sales Log'}
+            {mode === "PHOTO" ? "Receipt Scanner" : "Voice Sales Log"}
           </Text>
 
-          {mode === 'PHOTO' ? (
+          {mode === "PHOTO" ? (
             <TouchableOpacity
               style={styles.topBtn}
-              onPress={() => setFlashOn(f => !f)}
+              onPress={() => setFlashOn((f) => !f)}
               activeOpacity={0.8}
             >
               <Icon
@@ -164,7 +193,7 @@ export function SalesIntakeScreen() {
       </View>
 
       {/* ── VIEWFINDER CORNERS (Photo mode) ── */}
-      {mode === 'PHOTO' && (
+      {mode === "PHOTO" && (
         <View style={styles.finderWrap}>
           <View style={styles.finderFrame}>
             <View style={[styles.corner, styles.cTL]} />
@@ -177,10 +206,17 @@ export function SalesIntakeScreen() {
       )}
 
       {/* ── VOICE AREA ── */}
-      {mode === 'VOICE' && (
+      {mode === "VOICE" && (
         <View style={styles.voiceArea}>
-          <Animated.View style={[styles.micRingOuter, { transform: [{ scale: pulseAnim }] }]}>
-            <View style={[styles.micRingInner, isRecording && styles.micRingInnerActive]}>
+          <Animated.View
+            style={[styles.micRingOuter, { transform: [{ scale: pulseAnim }] }]}
+          >
+            <View
+              style={[
+                styles.micRingInner,
+                isRecording && styles.micRingInnerActive,
+              ]}
+            >
               <Icon name="mic" size={52} color={colors.white} />
             </View>
           </Animated.View>
@@ -199,7 +235,16 @@ export function SalesIntakeScreen() {
               {Array.from({ length: 30 }).map((_, i) => {
                 const h = 8 + Math.abs(Math.sin(i * 0.7)) * 22 + (i % 3) * 5;
                 return (
-                  <View key={i} style={{ width: 3.5, height: h, backgroundColor: colors.successGreen, borderRadius: 2, opacity: 0.85 }} />
+                  <View
+                    key={i}
+                    style={{
+                      width: 3.5,
+                      height: h,
+                      backgroundColor: colors.successGreen,
+                      borderRadius: 2,
+                      opacity: 0.85,
+                    }}
+                  />
                 );
               })}
             </View>
@@ -207,49 +252,88 @@ export function SalesIntakeScreen() {
 
           <Text style={styles.voiceHint}>
             {isRecording
-              ? 'Speak items & prices in English, Pidgin, Hausa, Yoruba or Igbo'
-              : 'Tap mic to record your sales. AI will parse items & amounts.'}
+              ? "Speak items & prices in English, Pidgin, Hausa, Yoruba or Igbo"
+              : "Tap mic to record your sales. AI will parse items & amounts."}
           </Text>
         </View>
       )}
 
       {/* ── BOTTOM CONTROLS ── */}
-      <View style={[styles.bottomContainer, { paddingBottom: Math.max(insets.bottom, 16) + 12 }]}>
+      <View
+        style={[
+          styles.bottomContainer,
+          { paddingBottom: Math.max(insets.bottom, 16) + 12 },
+        ]}
+      >
         <View style={styles.bottomBar}>
           {/* Mode Switcher */}
           <View style={styles.segmented}>
             <TouchableOpacity
-              style={[styles.seg, mode === 'PHOTO' && styles.segActive]}
-              onPress={() => { setMode('PHOTO'); setIsRecording(false); }}
+              style={[styles.seg, mode === "PHOTO" && styles.segActive]}
+              onPress={() => {
+                setMode("PHOTO");
+                setIsRecording(false);
+              }}
               activeOpacity={0.8}
             >
-              <Icon name="camera" size={15} color={mode === 'PHOTO' ? colors.primaryDeep : colors.white} />
-              <Text style={[styles.segText, mode === 'PHOTO' && styles.segTextActive]}>Photo</Text>
+              <Icon
+                name="camera"
+                size={15}
+                color={mode === "PHOTO" ? colors.primaryDeep : colors.white}
+              />
+              <Text
+                style={[
+                  styles.segText,
+                  mode === "PHOTO" && styles.segTextActive,
+                ]}
+              >
+                Photo
+              </Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.seg, mode === 'VOICE' && styles.segActive]}
-              onPress={() => setMode('VOICE')}
+              style={[styles.seg, mode === "VOICE" && styles.segActive]}
+              onPress={() => setMode("VOICE")}
               activeOpacity={0.8}
             >
-              <Icon name="mic" size={15} color={mode === 'VOICE' ? colors.primaryDeep : colors.white} />
-              <Text style={[styles.segText, mode === 'VOICE' && styles.segTextActive]}>Voice</Text>
+              <Icon
+                name="mic"
+                size={15}
+                color={mode === "VOICE" ? colors.primaryDeep : colors.white}
+              />
+              <Text
+                style={[
+                  styles.segText,
+                  mode === "VOICE" && styles.segTextActive,
+                ]}
+              >
+                Voice
+              </Text>
             </TouchableOpacity>
           </View>
 
           {/* Action Button */}
           <View style={styles.actionRow}>
-            {mode === 'PHOTO' ? (
+            {mode === "PHOTO" ? (
               /* Camera shutter */
-              <TouchableOpacity style={styles.shutter} onPress={handleSnap} activeOpacity={0.85}>
+              <TouchableOpacity
+                style={styles.shutter}
+                onPress={handleSnap}
+                activeOpacity={0.85}
+              >
                 <View style={styles.shutterOuter}>
                   {isProcessingPhoto ? (
-                    <ActivityIndicator color={colors.primaryDeep} size="small" />
+                    <ActivityIndicator
+                      color={colors.primaryDeep}
+                      size="small"
+                    />
                   ) : (
                     <View style={styles.shutterInner} />
                   )}
                 </View>
                 <Text style={styles.actionCaption}>
-                  {isProcessingPhoto ? 'Extracting receipt...' : 'Tap to capture receipt'}
+                  {isProcessingPhoto
+                    ? "Extracting receipt..."
+                    : "Tap to capture receipt"}
                 </Text>
               </TouchableOpacity>
             ) : (
@@ -273,13 +357,15 @@ export function SalesIntakeScreen() {
                 <TouchableOpacity onPress={handleMicPress} activeOpacity={0.88}>
                   <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
                     <LinearGradient
-                      colors={isRecording
-                        ? ['#E53935', '#B71C1C']
-                        : [colors.primaryMid, colors.primaryDeep]}
+                      colors={
+                        isRecording
+                          ? ["#E53935", "#B71C1C"]
+                          : [colors.primaryMid, colors.primaryDeep]
+                      }
                       style={styles.micFAB}
                     >
                       <Icon
-                        name={isRecording ? 'checkmark' : 'mic'}
+                        name={isRecording ? "checkmark" : "mic"}
                         size={36}
                         color={colors.white}
                       />
@@ -300,145 +386,283 @@ export function SalesIntakeScreen() {
 const CORNER_SIZE = 28;
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#0D0B14' },
+  root: { flex: 1, backgroundColor: "#0D0B14" },
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.28)',
+    backgroundColor: "rgba(0,0,0,0.28)",
   },
   permRoot: {
-    flex: 1, backgroundColor: colors.grayBG,
-    alignItems: 'center', justifyContent: 'center',
-    padding: spacing.xxl, gap: spacing.md,
+    flex: 1,
+    backgroundColor: colors.grayBG,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: spacing.xxl,
+    gap: spacing.md,
   },
-  permTitle: { fontSize: typography.sizes.h3, fontWeight: '800', color: colors.textDark, textAlign: 'center' },
-  permSub:   { fontSize: typography.sizes.body, color: colors.textMuted, textAlign: 'center', lineHeight: 22 },
-  permText:  { fontSize: typography.sizes.body, color: colors.textMuted },
+  permTitle: {
+    fontSize: typography.sizes.h3,
+    fontWeight: "800",
+    color: colors.textDark,
+    textAlign: "center",
+  },
+  permSub: {
+    fontSize: typography.sizes.body,
+    color: colors.textMuted,
+    textAlign: "center",
+    lineHeight: 22,
+  },
+  permText: { fontSize: typography.sizes.body, color: colors.textMuted },
   permBtn: {
-    backgroundColor: colors.primaryDeep, borderRadius: radius.xl,
-    paddingHorizontal: spacing.xxl, paddingVertical: spacing.md,
+    backgroundColor: colors.primaryDeep,
+    borderRadius: radius.xl,
+    paddingHorizontal: spacing.xxl,
+    paddingVertical: spacing.md,
     marginTop: spacing.md,
   },
-  permBtnText: { color: colors.white, fontWeight: '800', fontSize: typography.sizes.body },
+  permBtnText: {
+    color: colors.white,
+    fontWeight: "800",
+    fontSize: typography.sizes.body,
+  },
 
   // Top Bar Container
   topBarContainer: {
-    position: 'absolute', top: 0, left: 0, right: 0, zIndex: 100,
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 100,
     paddingHorizontal: spacing.lg,
   },
   topBar: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   topBtn: {
-    width: 48, height: 48, borderRadius: 14,
-    backgroundColor: 'rgba(0,0,0,0.55)',
-    alignItems: 'center', justifyContent: 'center',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)',
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: "rgba(0,0,0,0.55)",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.2)",
   },
-  topTitle: { fontSize: typography.sizes.body, fontWeight: '800', color: colors.white },
+  topTitle: {
+    fontSize: typography.sizes.body,
+    fontWeight: "800",
+    color: colors.white,
+  },
 
   // Finder
   finderWrap: {
     ...StyleSheet.absoluteFillObject,
-    alignItems: 'center', justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   finderFrame: {
-    width: '80%', aspectRatio: 3 / 4,
-    position: 'relative', alignItems: 'center', justifyContent: 'flex-end',
+    width: "80%",
+    aspectRatio: 3 / 4,
+    position: "relative",
+    alignItems: "center",
+    justifyContent: "flex-end",
     paddingBottom: spacing.md,
   },
   corner: {
-    position: 'absolute', width: CORNER_SIZE, height: CORNER_SIZE,
+    position: "absolute",
+    width: CORNER_SIZE,
+    height: CORNER_SIZE,
     borderColor: colors.successGreen,
   },
-  cTL: { top: 0, left: 0, borderTopWidth: 3, borderLeftWidth: 3, borderTopLeftRadius: 6 },
-  cTR: { top: 0, right: 0, borderTopWidth: 3, borderRightWidth: 3, borderTopRightRadius: 6 },
-  cBL: { bottom: 30, left: 0, borderBottomWidth: 3, borderLeftWidth: 3, borderBottomLeftRadius: 6 },
-  cBR: { bottom: 30, right: 0, borderBottomWidth: 3, borderRightWidth: 3, borderBottomRightRadius: 6 },
+  cTL: {
+    top: 0,
+    left: 0,
+    borderTopWidth: 3,
+    borderLeftWidth: 3,
+    borderTopLeftRadius: 6,
+  },
+  cTR: {
+    top: 0,
+    right: 0,
+    borderTopWidth: 3,
+    borderRightWidth: 3,
+    borderTopRightRadius: 6,
+  },
+  cBL: {
+    bottom: 30,
+    left: 0,
+    borderBottomWidth: 3,
+    borderLeftWidth: 3,
+    borderBottomLeftRadius: 6,
+  },
+  cBR: {
+    bottom: 30,
+    right: 0,
+    borderBottomWidth: 3,
+    borderRightWidth: 3,
+    borderBottomRightRadius: 6,
+  },
   finderHint: {
-    fontSize: typography.sizes.tiny, color: colors.white,
-    fontWeight: '600', backgroundColor: 'rgba(0,0,0,0.55)',
-    paddingHorizontal: spacing.md, paddingVertical: 5, borderRadius: radius.pill,
+    fontSize: typography.sizes.tiny,
+    color: colors.white,
+    fontWeight: "600",
+    backgroundColor: "rgba(0,0,0,0.55)",
+    paddingHorizontal: spacing.md,
+    paddingVertical: 5,
+    borderRadius: radius.pill,
   },
 
   // Voice area
   voiceArea: {
     ...StyleSheet.absoluteFillObject,
-    alignItems: 'center', justifyContent: 'center',
-    paddingHorizontal: spacing.xxl, paddingTop: 100,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: spacing.xxl,
+    paddingTop: 100,
   },
   micRingOuter: {
-    width: 156, height: 156, borderRadius: 78,
-    backgroundColor: 'rgba(107, 47, 165, 0.20)',
-    borderWidth: 2, borderColor: 'rgba(255,255,255,0.18)',
-    alignItems: 'center', justifyContent: 'center',
+    width: 156,
+    height: 156,
+    borderRadius: 78,
+    backgroundColor: "rgba(107, 47, 165, 0.20)",
+    borderWidth: 2,
+    borderColor: "rgba(255,255,255,0.18)",
+    alignItems: "center",
+    justifyContent: "center",
     marginBottom: spacing.xl,
   },
   micRingInner: {
-    width: 108, height: 108, borderRadius: 54,
+    width: 108,
+    height: 108,
+    borderRadius: 54,
     backgroundColor: colors.primaryMid,
-    alignItems: 'center', justifyContent: 'center',
-    borderWidth: 3, borderColor: 'rgba(255,255,255,0.3)',
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 3,
+    borderColor: "rgba(255,255,255,0.3)",
   },
-  micRingInnerActive: { backgroundColor: '#C0392B' },
+  micRingInnerActive: { backgroundColor: "#C0392B" },
   recordingBadge: {
-    flexDirection: 'row', alignItems: 'center', gap: 7,
-    backgroundColor: 'rgba(192, 57, 43, 0.85)',
-    paddingHorizontal: spacing.lg, paddingVertical: 6,
-    borderRadius: radius.pill, marginBottom: spacing.lg,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 7,
+    backgroundColor: "rgba(192, 57, 43, 0.85)",
+    paddingHorizontal: spacing.lg,
+    paddingVertical: 6,
+    borderRadius: radius.pill,
+    marginBottom: spacing.lg,
   },
-  recDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#FF8A80' },
-  recText: { color: colors.white, fontSize: typography.sizes.small, fontWeight: '700' },
+  recDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: "#FF8A80" },
+  recText: {
+    color: colors.white,
+    fontSize: typography.sizes.small,
+    fontWeight: "700",
+  },
   waveform: {
-    flexDirection: 'row', alignItems: 'center',
-    gap: 3.5, height: 56, marginBottom: spacing.lg,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3.5,
+    height: 56,
+    marginBottom: spacing.lg,
   },
   voiceHint: {
-    color: 'rgba(255,255,255,0.8)', fontSize: typography.sizes.small,
-    textAlign: 'center', lineHeight: 20, fontWeight: '500',
+    color: "rgba(255,255,255,0.8)",
+    fontSize: typography.sizes.small,
+    textAlign: "center",
+    lineHeight: 20,
+    fontWeight: "500",
   },
 
   // Bottom Container
-  bottomContainer: { position: 'absolute', bottom: 0, left: 0, right: 0 },
+  bottomContainer: { position: "absolute", bottom: 0, left: 0, right: 0 },
   bottomBar: {
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.lg,
-    backgroundColor: 'rgba(0,0,0,0.75)',
+    backgroundColor: "rgba(0,0,0,0.75)",
     gap: spacing.md,
   },
   segmented: {
-    flexDirection: 'row', alignSelf: 'center',
-    backgroundColor: 'rgba(255,255,255,0.12)',
-    borderRadius: radius.pill, padding: 3, gap: 2,
+    flexDirection: "row",
+    alignSelf: "center",
+    backgroundColor: "rgba(255,255,255,0.12)",
+    borderRadius: radius.pill,
+    padding: 3,
+    gap: 2,
   },
   seg: {
-    flexDirection: 'row', alignItems: 'center', gap: 6,
-    paddingHorizontal: spacing.lg, paddingVertical: 8,
-    borderRadius: radius.pill, minWidth: 100, justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: 8,
+    borderRadius: radius.pill,
+    minWidth: 100,
+    justifyContent: "center",
   },
-  segActive:     { backgroundColor: colors.white },
-  segText:       { fontSize: typography.sizes.small, fontWeight: '700', color: colors.white },
+  segActive: { backgroundColor: colors.white },
+  segText: {
+    fontSize: typography.sizes.small,
+    fontWeight: "700",
+    color: colors.white,
+  },
   segTextActive: { color: colors.primaryDeep },
-  actionRow: { alignItems: 'center', paddingBottom: spacing.sm },
-  shutter:   { alignItems: 'center', gap: spacing.sm },
+  actionRow: { alignItems: "center", paddingBottom: spacing.sm },
+  shutter: { alignItems: "center", gap: spacing.sm },
   shutterOuter: {
-    width: 76, height: 76, borderRadius: 38,
-    borderWidth: 4, borderColor: 'rgba(255,255,255,0.9)',
-    alignItems: 'center', justifyContent: 'center',
+    width: 76,
+    height: 76,
+    borderRadius: 38,
+    borderWidth: 4,
+    borderColor: "rgba(255,255,255,0.9)",
+    alignItems: "center",
+    justifyContent: "center",
   },
-  shutterInner: { width: 60, height: 60, borderRadius: 30, backgroundColor: colors.white },
-  actionCaption: { fontSize: typography.sizes.tiny, color: 'rgba(255,255,255,0.7)', fontWeight: '500' },
+  shutterInner: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: colors.white,
+  },
+  actionCaption: {
+    fontSize: typography.sizes.tiny,
+    color: "rgba(255,255,255,0.7)",
+    fontWeight: "500",
+  },
   micActionWrap: {
-    flexDirection: 'row', alignItems: 'center',
-    justifyContent: 'space-between', width: '100%',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    width: "100%",
     paddingHorizontal: spacing.md,
   },
-  recIndicatorBox: { alignItems: 'center', width: 72 },
-  recCircle: { width: 20, height: 20, borderRadius: 10, backgroundColor: '#FF3B30', marginBottom: 5 },
-  stopSquare: { width: 20, height: 20, borderRadius: 4, backgroundColor: '#FF3B30', marginBottom: 5 },
-  recIndicatorText: { fontSize: typography.sizes.tiny, color: 'rgba(255,255,255,0.75)', fontWeight: '600' },
+  recIndicatorBox: { alignItems: "center", width: 72 },
+  recCircle: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: "#FF3B30",
+    marginBottom: 5,
+  },
+  stopSquare: {
+    width: 20,
+    height: 20,
+    borderRadius: 4,
+    backgroundColor: "#FF3B30",
+    marginBottom: 5,
+  },
+  recIndicatorText: {
+    fontSize: typography.sizes.tiny,
+    color: "rgba(255,255,255,0.75)",
+    fontWeight: "600",
+  },
   micFAB: {
-    width: 80, height: 80, borderRadius: 40,
-    alignItems: 'center', justifyContent: 'center',
-    borderWidth: 4, borderColor: 'rgba(255,255,255,0.2)',
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 4,
+    borderColor: "rgba(255,255,255,0.2)",
   },
 });

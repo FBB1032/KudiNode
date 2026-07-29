@@ -43,7 +43,15 @@ const imageUpload = multer({
 
 router.use(requireAuth);
 
-router.post("/voice-transfer", audioUpload.single("audio"), parseVoiceTransferIntent);
-router.post("/receipt-extract", imageUpload.single("image"), extractReceiptItems);
+router.post(
+  "/voice-transfer",
+  audioUpload.single("audio"),
+  parseVoiceTransferIntent,
+);
+router.post(
+  "/receipt-extract",
+  imageUpload.single("image"),
+  extractReceiptItems,
+);
 
 export default router;
