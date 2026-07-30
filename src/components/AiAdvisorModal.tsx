@@ -124,7 +124,7 @@ export function AiAdvisorModal({ visible, onClose }: Props) {
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === "ios" ? "padding" : "padding"}
         style={styles.overlay}
       >
         <View style={styles.cardContainer}>
