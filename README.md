@@ -20,7 +20,7 @@
 - **Backend API:** https://kudinode.onrender.com
 - **Recorded Demo:**: MOBILE DEMO =https://www.loom.com/share/3f71d6329cd0439d93a882309708cf81
                       Admin panel demo: https://www.loom.com/share/58414d7194d6490f9c4b98680d899192
-
+-**MOBILE APP PRÉSENTATION VIDEO: https://www.loom.com/share/e5f4028b610749d28616dadc9db76521
 ---
 
 ##  The Problem
