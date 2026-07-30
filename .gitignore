@@ -34,6 +34,7 @@ yarn-error.*
 .env
 .env*.local
 server/.env
+*.env
 
 # typescript
 *.tsbuildinfo
@@ -46,10 +47,6 @@ admin/DEBUG_ANALYSIS.md
 MERGE_CONFLICTS_RESOLVED.md
 FIXES_APPLIED.md
 server/DEBUG_LOGIN.md
-<<<<<<< HEAD
-server/.env
 QUICK_START_VOICE_SALES_LOG.md
 VOICE_SALES_LOG_IMPLEMENTATION.md
 docs/VOICE_SALES_LOG_FEATURE.md
-=======
->>>>>>> 0be3e4ff2ed858d2a474c8e4cdecd6afc91fc244
