@@ -177,10 +177,6 @@ async function callGeminiJson({ prompt, inlineParts = [] }) {
  * Transcribe audio using Groq's whisper-large-v3-turbo endpoint
  */
 async function transcribeWithGroqAudio(audioFile) {
-/**
- * Transcribe audio using Groq's whisper-large-v3-turbo endpoint
- */
-async function transcribeWithGroqAudio(audioFile) {
   if (!env.groqApiKey) {
     throw badRequest(
       "Missing GROQ_API_KEY on backend server. Add GROQ_API_KEY to server/.env first.",
@@ -189,7 +185,7 @@ async function transcribeWithGroqAudio(audioFile) {
 
   const url = `${GROQ_API_BASE}/audio/transcriptions`;
   const form = new FormData();
-  
+
   const fileBlob = new Blob([audioFile.buffer], {
     type: audioFile.mimetype || "audio/m4a",
   });
@@ -321,4 +317,3 @@ export async function getAiAdvisorAdvice({ prompt, language = "English" }) {
     "Based on your 91 Trust Score and sales volume, keeping your Wema settlement account active guarantees automatic credit upgrades."
   );
 }
-
