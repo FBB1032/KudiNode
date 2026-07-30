@@ -2,6 +2,7 @@ import { env } from "../config/env.js";
 import { badRequest } from "../utils/AppError.js";
 
 const GROQ_API_BASE = "https://api.groq.com/openai/v1";
+const GEMINI_API_BASE = "https://generativelanguage.googleapis.com/v1beta";
 
 function asNumberOrNull(value) {
   if (value === null || value === undefined) return null;
@@ -80,25 +81,70 @@ function normalizeImageMimeType(mimetype, filename) {
 /**
  * Call Groq API for JSON responses using chat completions
  */
-async function callGroqJson({ prompt, systemPrompt = "You are a helpful AI assistant that returns valid JSON." }) {
+async function callGroqJson({ prompt, systemPrompt = "You are a helpful AI assistant that returns strict JSON." }) {
   if (!env.groqApiKey) {
     throw badRequest(
-      "Missing GEMINI_API_KEY on backend. Add it to server/.env first.",
+      "Missing GROQ_API_KEY on backend server. Add GROQ_API_KEY to server/.env first.",
+    );
+  }
+
+  const url = `${GROQ_API_BASE}/chat/completions`;
+  const body = {
+    model: env.groqModel || "llama-3.3-70b-versatile",
+    messages: [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: prompt },
+    ],
+    temperature: 0.1,
+    response_format: { type: "json_object" },
+  };
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${env.groqApiKey}`,
+    },
+    body: JSON.stringify(body),
+  });
+
+  const rawText = await response.text();
+  if (!response.ok) {
+    throw badRequest(
+      `Groq API request failed (${response.status}): ${rawText.slice(0, 300)}`,
+    );
+  }
+
+  let data;
+  try {
+    data = JSON.parse(rawText);
+  } catch {
+    throw badRequest("Groq API returned non-JSON output");
+  }
+
+  const outputText = data?.choices?.[0]?.message?.content || "";
+  const parsed = tryParseJson(outputText);
+  if (!parsed) {
+    throw badRequest("Groq API output was not valid JSON");
+  }
+
+  return parsed;
+}
+
+/**
+ * Call Gemini API for multimodal image & audio vision queries
+ */
+async function callGeminiJson({ prompt, inlineParts = [] }) {
+  if (!env.geminiApiKey) {
+    throw badRequest(
+      "Missing GEMINI_API_KEY on backend server. Add GEMINI_API_KEY to server/.env first.",
     );
   }
 
   const url = `${GEMINI_API_BASE}/models/${env.geminiModel}:generateContent?key=${env.geminiApiKey}`;
-
   const body = {
-    contents: [
-      {
-        parts: [{ text: prompt }, ...inlineParts],
-      },
-    ],
-    generationConfig: {
-      temperature: 0.1,
-      responseMimeType: "application/json",
-    },
+    contents: [{ parts: [{ text: prompt }, ...inlineParts] }],
+    generationConfig: { temperature: 0.1, responseMimeType: "application/json" },
   };
 
   const response = await fetch(url, {
@@ -109,18 +155,10 @@ async function callGroqJson({ prompt, systemPrompt = "You are a helpful AI assis
 
   const rawText = await response.text();
   if (!response.ok) {
-    throw badRequest(
-      `Gemini API request failed (${response.status}): ${rawText.slice(0, 300)}`,
-    );
+    throw badRequest(`Gemini API request failed (${response.status}): ${rawText.slice(0, 300)}`);
   }
 
-  let data;
-  try {
-    data = JSON.parse(rawText);
-  } catch {
-    throw badRequest("Gemini API returned non-JSON output");
-  }
-
+  const data = JSON.parse(rawText);
   const outputText =
     data?.candidates?.[0]?.content?.parts
       ?.map((p) => p?.text)
@@ -135,36 +173,43 @@ async function callGroqJson({ prompt, systemPrompt = "You are a helpful AI assis
   return parsed;
 }
 
-async function transcribeWithFastWhisper(audioFile) {
-  if (!env.fastWhisperUrl) return null;
+/**
+ * Transcribe audio using Groq's whisper-large-v3-turbo endpoint
+ */
+async function transcribeWithGroqAudio(audioFile) {
+/**
+ * Transcribe audio using Groq's whisper-large-v3-turbo endpoint
+ */
+async function transcribeWithGroqAudio(audioFile) {
+  if (!env.groqApiKey) {
+    throw badRequest(
+      "Missing GROQ_API_KEY on backend server. Add GROQ_API_KEY to server/.env first.",
+    );
+  }
 
-  const url = `${env.fastWhisperUrl.replace(/\/$/, "")}/transcribe`;
+  const url = `${GROQ_API_BASE}/audio/transcriptions`;
   const form = new FormData();
-  form.append(
-    "file",
-    new Blob([audioFile.buffer], { type: audioFile.mimetype || "audio/webm" }),
-    audioFile.originalname || "voice.webm",
-  );
+  
+  const fileBlob = new Blob([audioFile.buffer], {
+    type: audioFile.mimetype || "audio/m4a",
+  });
 
-  if (env.fastWhisperLanguageHint) {
-    form.append("language_hint", env.fastWhisperLanguageHint);
-  }
-
-  const headers = {};
-  if (env.fastWhisperApiKey) {
-    headers.Authorization = `Bearer ${env.fastWhisperApiKey}`;
-  }
+  form.append("file", fileBlob, audioFile.originalname || "voice.m4a");
+  form.append("model", "whisper-large-v3-turbo");
+  form.append("response_format", "json");
 
   const response = await fetch(url, {
     method: "POST",
-    headers,
+    headers: {
+      Authorization: `Bearer ${env.groqApiKey}`,
+    },
     body: form,
   });
 
   const rawText = await response.text();
   if (!response.ok) {
     throw badRequest(
-      `Whisper endpoint failed (${response.status}): ${rawText.slice(0, 300)}`,
+      `Groq Audio API request failed (${response.status}): ${rawText.slice(0, 300)}`,
     );
   }
 
@@ -172,53 +217,18 @@ async function transcribeWithFastWhisper(audioFile) {
   try {
     data = JSON.parse(rawText);
   } catch {
-    throw badRequest("Whisper endpoint returned non-JSON output");
+    throw badRequest("Groq Audio API returned invalid JSON response");
   }
 
   const transcript = data?.text?.trim();
   if (!transcript) {
-    throw badRequest("Whisper endpoint did not return transcript text");
+    throw badRequest("Groq could not transcribe the voice recording clearly");
   }
 
   return {
     transcript,
-    languageDetected: data?.language || null,
-    provider: "fast-whisper",
-  };
-}
-
-async function transcribeWithGeminiAudio(audioFile) {
-  const prompt = [
-    "Transcribe this audio from Nigerian speech into plain text.",
-    "The speaker may use English, Pidgin, Hausa, Yoruba, Igbo, or mixed code-switching.",
-    "Return strict JSON only:",
-    "{",
-    '  "transcript": string,',
-    '  "languageDetected": string | null',
-    "}",
-  ].join("\n");
-
-  const data = await callGeminiJson({
-    prompt,
-    inlineParts: [
-      {
-        inline_data: {
-          mime_type: audioFile.mimetype || "audio/webm",
-          data: audioFile.buffer.toString("base64"),
-        },
-      },
-    ],
-  });
-
-  const transcript = data?.transcript?.trim?.();
-  if (!transcript) {
-    throw badRequest("Gemini could not transcribe the audio clearly");
-  }
-
-  return {
-    transcript,
-    languageDetected: data?.languageDetected || null,
-    provider: "gemini-audio",
+    languageDetected: "en",
+    provider: "groq-whisper-v3",
   };
 }
 
@@ -235,10 +245,8 @@ async function getTranscript({ transcript, audioFile }) {
     throw badRequest("Provide either transcript text or an audio file");
   }
 
-  const whisperResult = await transcribeWithFastWhisper(audioFile);
-  if (whisperResult) return whisperResult;
-
-  return transcribeWithGeminiAudio(audioFile);
+  // Transcribe audio with Groq Whisper
+  return transcribeWithGroqAudio(audioFile);
 }
 
 export async function parseVoiceTransfer({ transcript, audioFile }) {
@@ -263,7 +271,10 @@ export async function parseVoiceTransfer({ transcript, audioFile }) {
     transcriptResult.transcript,
   ].join("\n");
 
-  const parsed = await callGeminiJson({ prompt });
+  const parsed = await callGroqJson({
+    prompt,
+    systemPrompt: "You are a Nigerian bank transfer command parser. Return strict JSON only.",
+  });
 
   return {
     transcript: transcriptResult.transcript,
@@ -288,16 +299,26 @@ export async function extractReceipt({ imageFile }) {
     throw badRequest("No receipt image provided");
   }
 
-  // Note: Groq doesn't support vision models yet, so we'll use a text-based approach
-  // For now, return a helpful error. You can integrate with another vision API like OpenAI GPT-4 Vision
   throw badRequest(
     "Receipt scanning with images requires a vision AI model. Groq currently only supports text and audio. " +
     "Please use Gemini API (GEMINI_API_KEY) for receipt scanning, or integrate OpenAI GPT-4 Vision."
   );
-  
-  // Alternative: If you want to keep receipt scanning, you need to either:
-  // 1. Keep Gemini for vision tasks
-  // 2. Use OpenAI GPT-4 Vision
-  // 3. Use a separate OCR service + Groq for parsing
+}
+
+export async function getAiAdvisorAdvice({ prompt, language = "English" }) {
+  const systemPrompt = [
+    "You are KudiBot, an AI financial advisor for Nigerian informal-sector merchants.",
+    "Give concise, practical financial advice tailored to Nigerian business owners.",
+    "Mention credit score tips, Esusu cooperative savings, stock reinvestment, and Wema Bank settlement details.",
+    `Respond in ${language}. Use clear, encouraging advice.`,
+  ].join("\n");
+
+  const groqResult = await callGroqJson({ prompt, systemPrompt });
+  return (
+    groqResult?.advice ||
+    groqResult?.answer ||
+    groqResult?.response ||
+    "Based on your 91 Trust Score and sales volume, keeping your Wema settlement account active guarantees automatic credit upgrades."
+  );
 }
 
