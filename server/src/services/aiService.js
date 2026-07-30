@@ -1,7 +1,7 @@
 import { env } from "../config/env.js";
 import { badRequest } from "../utils/AppError.js";
 
-const GEMINI_API_BASE = "https://generativelanguage.googleapis.com/v1beta";
+const GROQ_API_BASE = "https://api.groq.com/openai/v1";
 
 function asNumberOrNull(value) {
   if (value === null || value === undefined) return null;
@@ -77,100 +77,117 @@ function normalizeImageMimeType(mimetype, filename) {
   return "image/jpeg";
 }
 
-async function callGeminiJson({ prompt, inlineParts = [] }) {
-  if (!env.geminiApiKey) {
+/**
+ * Call Groq API for JSON responses using chat completions
+ */
+async function callGroqJson({ prompt, systemPrompt = "You are a helpful AI assistant that returns valid JSON." }) {
+  if (!env.groqApiKey) {
     throw badRequest(
-      "AI features are temporarily unavailable. The GEMINI_API_KEY environment variable is not configured on the backend server.",
+      "Missing GEMINI_API_KEY on backend. Add it to server/.env first.",
     );
   }
 
-  const candidateModels = Array.from(
-    new Set([
-      env.geminiModel,
-      "gemini-2.0-flash",
-      "gemini-1.5-flash",
-      "gemini-2.0-flash-lite",
-      "gemini-1.5-pro",
-    ]),
-  ).filter(Boolean);
+  const url = `${GEMINI_API_BASE}/models/${env.geminiModel}:generateContent?key=${env.geminiApiKey}`;
 
-  let lastError = null;
+  const body = {
+    contents: [
+      {
+        parts: [{ text: prompt }, ...inlineParts],
+      },
+    ],
+    generationConfig: {
+      temperature: 0.1,
+      responseMimeType: "application/json",
+    },
+  };
 
-  for (const modelName of candidateModels) {
-    const url = `${GEMINI_API_BASE}/models/${modelName}:generateContent?key=${env.geminiApiKey}`;
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
 
-    // Try first with responseMimeType, then without if Gemini rejects it
-    const configVariations = [
-      { temperature: 0.1, responseMimeType: "application/json" },
-      { temperature: 0.1 },
-    ];
-
-    for (const genConfig of configVariations) {
-      const body = {
-        contents: [
-          {
-            parts: [{ text: prompt }, ...inlineParts],
-          },
-        ],
-        generationConfig: genConfig,
-      };
-
-      try {
-        const response = await fetch(url, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        });
-
-        const rawText = await response.text();
-        if (!response.ok) {
-          if (
-            response.status === 404 &&
-            candidateModels.indexOf(modelName) < candidateModels.length - 1
-          ) {
-            break; // Try next model
-          }
-          throw new Error(
-            `Gemini API (${modelName}) HTTP ${response.status}: ${rawText.slice(0, 200)}`,
-          );
-        }
-
-        let data;
-        try {
-          data = JSON.parse(rawText);
-        } catch {
-          throw new Error("Gemini API returned non-JSON HTTP response");
-        }
-
-        const outputText =
-          data?.candidates?.[0]?.content?.parts
-            ?.map((p) => p?.text)
-            .filter(Boolean)
-            .join("\n") || "";
-
-        const parsed = tryParseJson(outputText);
-        if (parsed) {
-          return parsed;
-        }
-      } catch (err) {
-        lastError = err;
-      }
-    }
+  const rawText = await response.text();
+  if (!response.ok) {
+    throw badRequest(
+      `Gemini API request failed (${response.status}): ${rawText.slice(0, 300)}`,
+    );
   }
 
-  throw badRequest(
-    lastError
-      ? lastError.message
-      : "Gemini API request failed across all candidate models",
+  let data;
+  try {
+    data = JSON.parse(rawText);
+  } catch {
+    throw badRequest("Gemini API returned non-JSON output");
+  }
+
+  const outputText =
+    data?.candidates?.[0]?.content?.parts
+      ?.map((p) => p?.text)
+      .filter(Boolean)
+      .join("\n") || "";
+
+  const parsed = tryParseJson(outputText);
+  if (!parsed) {
+    throw badRequest("Gemini output was not valid JSON");
+  }
+
+  return parsed;
+}
+
+async function transcribeWithFastWhisper(audioFile) {
+  if (!env.fastWhisperUrl) return null;
+
+  const url = `${env.fastWhisperUrl.replace(/\/$/, "")}/transcribe`;
+  const form = new FormData();
+  form.append(
+    "file",
+    new Blob([audioFile.buffer], { type: audioFile.mimetype || "audio/webm" }),
+    audioFile.originalname || "voice.webm",
   );
+
+  if (env.fastWhisperLanguageHint) {
+    form.append("language_hint", env.fastWhisperLanguageHint);
+  }
+
+  const headers = {};
+  if (env.fastWhisperApiKey) {
+    headers.Authorization = `Bearer ${env.fastWhisperApiKey}`;
+  }
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers,
+    body: form,
+  });
+
+  const rawText = await response.text();
+  if (!response.ok) {
+    throw badRequest(
+      `Whisper endpoint failed (${response.status}): ${rawText.slice(0, 300)}`,
+    );
+  }
+
+  let data;
+  try {
+    data = JSON.parse(rawText);
+  } catch {
+    throw badRequest("Whisper endpoint returned non-JSON output");
+  }
+
+  const transcript = data?.text?.trim();
+  if (!transcript) {
+    throw badRequest("Whisper endpoint did not return transcript text");
+  }
+
+  return {
+    transcript,
+    languageDetected: data?.language || null,
+    provider: "fast-whisper",
+  };
 }
 
 async function transcribeWithGeminiAudio(audioFile) {
-  const mimeType = normalizeAudioMimeType(
-    audioFile.mimetype,
-    audioFile.originalname,
-  );
-
   const prompt = [
     "Transcribe this audio from Nigerian speech into plain text.",
     "The speaker may use English, Pidgin, Hausa, Yoruba, Igbo, or mixed code-switching.",
@@ -186,7 +203,7 @@ async function transcribeWithGeminiAudio(audioFile) {
     inlineParts: [
       {
         inline_data: {
-          mime_type: mimeType,
+          mime_type: audioFile.mimetype || "audio/webm",
           data: audioFile.buffer.toString("base64"),
         },
       },
@@ -218,35 +235,20 @@ async function getTranscript({ transcript, audioFile }) {
     throw badRequest("Provide either transcript text or an audio file");
   }
 
-  // Audio is transcribed directly with Gemini AI
+  const whisperResult = await transcribeWithFastWhisper(audioFile);
+  if (whisperResult) return whisperResult;
+
   return transcribeWithGeminiAudio(audioFile);
 }
 
 export async function parseVoiceTransfer({ transcript, audioFile }) {
-  let transcriptResult = {
-    transcript: "",
-    languageDetected: "en",
-    provider: "fallback",
-  };
-
-  try {
-    transcriptResult = await getTranscript({ transcript, audioFile });
-  } catch (err) {
-    // eslint-disable-next-line no-console
-    console.error("[aiService] Audio transcription error:", err?.message || err);
-    transcriptResult = {
-      transcript: transcript || "Voice input received",
-      languageDetected: "en",
-      provider: "fallback",
-    };
-  }
+  const transcriptResult = await getTranscript({ transcript, audioFile });
 
   const prompt = [
-    "You are a Nigerian bank transfer command parser.",
     "Input can be English, Pidgin, Hausa, Yoruba, Igbo, or mixed speech.",
     "Extract transfer details and return strict JSON only.",
     "Do not invent values. Use null when unknown.",
-    "Return:",
+    "Return this exact structure:",
     "{",
     '  "recipientName": string | null,',
     '  "bankName": string | null,',
@@ -254,20 +256,14 @@ export async function parseVoiceTransfer({ transcript, audioFile }) {
     '  "amount": number | null,',
     '  "narration": string | null,',
     '  "languageDetected": string | null,',
-    '  "confidence": number',
+    '  "confidence": number (between 0 and 1)',
     "}",
     "",
     "Transcript:",
     transcriptResult.transcript,
   ].join("\n");
 
-  let parsed = null;
-  try {
-    parsed = await callGeminiJson({ prompt });
-  } catch (err) {
-    // eslint-disable-next-line no-console
-    console.error("[aiService] Gemini JSON parse error:", err?.message || err);
-  }
+  const parsed = await callGeminiJson({ prompt });
 
   return {
     transcript: transcriptResult.transcript,
@@ -321,23 +317,17 @@ export async function extractReceipt({ imageFile }) {
     "}",
   ].join("\n");
 
-  let parsed = null;
-  try {
-    parsed = await callGeminiJson({
-      prompt,
-      inlineParts: [
-        {
-          inline_data: {
-            mime_type: mimeType,
-            data: imageFile.buffer.toString("base64"),
-          },
+  const parsed = await callGeminiJson({
+    prompt,
+    inlineParts: [
+      {
+        inline_data: {
+          mime_type: imageFile.mimetype || "image/jpeg",
+          data: imageFile.buffer.toString("base64"),
         },
-      ],
-    });
-  } catch (err) {
-    // eslint-disable-next-line no-console
-    console.error("[aiService] Gemini Receipt scan error:", err?.message || err);
-  }
+      },
+    ],
+  });
 
   const items = Array.isArray(parsed?.items) ? parsed.items : [];
 
