@@ -3,6 +3,7 @@ import multer from "multer";
 import {
   parseVoiceTransferIntent,
   extractReceiptItems,
+  parseVoiceSalesLogIntent,
 } from "../controllers/aiController.js";
 import { optionalAuth } from "../middleware/auth.js";
 
@@ -59,6 +60,11 @@ router.post(
   "/receipt-extract",
   imageUpload.single("image"),
   extractReceiptItems,
+);
+router.post(
+  "/voice-sales-log",
+  audioUpload.single("audio"),
+  parseVoiceSalesLogIntent,
 );
 
 export default router;

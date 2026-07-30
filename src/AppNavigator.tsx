@@ -66,6 +66,17 @@ export type RootStackParamList = {
           total: number | null;
           confidence: number;
         };
+        parsedSalesLog?: {
+          items: Array<{
+            name: string;
+            quantity: number | null;
+            unitPrice: number | null;
+            lineTotal: number | null;
+          }>;
+          totalAmount: number | null;
+          languageDetected: string | null;
+          confidence: number;
+        };
       }
     | undefined;
   TransferPin:

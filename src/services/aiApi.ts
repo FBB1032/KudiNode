@@ -38,6 +38,26 @@ export interface ReceiptExtractionResponse {
   };
 }
 
+export interface SalesLogItem {
+  name: string;
+  quantity: number | null;
+  unitPrice: number | null;
+  lineTotal: number | null;
+}
+
+export interface VoiceSalesLogResponse {
+  transcript: string;
+  parsed: {
+    items: SalesLogItem[];
+    totalAmount: number | null;
+    languageDetected: string | null;
+    confidence: number;
+  };
+  meta: {
+    transcriptionProvider: string;
+  };
+}
+
 export async function parseVoiceTransferFromText(transcript: string) {
   return api.post<VoiceTransferResponse>("/ai/voice-transfer", { transcript });
 }
@@ -62,4 +82,15 @@ export async function extractReceiptFromImage(imageUri: string) {
   } as any);
 
   return api.postForm<ReceiptExtractionResponse>("/ai/receipt-extract", form);
+}
+
+export async function parseVoiceSalesLog(audioUri: string) {
+  const form = new FormData();
+  form.append("audio", {
+    uri: audioUri,
+    name: `sales-log-${Date.now()}.m4a`,
+    type: "audio/x-m4a",
+  } as any);
+
+  return api.postForm<VoiceSalesLogResponse>("/ai/voice-sales-log", form);
 }
