@@ -220,7 +220,6 @@ npm run dev
 
 Dashboard available at `https://kudinode.vercel.app/`.
 
-
 ---
 
 ##  Key Features
