@@ -240,3 +240,67 @@ export async function extractReceipt({ imageFile }) {
   // 3. Use a separate OCR service + Groq for parsing
 }
 
+/**
+ * Parse voice sales log (items + prices) using Groq
+ * This is for merchants logging sales verbally
+ */
+export async function parseVoiceSalesLog({ transcript, audioFile }) {
+  const transcriptResult = await getTranscript({ transcript, audioFile });
+
+  const systemPrompt = "You are a Nigerian sales log parser. Extract item names, quantities, and prices from merchant voice logs. Return valid JSON only.";
+  
+  const prompt = [
+    "Input can be English, Pidgin, Hausa, Yoruba, Igbo, or mixed speech.",
+    "The merchant is listing items they sold with quantities and prices.",
+    "Extract all items mentioned and return strict JSON only.",
+    "Do not invent values. Use null when unknown.",
+    "Return this exact structure:",
+    "{",
+    '  "items": [',
+    '    {',
+    '      "name": string,',
+    '      "quantity": number | null,',
+    '      "unitPrice": number | null,',
+    '      "lineTotal": number | null',
+    '    }',
+    '  ],',
+    '  "currency": "NGN",',
+    '  "total": number | null,',
+    '  "confidence": number (between 0 and 1)',
+    "}",
+    "",
+    "Examples:",
+    "- 'I sold 5 bags of rice at 10,000 naira each' → {items: [{name: 'Rice', quantity: 5, unitPrice: 10000, lineTotal: 50000}], total: 50000}",
+    "- '3 cartons of tomatoes, 8000 each' → {items: [{name: 'Tomatoes', quantity: 3, unitPrice: 8000, lineTotal: 24000}], total: 24000}",
+    "- '10kg beans for 15,000 and 5kg garri for 5,000' → {items: [{name: 'Beans 10kg', quantity: 1, unitPrice: 15000, lineTotal: 15000}, {name: 'Garri 5kg', quantity: 1, unitPrice: 5000, lineTotal: 5000}], total: 20000}",
+    "",
+    "Transcript:",
+    transcriptResult.transcript,
+  ].join("\n");
+
+  const parsed = await callGroqJson({ prompt, systemPrompt });
+
+  const items = Array.isArray(parsed?.items) ? parsed.items : [];
+
+  return {
+    transcript: transcriptResult.transcript,
+    parsed: {
+      items: items
+        .map((it) => ({
+          name: String(it?.name || "").trim(),
+          quantity: asNumberOrNull(it?.quantity),
+          unitPrice: asNumberOrNull(it?.unitPrice),
+          lineTotal: asNumberOrNull(it?.lineTotal),
+        }))
+        .filter((it) => it.name.length > 0),
+      currency: "NGN",
+      total: asNumberOrNull(parsed?.total),
+      confidence: asNumberOrNull(parsed?.confidence) ?? 0,
+    },
+    meta: {
+      transcriptionProvider: transcriptResult.provider,
+      languageDetected: transcriptResult.languageDetected,
+    },
+  };
+}
+

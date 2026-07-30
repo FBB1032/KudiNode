@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { CameraView, useCameraPermissions } from "expo-camera";
+import { Audio } from "expo-av";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors, spacing, radius, typography, shadows } from "../theme/theme";
@@ -17,7 +18,7 @@ import { Icon } from "../components/Icon";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../AppNavigator";
-import { extractReceiptFromImage } from "../services/aiApi";
+import { extractReceiptFromImage, parseVoiceSalesLog } from "../services/aiApi";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type Route = RouteProp<RootStackParamList, "SalesIntake">;
@@ -33,10 +34,12 @@ export function SalesIntakeScreen() {
   const [flashOn, setFlashOn] = useState(false);
   const [permission, requestPermission] = useCameraPermissions();
   const [isProcessingPhoto, setIsProcessingPhoto] = useState(false);
+  const [isProcessingVoice, setIsProcessingVoice] = useState(false);
 
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const pulseLoop = useRef<Animated.CompositeAnimation | null>(null);
   const cameraRef = useRef<CameraView | null>(null);
+  const audioRecordingRef = useRef<Audio.Recording | null>(null);
 
   // Recording pulse animation
   useEffect(() => {
@@ -66,12 +69,79 @@ export function SalesIntakeScreen() {
     }
   }, [isRecording, pulseAnim]);
 
-  const handleMicPress = () => {
+  const handleMicPress = async () => {
     if (isRecording) {
+      // Stop recording and process
       setIsRecording(false);
-      setTimeout(() => nav.navigate("Verification"), 300);
+      try {
+        if (!audioRecordingRef.current) {
+          throw new Error("No active recording found");
+        }
+
+        setIsProcessingVoice(true);
+        await audioRecordingRef.current.stopAndUnloadAsync();
+        const uri = audioRecordingRef.current.getURI();
+        audioRecordingRef.current = null;
+
+        if (!uri) {
+          throw new Error("Recording failed to save");
+        }
+
+        // Call the voice sales log API
+        const result = await parseVoiceSalesLog(uri);
+        
+        // Navigate to verification with parsed items
+        nav.navigate("Verification", { parsedSalesLog: result.parsed });
+      } catch (error: any) {
+        const errorMessage = error?.message || "Unknown error occurred";
+
+        if (
+          errorMessage.includes("AI features are temporarily unavailable") ||
+          errorMessage.includes("GROQ_API_KEY")
+        ) {
+          Alert.alert(
+            "AI Service Unavailable",
+            "Voice sales log parsing is currently unavailable. Please contact support or try again later.",
+          );
+        } else {
+          Alert.alert(
+            "Voice Parsing Failed",
+            "Could not parse your voice recording. Please try again with clearer speech or contact support if this persists.",
+          );
+        }
+      } finally {
+        setIsProcessingVoice(false);
+      }
     } else {
-      setIsRecording(true);
+      // Start recording
+      try {
+        const { granted } = await Audio.requestPermissionsAsync();
+        if (!granted) {
+          Alert.alert(
+            "Microphone Access Required",
+            "Please grant microphone access to record voice sales logs.",
+          );
+          return;
+        }
+
+        await Audio.setAudioModeAsync({
+          allowsRecordingIOS: true,
+          playsInSilentModeIOS: true,
+        });
+
+        const recording = new Audio.Recording();
+        await recording.prepareToRecordAsync(
+          Audio.RecordingOptionsPresets.HIGH_QUALITY,
+        );
+        await recording.startAsync();
+        audioRecordingRef.current = recording;
+        setIsRecording(true);
+      } catch (error) {
+        Alert.alert(
+          "Recording Error",
+          "Could not start audio recording. Please check microphone permissions.",
+        );
+      }
     }
   };
 
@@ -235,7 +305,11 @@ export function SalesIntakeScreen() {
           {isRecording && (
             <View style={styles.recordingBadge}>
               <View style={styles.recDot} />
-              <Text style={styles.recText}>Recording · AI parsing active</Text>
+              <Text style={styles.recText}>
+                {isProcessingVoice
+                  ? "Processing..."
+                  : "Recording · AI parsing active"}
+              </Text>
             </View>
           )}
 
@@ -364,7 +438,11 @@ export function SalesIntakeScreen() {
                 </View>
 
                 {/* Main mic FAB */}
-                <TouchableOpacity onPress={handleMicPress} activeOpacity={0.88}>
+                <TouchableOpacity
+                  onPress={handleMicPress}
+                  activeOpacity={0.88}
+                  disabled={isProcessingVoice}
+                >
                   <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
                     <LinearGradient
                       colors={
@@ -374,11 +452,15 @@ export function SalesIntakeScreen() {
                       }
                       style={styles.micFAB}
                     >
-                      <Icon
-                        name={isRecording ? "checkmark" : "mic"}
-                        size={36}
-                        color={colors.white}
-                      />
+                      {isProcessingVoice ? (
+                        <ActivityIndicator color={colors.white} size="large" />
+                      ) : (
+                        <Icon
+                          name={isRecording ? "checkmark" : "mic"}
+                          size={36}
+                          color={colors.white}
+                        />
+                      )}
                     </LinearGradient>
                   </Animated.View>
                 </TouchableOpacity>

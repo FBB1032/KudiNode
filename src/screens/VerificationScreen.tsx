@@ -48,6 +48,7 @@ export function VerificationScreen() {
   const nav = useNavigation<Nav>();
   const route = useRoute<Route>();
   const parsedReceipt = route.params?.parsedReceipt;
+  const parsedSalesLog = route.params?.parsedSalesLog;
 
   const initialRows: Row[] = parsedReceipt?.items?.length
     ? parsedReceipt.items.map((item, idx) => {
@@ -62,7 +63,20 @@ export function VerificationScreen() {
           amount: `₦${lineTotal.toLocaleString()}`,
         };
       })
-    : INITIAL_ROWS;
+    : parsedSalesLog?.items?.length
+      ? parsedSalesLog.items.map((item, idx) => {
+          const qty = item.quantity ?? 1;
+          const unitPrice = item.unitPrice ?? 0;
+          const lineTotal = item.lineTotal ?? qty * unitPrice;
+          return {
+            id: Date.now() + idx,
+            item: item.name,
+            qty,
+            price: `₦${unitPrice.toLocaleString()}`,
+            amount: `₦${lineTotal.toLocaleString()}`,
+          };
+        })
+      : INITIAL_ROWS;
 
   const [rows, setRows] = useState<Row[]>(initialRows);
   const [editId, setEditId] = useState<number | null>(null);
