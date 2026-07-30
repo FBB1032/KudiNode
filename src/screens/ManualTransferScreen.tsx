@@ -18,6 +18,8 @@ import {
   Modal,
   ActivityIndicator,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { colors, spacing, radius, typography, shadows } from "../theme/theme";
@@ -27,6 +29,7 @@ import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../AppNavigator";
 import { UssdFallbackModule } from "../services/UssdFallbackModule";
+import { FloatingLabelInput } from "../components/FloatingLabelInput";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type Route = RouteProp<RootStackParamList, "ManualTransfer">;
@@ -198,280 +201,224 @@ export function ManualTransferScreen() {
             : "Fill in all transfer details"
         }
       />
-
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.content}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 10 : 0}
       >
-        {fromVoice ? (
-          <View style={styles.voiceBanner}>
-            <View style={styles.voiceBannerIcon}>
-              <Icon name="mic" size={18} color={colors.white} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.voiceBannerTitle}>Voice Command Parsed</Text>
-              <Text style={styles.voiceBannerSub}>
-                {`Transcription: ${aiMeta?.transcriptionProvider || "unknown"} · Language: ${aiMeta?.languageDetected || "unknown"}`}
-              </Text>
-              {aiConfidence !== null ? (
-                <Text style={styles.voiceBannerSub}>
-                  Confidence: {(aiConfidence * 100).toFixed(0)}%
-                </Text>
-              ) : null}
-            </View>
-          </View>
-        ) : null}
-
-        {isLowConfidence ? (
-          <View style={styles.infoBanner}>
-            <Icon name="info" size={16} color={colors.warningOrange} />
-            <Text style={styles.infoText}>
-              AI confidence is low for this voice command. Please verify all
-              details manually before you authorize transfer.
-            </Text>
-          </View>
-        ) : null}
-
-        {/* ── Transfer Form Card ── */}
-        <View style={[styles.card, shadows.card]}>
-          <Text style={styles.cardTitle}>Transfer Details</Text>
-
-          {/* Fixed Non-Editable Sender / From Account */}
-          <View style={styles.fieldGroup}>
-            <Text style={styles.fieldLabel}>From Account (Fixed)</Text>
-            <View style={styles.fixedFromWrap}>
-              <Icon name="bank" size={18} color={colors.primaryDeep} />
-              <View style={{ flex: 1 }}>
-                <Text style={styles.fixedFromTitle}>Wema Bank PLC</Text>
-                <Text style={styles.fixedFromSub}>
-                  Settlement Account · 0129384756 (Amina Bello)
-                </Text>
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={styles.content}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          {fromVoice ? (
+            <View style={styles.voiceBanner}>
+              <View style={styles.voiceBannerIcon}>
+                <Icon name="mic" size={18} color={colors.white} />
               </View>
-              <Icon name="lock-closed" size={14} color={colors.textMuted} />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.voiceBannerTitle}>Voice Command Parsed</Text>
+                <Text style={styles.voiceBannerSub}>
+                  {`Transcription: ${aiMeta?.transcriptionProvider || "unknown"} · Language: ${aiMeta?.languageDetected || "unknown"}`}
+                </Text>
+                {aiConfidence !== null ? (
+                  <Text style={styles.voiceBannerSub}>
+                    Confidence: {(aiConfidence * 100).toFixed(0)}%
+                  </Text>
+                ) : null}
+              </View>
             </View>
-          </View>
+          ) : null}
 
-          {/* Recipient */}
-          <View style={styles.fieldGroup}>
-            <Text style={styles.fieldLabel}>Recipient / Beneficiary Name</Text>
-            <View
-              style={[
-                styles.inputWrap,
-                errors.recipientName ? styles.inputError : null,
-              ]}
-            >
-              <Icon name="person" size={18} color={colors.textMuted} />
-              <TextInput
-                style={styles.input}
-                value={recipientName}
-                onChangeText={(v) => {
-                  setRecipientName(v);
-                  setErrors((p) => ({ ...p, recipientName: "" }));
-                }}
-                placeholder="e.g. Supplier Musa Ibrahim"
-                placeholderTextColor={colors.textMuted}
-              />
-              {fromVoice && recipientName ? (
-                <Icon name="mic" size={13} color={colors.primaryMid} />
-              ) : null}
-            </View>
-            {errors.recipientName ? (
-              <Text style={styles.fieldError}>{errors.recipientName}</Text>
-            ) : null}
-          </View>
-
-          {/* Bank Selector */}
-          <View style={styles.fieldGroup}>
-            <Text style={styles.fieldLabel}>Destination Bank</Text>
-            <TouchableOpacity
-              style={[
-                styles.inputWrap,
-                styles.bankTrigger,
-                errors.selectedBank ? styles.inputError : null,
-              ]}
-              onPress={() => setShowBankPicker(true)}
-              activeOpacity={0.8}
-            >
-              <Icon
-                name="bank"
-                size={18}
-                color={selectedBank ? colors.primaryDeep : colors.textMuted}
-              />
-              <Text
-                style={[
-                  styles.bankTriggerText,
-                  { color: selectedBank ? colors.textDark : colors.textMuted },
-                ]}
-              >
-                {selectedBank || "Select bank…"}
+          {isLowConfidence ? (
+            <View style={styles.infoBanner}>
+              <Icon name="info" size={16} color={colors.warningOrange} />
+              <Text style={styles.infoText}>
+                AI confidence is low for this voice command. Please verify all
+                details manually before you authorize transfer.
               </Text>
-              {fromVoice && selectedBank ? (
-                <Icon name="mic" size={13} color={colors.primaryMid} />
+            </View>
+          ) : null}
+
+          {/* ── Transfer Form Card ── */}
+          <View style={[styles.card, shadows.card]}>
+            <Text style={styles.cardTitle}>Transfer Details</Text>
+
+            {/* Fixed Non-Editable Sender / From Account */}
+            <View style={styles.fieldGroup}>
+              <Text style={styles.fieldLabel}>From Account (Fixed)</Text>
+              <View style={styles.fixedFromWrap}>
+                <Icon name="bank" size={18} color={colors.primaryDeep} />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.fixedFromTitle}>Wema Bank PLC</Text>
+                  <Text style={styles.fixedFromSub}>
+                    Settlement Account · 0129384756 (Amina Bello)
+                  </Text>
+                </View>
+                <Icon name="lock-closed" size={14} color={colors.textMuted} />
+              </View>
+            </View>
+
+            {/* Recipient */}
+            <FloatingLabelInput
+              label="Recipient / Beneficiary Name"
+              leadingIcon="person"
+              value={recipientName}
+              onChangeText={(v) => {
+                setRecipientName(v);
+                setErrors((p) => ({ ...p, recipientName: "" }));
+              }}
+              error={errors.recipientName}
+              voiceActive={fromVoice && !!recipientName}
+            />
+
+            {/* Bank Selector */}
+            <View style={styles.fieldGroup}>
+              <Text style={styles.fieldLabel}>Destination Bank</Text>
+              <TouchableOpacity
+                style={[
+                  styles.inputWrap,
+                  styles.bankTrigger,
+                  errors.selectedBank ? styles.inputError : null,
+                ]}
+                onPress={() => setShowBankPicker(true)}
+                activeOpacity={0.8}
+              >
+                <Icon
+                  name="bank"
+                  size={18}
+                  color={selectedBank ? colors.primaryDeep : colors.textMuted}
+                />
+                <Text
+                  style={[
+                    styles.bankTriggerText,
+                    { color: selectedBank ? colors.textDark : colors.textMuted },
+                  ]}
+                >
+                  {selectedBank || "Select bank…"}
+                </Text>
+                {fromVoice && selectedBank ? (
+                  <Icon name="mic" size={13} color={colors.primaryMid} />
+                ) : null}
+                <Icon name="chevron-down" size={16} color={colors.textMuted} />
+              </TouchableOpacity>
+              {errors.selectedBank ? (
+                <Text style={styles.fieldError}>{errors.selectedBank}</Text>
               ) : null}
-              <Icon name="chevron-down" size={16} color={colors.textMuted} />
-            </TouchableOpacity>
-            {errors.selectedBank ? (
-              <Text style={styles.fieldError}>{errors.selectedBank}</Text>
-            ) : null}
+            </View>
+
+            {/* Account Number */}
+            <FloatingLabelInput
+              label="Account Number (10 digits)"
+              leadingIcon="card"
+              keyboardType="numeric"
+              maxLength={10}
+              value={accountNum}
+              onChangeText={(v) => {
+                setAccountNum(v);
+                setErrors((p) => ({ ...p, accountNum: "" }));
+              }}
+              error={errors.accountNum}
+              voiceActive={fromVoice && !!accountNum}
+              trailingIcon={
+                accountNum.length === 10 ? (
+                  <Icon name="checkmark-circle" size={16} color={colors.successGreen} />
+                ) : undefined
+              }
+            />
+
+            {/* Amount */}
+            <FloatingLabelInput
+              label="Transfer Amount (₦)"
+              prefix="₦"
+              keyboardType="numeric"
+              value={amount}
+              onChangeText={(v) => {
+                setAmount(v);
+                setErrors((p) => ({ ...p, amount: "" }));
+              }}
+              error={errors.amount}
+              voiceActive={fromVoice && !!amount}
+              inputStyle={styles.amountInput}
+            />
+
+            {/* Optional note */}
+            <FloatingLabelInput
+              label="Transfer Note (Optional)"
+              leadingIcon="document-text"
+              value={note}
+              onChangeText={setNote}
+            />
           </View>
 
-          {/* Account Number */}
-          <View style={styles.fieldGroup}>
-            <Text style={styles.fieldLabel}>Account Number (10 digits)</Text>
-            <View
-              style={[
-                styles.inputWrap,
-                errors.accountNum ? styles.inputError : null,
-              ]}
-            >
-              <Icon name="card" size={18} color={colors.textMuted} />
-              <TextInput
-                style={styles.input}
-                value={accountNum}
-                onChangeText={(v) => {
-                  setAccountNum(v);
-                  setErrors((p) => ({ ...p, accountNum: "" }));
-                }}
-                placeholder="0123456789"
-                placeholderTextColor={colors.textMuted}
-                keyboardType="numeric"
-                maxLength={10}
-              />
-              {fromVoice && accountNum ? (
-                <Icon name="mic" size={13} color={colors.primaryMid} />
-              ) : null}
-              {accountNum.length === 10 && (
+          {/* ── Summary Preview (when all filled) ── */}
+          {allFilled ? (
+            <View style={[styles.summaryCard, shadows.card]}>
+              <View style={styles.summaryHeader}>
                 <Icon
                   name="checkmark-circle"
-                  size={16}
+                  size={18}
                   color={colors.successGreen}
                 />
-              )}
+                <Text style={styles.summaryTitle}>Transfer Summary</Text>
+              </View>
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>To</Text>
+                <Text style={styles.summaryValue}>{recipientName}</Text>
+              </View>
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>Account</Text>
+                <Text style={styles.summaryValue}>{accountNum}</Text>
+              </View>
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>Bank</Text>
+                <Text style={styles.summaryValue}>{selectedBank}</Text>
+              </View>
+              <View style={[styles.summaryRow, styles.summaryAmountRow]}>
+                <Text style={styles.summaryLabel}>Amount</Text>
+                <Text style={styles.summaryAmount}>
+                  ₦{Number(amount.replace(/,/g, "")).toLocaleString()}
+                </Text>
+              </View>
             </View>
-            {errors.accountNum ? (
-              <Text style={styles.fieldError}>{errors.accountNum}</Text>
-            ) : null}
-          </View>
+          ) : null}
 
-          {/* Amount */}
-          <View style={styles.fieldGroup}>
-            <Text style={styles.fieldLabel}>Transfer Amount (₦)</Text>
-            <View
-              style={[
-                styles.inputWrap,
-                errors.amount ? styles.inputError : null,
-              ]}
-            >
-              <Text style={styles.nairaSign}>₦</Text>
-              <TextInput
-                style={[styles.input, styles.amountInput]}
-                value={amount}
-                onChangeText={(v) => {
-                  setAmount(v);
-                  setErrors((p) => ({ ...p, amount: "" }));
-                }}
-                placeholder="0.00"
-                placeholderTextColor={colors.textMuted}
-                keyboardType="numeric"
-              />
-              {fromVoice && amount ? (
-                <Icon name="mic" size={13} color={colors.primaryMid} />
-              ) : null}
-            </View>
-            {errors.amount ? (
-              <Text style={styles.fieldError}>{errors.amount}</Text>
-            ) : null}
-          </View>
-
-          {/* Optional note */}
-          <View style={styles.fieldGroup}>
-            <Text style={styles.fieldLabel}>
-              Transfer Note{" "}
-              <Text style={{ fontWeight: "400", color: colors.textMuted }}>
-                (Optional)
-              </Text>
-            </Text>
-            <View style={styles.inputWrap}>
-              <Icon name="document-text" size={18} color={colors.textMuted} />
-              <TextInput
-                style={styles.input}
-                value={note}
-                onChangeText={setNote}
-                placeholder="e.g. Payment for goods"
-                placeholderTextColor={colors.textMuted}
-              />
-            </View>
-          </View>
-        </View>
-
-        {/* ── Summary Preview (when all filled) ── */}
-        {allFilled ? (
-          <View style={[styles.summaryCard, shadows.card]}>
-            <View style={styles.summaryHeader}>
-              <Icon
-                name="checkmark-circle"
-                size={18}
-                color={colors.successGreen}
-              />
-              <Text style={styles.summaryTitle}>Transfer Summary</Text>
-            </View>
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>To</Text>
-              <Text style={styles.summaryValue}>{recipientName}</Text>
-            </View>
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Account</Text>
-              <Text style={styles.summaryValue}>{accountNum}</Text>
-            </View>
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Bank</Text>
-              <Text style={styles.summaryValue}>{selectedBank}</Text>
-            </View>
-            <View style={[styles.summaryRow, styles.summaryAmountRow]}>
-              <Text style={styles.summaryLabel}>Amount</Text>
-              <Text style={styles.summaryAmount}>
-                ₦{Number(amount.replace(/,/g, "")).toLocaleString()}
-              </Text>
-            </View>
-          </View>
-        ) : null}
-
-        {/* ── Proceed CTA ── */}
-        <TouchableOpacity
-          style={[styles.proceedBtn, shadows.button]}
-          onPress={handleProceed}
-          activeOpacity={0.88}
-        >
-          <LinearGradient
-            colors={[colors.primaryMid, colors.primaryDeep]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={styles.proceedGrad}
+          {/* ── Proceed CTA ── */}
+          <TouchableOpacity
+            style={[styles.proceedBtn, shadows.button]}
+            onPress={handleProceed}
+            activeOpacity={0.88}
           >
-            <Icon name="lock" size={20} color={colors.white} />
-            <Text style={styles.proceedText}>Proceed to Authorize</Text>
-            <Icon name="arrow-forward" size={18} color={colors.white} />
-          </LinearGradient>
-        </TouchableOpacity>
+            <LinearGradient
+              colors={[colors.primaryMid, colors.primaryDeep]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.proceedGrad}
+            >
+              <Icon name="lock" size={20} color={colors.white} />
+              <Text style={styles.proceedText}>Proceed to Authorize</Text>
+              <Icon name="arrow-forward" size={18} color={colors.white} />
+            </LinearGradient>
+          </TouchableOpacity>
 
-        {/* ── Back to Voice link ── */}
-        <TouchableOpacity
-          style={styles.voiceBackBtn}
-          onPress={() => nav.replace("VoiceTransfer")}
-          activeOpacity={0.75}
-        >
-          <Icon name="mic" size={16} color={colors.primaryMid} />
-          <Text style={styles.voiceBackText}>
-            {fromVoice
-              ? "Re-record Voice Command"
-              : "Use Voice Transfer Instead"}
-          </Text>
-        </TouchableOpacity>
+          {/* ── Back to Voice link ── */}
+          <TouchableOpacity
+            style={styles.voiceBackBtn}
+            onPress={() => nav.replace("VoiceTransfer")}
+            activeOpacity={0.75}
+          >
+            <Icon name="mic" size={16} color={colors.primaryMid} />
+            <Text style={styles.voiceBackText}>
+              {fromVoice
+                ? "Re-record Voice Command"
+                : "Use Voice Transfer Instead"}
+            </Text>
+          </TouchableOpacity>
 
-        <View style={{ height: spacing.xxxl * 2 }} />
-      </ScrollView>
+          <View style={{ height: spacing.xxxl * 2 }} />
+        </ScrollView>
+      </KeyboardAvoidingView>
 
       {/* ── Bank Picker Bottom-Sheet Modal ── */}
       <Modal visible={showBankPicker} transparent animationType="slide">
