@@ -28,6 +28,9 @@ export const env = {
   supabaseAnonKey: required("SUPABASE_ANON_KEY"),
   supabaseServiceRoleKey: required("SUPABASE_SERVICE_ROLE_KEY"),
 
+  groqApiKey: process.env.GROQ_API_KEY || "",
+  groqModel: process.env.GROQ_MODEL || "llama-3.3-70b-versatile",
+
   kycBucket: process.env.KYC_BUCKET || "kyc-documents",
   ledgerBucket: process.env.LEDGER_BUCKET || "ledger-images",
 
