@@ -15,7 +15,7 @@
 ---
 
 ##  Live Demo
-- **Admin Dashboard:** https://kudinode-admin.vercel.app/
+- **Admin Dashboard:** https://kudinode.vercel.app/
 - **Admin login details** : email=fahdbadamasi320@gmail.com  password=*FahdBad2026#
 - **Backend API:** https://kudinode.onrender.com
 - **Recorded Demo:**:
