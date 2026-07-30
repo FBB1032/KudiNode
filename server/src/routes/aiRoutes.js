@@ -4,6 +4,7 @@ import {
   parseVoiceTransferIntent,
   extractReceiptItems,
   parseVoiceSalesLogIntent,
+  chatWithKudiBot,
 } from "../controllers/aiController.js";
 import { optionalAuth } from "../middleware/auth.js";
 
@@ -66,5 +67,7 @@ router.post(
   audioUpload.single("audio"),
   parseVoiceSalesLogIntent,
 );
+
+router.post("/chat", chatWithKudiBot);
 
 export default router;

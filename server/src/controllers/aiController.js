@@ -4,6 +4,7 @@ import {
   parseVoiceTransfer,
   extractReceipt,
   parseVoiceSalesLog,
+  chatWithAssistant,
 } from "../services/aiService.js";
 
 export const parseVoiceTransferIntent = asyncHandler(async (req, res) => {
@@ -40,5 +41,17 @@ export const parseVoiceSalesLogIntent = asyncHandler(async (req, res) => {
   }
 
   const result = await parseVoiceSalesLog({ transcript, audioFile });
+  res.json(result);
+});
+
+export const chatWithKudiBot = asyncHandler(async (req, res) => {
+  const messages = req.body?.messages;
+  const userName = req.body?.userName || req.user?.full_name || req.user?.name || null;
+
+  if (!Array.isArray(messages)) {
+    throw badRequest("Request body must include 'messages' array");
+  }
+
+  const result = await chatWithAssistant({ messages, userName });
   res.json(result);
 });

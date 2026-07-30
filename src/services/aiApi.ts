@@ -28,8 +28,10 @@ export interface ReceiptLineItem {
 export interface ReceiptExtractionResponse {
   parsed: {
     merchantName: string | null;
+    customerName: string | null;
     date: string | null;
     currency: "NGN";
+    isHandwritten: boolean;
     items: ReceiptLineItem[];
     subtotal: number | null;
     tax: number | null;
@@ -56,6 +58,16 @@ export interface VoiceSalesLogResponse {
   meta: {
     transcriptionProvider: string;
   };
+}
+
+export interface ChatMessageInput {
+  role: "user" | "assistant";
+  content: string;
+}
+
+export interface ChatResponse {
+  content: string;
+  provider: "groq" | "gemini";
 }
 
 export async function parseVoiceTransferFromText(transcript: string) {
@@ -93,4 +105,11 @@ export async function parseVoiceSalesLog(audioUri: string) {
   } as any);
 
   return api.postForm<VoiceSalesLogResponse>("/ai/voice-sales-log", form);
+}
+
+export async function sendAiChatMessage(
+  messages: ChatMessageInput[],
+  userName?: string,
+) {
+  return api.post<ChatResponse>("/ai/chat", { messages, userName });
 }
