@@ -53,41 +53,64 @@ function tryParseJson(text) {
   return null;
 }
 
+function normalizeAudioMimeType(mimetype, filename) {
+  const mime = (mimetype || "").toLowerCase();
+  const name = (filename || "").toLowerCase();
+
+  if (name.endsWith(".m4a") || mime.includes("m4a") || mime.includes("mp4")) return "audio/mp4";
+  if (name.endsWith(".wav") || mime.includes("wav")) return "audio/wav";
+  if (name.endsWith(".mp3") || mime.includes("mpeg") || mime.includes("mp3")) return "audio/mp3";
+  if (name.endsWith(".aac") || mime.includes("aac")) return "audio/aac";
+  if (name.endsWith(".3gp") || mime.includes("3gpp")) return "audio/3gpp";
+  if (name.endsWith(".webm") || mime.includes("webm")) return "audio/webm";
+  if (mime.startsWith("audio/")) return mime;
+  return "audio/mp4";
+}
+
+function normalizeImageMimeType(mimetype, filename) {
+  const mime = (mimetype || "").toLowerCase();
+  const name = (filename || "").toLowerCase();
+
+  if (name.endsWith(".png") || mime.includes("png")) return "image/png";
+  if (name.endsWith(".webp") || mime.includes("webp")) return "image/webp";
+  if (mime.startsWith("image/")) return mime;
+  return "image/jpeg";
+}
+
 /**
  * Call Groq API for JSON responses using chat completions
  */
 async function callGroqJson({ prompt, systemPrompt = "You are a helpful AI assistant that returns valid JSON." }) {
   if (!env.groqApiKey) {
     throw badRequest(
-      "AI features are temporarily unavailable. The GROQ_API_KEY environment variable is not configured on the backend server. Please get an API key from https://console.groq.com/keys",
+      "Missing GEMINI_API_KEY on backend. Add it to server/.env first.",
     );
   }
 
-  const url = `${GROQ_API_BASE}/chat/completions`;
-  
+  const url = `${GEMINI_API_BASE}/models/${env.geminiModel}:generateContent?key=${env.geminiApiKey}`;
+
   const body = {
-    model: env.groqModel || "llama-3.3-70b-versatile",
-    messages: [
-      { role: "system", content: systemPrompt },
-      { role: "user", content: prompt }
+    contents: [
+      {
+        parts: [{ text: prompt }, ...inlineParts],
+      },
     ],
-    temperature: 0.1,
-    response_format: { type: "json_object" }
+    generationConfig: {
+      temperature: 0.1,
+      responseMimeType: "application/json",
+    },
   };
 
   const response = await fetch(url, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${env.groqApiKey}`
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
 
   const rawText = await response.text();
   if (!response.ok) {
     throw badRequest(
-      `Groq API request failed (${response.status}): ${rawText.slice(0, 300)}`,
+      `Gemini API request failed (${response.status}): ${rawText.slice(0, 300)}`,
     );
   }
 
@@ -95,51 +118,53 @@ async function callGroqJson({ prompt, systemPrompt = "You are a helpful AI assis
   try {
     data = JSON.parse(rawText);
   } catch {
-    throw badRequest("Groq API returned invalid response format");
+    throw badRequest("Gemini API returned non-JSON output");
   }
 
-  const outputText = data?.choices?.[0]?.message?.content || "";
+  const outputText =
+    data?.candidates?.[0]?.content?.parts
+      ?.map((p) => p?.text)
+      .filter(Boolean)
+      .join("\n") || "";
 
   const parsed = tryParseJson(outputText);
   if (!parsed) {
-    throw badRequest("Groq AI output could not be parsed as JSON");
+    throw badRequest("Gemini output was not valid JSON");
   }
 
   return parsed;
 }
 
-/**
- * Transcribe audio using Groq's Whisper implementation
- */
-async function transcribeWithGroqAudio(audioFile) {
-  if (!env.groqApiKey) {
-    throw badRequest("Audio transcription unavailable - GROQ_API_KEY not configured");
-  }
+async function transcribeWithFastWhisper(audioFile) {
+  if (!env.fastWhisperUrl) return null;
 
-  const url = `${GROQ_API_BASE}/audio/transcriptions`;
-  
+  const url = `${env.fastWhisperUrl.replace(/\/$/, "")}/transcribe`;
   const form = new FormData();
   form.append(
     "file",
     new Blob([audioFile.buffer], { type: audioFile.mimetype || "audio/webm" }),
     audioFile.originalname || "voice.webm",
   );
-  form.append("model", "whisper-large-v3-turbo"); // Groq's fastest Whisper model
-  form.append("response_format", "verbose_json");
-  form.append("language", "en"); // Can detect multiple languages but defaults to English
+
+  if (env.fastWhisperLanguageHint) {
+    form.append("language_hint", env.fastWhisperLanguageHint);
+  }
+
+  const headers = {};
+  if (env.fastWhisperApiKey) {
+    headers.Authorization = `Bearer ${env.fastWhisperApiKey}`;
+  }
 
   const response = await fetch(url, {
     method: "POST",
-    headers: {
-      "Authorization": `Bearer ${env.groqApiKey}`
-    },
+    headers,
     body: form,
   });
 
   const rawText = await response.text();
   if (!response.ok) {
     throw badRequest(
-      `Groq Whisper transcription failed (${response.status}): ${rawText.slice(0, 300)}`,
+      `Whisper endpoint failed (${response.status}): ${rawText.slice(0, 300)}`,
     );
   }
 
@@ -147,18 +172,53 @@ async function transcribeWithGroqAudio(audioFile) {
   try {
     data = JSON.parse(rawText);
   } catch {
-    throw badRequest("Groq Whisper returned non-JSON output");
+    throw badRequest("Whisper endpoint returned non-JSON output");
   }
 
   const transcript = data?.text?.trim();
   if (!transcript) {
-    throw badRequest("Groq Whisper did not return transcript text");
+    throw badRequest("Whisper endpoint did not return transcript text");
   }
 
   return {
     transcript,
     languageDetected: data?.language || null,
-    provider: "groq-whisper",
+    provider: "fast-whisper",
+  };
+}
+
+async function transcribeWithGeminiAudio(audioFile) {
+  const prompt = [
+    "Transcribe this audio from Nigerian speech into plain text.",
+    "The speaker may use English, Pidgin, Hausa, Yoruba, Igbo, or mixed code-switching.",
+    "Return strict JSON only:",
+    "{",
+    '  "transcript": string,',
+    '  "languageDetected": string | null',
+    "}",
+  ].join("\n");
+
+  const data = await callGeminiJson({
+    prompt,
+    inlineParts: [
+      {
+        inline_data: {
+          mime_type: audioFile.mimetype || "audio/webm",
+          data: audioFile.buffer.toString("base64"),
+        },
+      },
+    ],
+  });
+
+  const transcript = data?.transcript?.trim?.();
+  if (!transcript) {
+    throw badRequest("Gemini could not transcribe the audio clearly");
+  }
+
+  return {
+    transcript,
+    languageDetected: data?.languageDetected || null,
+    provider: "gemini-audio",
   };
 }
 
@@ -175,14 +235,15 @@ async function getTranscript({ transcript, audioFile }) {
     throw badRequest("Provide either transcript text or an audio file");
   }
 
-  return transcribeWithGroqAudio(audioFile);
+  const whisperResult = await transcribeWithFastWhisper(audioFile);
+  if (whisperResult) return whisperResult;
+
+  return transcribeWithGeminiAudio(audioFile);
 }
 
 export async function parseVoiceTransfer({ transcript, audioFile }) {
   const transcriptResult = await getTranscript({ transcript, audioFile });
 
-  const systemPrompt = "You are a Nigerian bank transfer command parser. Extract transfer details from natural speech and return valid JSON only.";
-  
   const prompt = [
     "Input can be English, Pidgin, Hausa, Yoruba, Igbo, or mixed speech.",
     "Extract transfer details and return strict JSON only.",
@@ -202,7 +263,7 @@ export async function parseVoiceTransfer({ transcript, audioFile }) {
     transcriptResult.transcript,
   ].join("\n");
 
-  const parsed = await callGroqJson({ prompt, systemPrompt });
+  const parsed = await callGeminiJson({ prompt });
 
   return {
     transcript: transcriptResult.transcript,
@@ -213,8 +274,8 @@ export async function parseVoiceTransfer({ transcript, audioFile }) {
       amount: asNumberOrNull(parsed?.amount),
       narration: parsed?.narration || null,
       languageDetected:
-        parsed?.languageDetected || transcriptResult.languageDetected || null,
-      confidence: asNumberOrNull(parsed?.confidence) ?? 0,
+        parsed?.languageDetected || transcriptResult.languageDetected || "en",
+      confidence: asNumberOrNull(parsed?.confidence) ?? 0.8,
     },
     meta: {
       transcriptionProvider: transcriptResult.provider,
@@ -238,69 +299,5 @@ export async function extractReceipt({ imageFile }) {
   // 1. Keep Gemini for vision tasks
   // 2. Use OpenAI GPT-4 Vision
   // 3. Use a separate OCR service + Groq for parsing
-}
-
-/**
- * Parse voice sales log (items + prices) using Groq
- * This is for merchants logging sales verbally
- */
-export async function parseVoiceSalesLog({ transcript, audioFile }) {
-  const transcriptResult = await getTranscript({ transcript, audioFile });
-
-  const systemPrompt = "You are a Nigerian sales log parser. Extract item names, quantities, and prices from merchant voice logs. Return valid JSON only.";
-  
-  const prompt = [
-    "Input can be English, Pidgin, Hausa, Yoruba, Igbo, or mixed speech.",
-    "The merchant is listing items they sold with quantities and prices.",
-    "Extract all items mentioned and return strict JSON only.",
-    "Do not invent values. Use null when unknown.",
-    "Return this exact structure:",
-    "{",
-    '  "items": [',
-    '    {',
-    '      "name": string,',
-    '      "quantity": number | null,',
-    '      "unitPrice": number | null,',
-    '      "lineTotal": number | null',
-    '    }',
-    '  ],',
-    '  "currency": "NGN",',
-    '  "total": number | null,',
-    '  "confidence": number (between 0 and 1)',
-    "}",
-    "",
-    "Examples:",
-    "- 'I sold 5 bags of rice at 10,000 naira each' → {items: [{name: 'Rice', quantity: 5, unitPrice: 10000, lineTotal: 50000}], total: 50000}",
-    "- '3 cartons of tomatoes, 8000 each' → {items: [{name: 'Tomatoes', quantity: 3, unitPrice: 8000, lineTotal: 24000}], total: 24000}",
-    "- '10kg beans for 15,000 and 5kg garri for 5,000' → {items: [{name: 'Beans 10kg', quantity: 1, unitPrice: 15000, lineTotal: 15000}, {name: 'Garri 5kg', quantity: 1, unitPrice: 5000, lineTotal: 5000}], total: 20000}",
-    "",
-    "Transcript:",
-    transcriptResult.transcript,
-  ].join("\n");
-
-  const parsed = await callGroqJson({ prompt, systemPrompt });
-
-  const items = Array.isArray(parsed?.items) ? parsed.items : [];
-
-  return {
-    transcript: transcriptResult.transcript,
-    parsed: {
-      items: items
-        .map((it) => ({
-          name: String(it?.name || "").trim(),
-          quantity: asNumberOrNull(it?.quantity),
-          unitPrice: asNumberOrNull(it?.unitPrice),
-          lineTotal: asNumberOrNull(it?.lineTotal),
-        }))
-        .filter((it) => it.name.length > 0),
-      currency: "NGN",
-      total: asNumberOrNull(parsed?.total),
-      confidence: asNumberOrNull(parsed?.confidence) ?? 0,
-    },
-    meta: {
-      transcriptionProvider: transcriptResult.provider,
-      languageDetected: transcriptResult.languageDetected,
-    },
-  };
 }
 
