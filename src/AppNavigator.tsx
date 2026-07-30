@@ -53,8 +53,10 @@ export type RootStackParamList = {
     | {
         parsedReceipt?: {
           merchantName: string | null;
+          customerName: string | null;
           date: string | null;
           currency: "NGN";
+          isHandwritten: boolean;
           items: Array<{
             name: string;
             quantity: number | null;

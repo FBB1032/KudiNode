@@ -377,6 +377,110 @@ async function callBestAiJson({ prompt, systemPrompt }) {
   return callGeminiJson({ prompt, systemPrompt });
 }
 
+async function callGroqChat({ messages, systemPrompt }) {
+  if (!env.groqApiKey) return null;
+
+  const url = `${GROQ_API_BASE}/chat/completions`;
+  const finalMessages = [];
+
+  if (systemPrompt) {
+    finalMessages.push({ role: "system", content: systemPrompt });
+  }
+
+  for (const m of messages) {
+    finalMessages.push({ role: m.role, content: m.content });
+  }
+
+  const body = {
+    model: env.groqModel || "llama-3.3-70b-versatile",
+    messages: finalMessages,
+    temperature: 0.6,
+    max_tokens: 1024,
+  };
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${env.groqApiKey}`,
+    },
+    body: JSON.stringify(body),
+  });
+
+  const rawText = await response.text();
+  if (!response.ok) return null;
+
+  let data;
+  try {
+    data = JSON.parse(rawText);
+  } catch {
+    return null;
+  }
+
+  const content = data?.choices?.[0]?.message?.content?.trim?.();
+  if (!content) return null;
+
+  return {
+    content, provider: "groq" };
+}
+
+async function callGeminiChat({ messages, systemPrompt }) {
+  if (!env.geminiApiKey) return null;
+
+  const model = env.geminiModel || "gemini-2.0-flash";
+  const url = `${GEMINI_API_BASE}/models/${model}:generateContent?key=${env.geminiApiKey}`;
+
+  const systemInstructionParts = systemPrompt
+    ? [{ text: systemPrompt }]
+    : undefined;
+
+  const contents = [];
+  for (const m of messages) {
+    const role = m.role === "assistant" ? "model" : "user";
+    contents.push({
+      role,
+      parts: [{ text: String(m.content || "") }],
+    });
+  }
+
+  const body = {
+    ...(systemInstructionParts && { systemInstruction: { parts: systemInstructionParts } }),
+    contents,
+    generationConfig: {
+      temperature: 0.6,
+      maxOutputTokens: 1024,
+    },
+  };
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+
+  const rawText = await response.text();
+  if (!response.ok) return null;
+
+  let data;
+  try {
+    data = JSON.parse(rawText);
+  } catch {
+    return null;
+  }
+
+  const content =
+    data?.candidates?.[0]?.content?.parts
+      ?.map((p) => p?.text)
+      .filter(Boolean)
+      .join("\n")
+      ?.trim?.();
+
+  if (!content) return null;
+
+  return {
+    content, provider: "gemini" };
+}
+
 export async function parseVoiceTransfer({ transcript, audioFile }) {
   const transcriptResult = await getTranscript({ transcript, audioFile });
 
@@ -422,6 +526,53 @@ export async function parseVoiceTransfer({ transcript, audioFile }) {
   };
 }
 
+const KUDIBOT_SYSTEM_PROMPT = [
+  "You are KudiBot, the AI Financial Advisor for KudiNode — a Nigerian fintech for market traders, small business merchants, and Esusu/cooperative societies.",
+  "You are warm, conversational, and familiar with Nigerian market context.",
+  "You understand and can respond in: English, Nigerian Pidgin, Hausa, Yoruba, and Igbo (including code-switching). Respond in the same language the user wrote to you, or English if unclear.",
+  "You advise on:",
+  "  - Daily sales log, profit margins, and stock reinvestment",
+  "  - Wema Bank credit line, micro-credit eligibility, and repayment strategy",
+  "  - AI Trust Score improvements and KudiNode usage tips",
+  "  - Esusu / Co-op cooperative contributions, rotation cycles, and payout planning",
+  "  - Receipt scanning and voice commands ('Record rice sale' etc.)",
+  "You can reference Naira amounts, Alaba / Oshodi / Kano markets context, and practical merchant habits.",
+  "Keep answers concise, practical, and encouraging. Use bullet points when listing steps. Never invent exact sales or credit data you do not have — if the user asks about their specific numbers, acknowledge you're analyzing based on typical patterns, and recommend they check their dashboard.",
+  "Use 💡, 📈, 💰, 👥, 🛒, 🗣️, 📄 emojis where appropriate to keep it friendly, but do not overdo it.",
+].join("\n");
+
+export async function chatWithAssistant({ messages, userName }) {
+  if (!Array.isArray(messages) || messages.length === 0) {
+    throw badRequest("Provide a non-empty conversation messages array");
+  }
+
+  const safeMessages = messages
+    .filter((m) => m && typeof m.content === "string" && m.content.trim())
+    .map((m) => ({
+      role: m.role === "assistant" ? "assistant" : "user",
+      content: String(m.content).trim(),
+    }))
+    .slice(-20);
+
+  if (safeMessages.length === 0) {
+    throw badRequest("Conversation contains no valid text messages");
+  }
+
+  const systemPrompt = userName
+    ? `${KUDIBOT_SYSTEM_PROMPT}\n\nThe user you are speaking to is: ${userName}. Address them naturally when appropriate.`
+    : KUDIBOT_SYSTEM_PROMPT;
+
+  const groqResult = await callGroqChat({ messages: safeMessages, systemPrompt });
+  if (groqResult) return groqResult;
+
+  const geminiResult = await callGeminiChat({ messages: safeMessages, systemPrompt });
+  if (geminiResult) return geminiResult;
+
+  throw badRequest(
+    "All AI chat providers failed. Ensure either GROQ_API_KEY or GEMINI_API_KEY is configured in server/.env.",
+  );
+}
+
 export async function extractReceipt({ imageFile }) {
   if (!imageFile) {
     throw badRequest("No receipt image provided");
@@ -429,38 +580,58 @@ export async function extractReceipt({ imageFile }) {
 
   const mime = normalizeImageMimeType(imageFile.mimetype, imageFile.originalname);
   const systemPrompt = [
-    "You are an AI receipt scanner for Nigerian merchants.",
-    "You read receipt images and extract structured data for sales ledger entry.",
-    "Currency is always Nigerian Naira (NGN).",
-    "Return strict JSON only — no prose, no markdown.",
+    "You are an AI receipt scanner for Nigerian small merchants and market traders.",
+    "You read receipt images of ALL TYPES including:",
+    "  • Printed POS / supermarket receipts",
+    "  • HANDWRITTEN paper receipts (exercise book paper, plain paper, tissue, card slips)",
+    "  • Scribbled notes and tallys on any paper surface",
+    "  • Customer invoices, waybills, 'received by' slips",
+    "  • Mixed printed + handwritten receipts (very common in Nigeria)",
+    "Handwriting is usually in Biro / ballpoint pen. Can be cursive, all caps, or shorthand. Expect spelling variations and shortened words.",
+    "Currency is always Nigerian Naira (NGN). Expect: N, ₦, #, NGN, 'naira' written by hand, or no symbol but context implies Naira.",
+    "Return strict JSON only — no prose, no markdown, no apology messages when data is partial.",
   ].join("\n");
 
   const prompt = [
-    "Analyze this receipt image carefully. Return strict JSON with this exact structure:",
+    "Analyze this receipt image with SPECIAL ATTENTION to HANDWRITING. This could be a printed, handwritten, or mixed receipt. Read every single word, number, and symbol you can.",
+    "",
+    "HANDWRITING GUIDELINES (very important for Nigerian market receipts):",
+    "1. Read carefully — ink can be smudged, paper creased, lighting uneven, handwriting cursive or rushed.",
+    "2. Naira might be written as: N 5000, #2500, ₦1,500, '=N= 800', just '500' with context of price, or '2k' meaning 2000.",
+    "3. Item names often use shorthand: 'Rice' could be Rc, 'Tomatoe' Tmt, 'Beans' Bns, 'Garri' Gr, 'Palm oil' PO, 'Semovita' Smvt.",
+    "4. A typical handwritten line format in Nigeria is:  Item Name   Qty   UnitPrice   Amount — or just Amount per item.",
+    "5. Some handwritten receipts write: Name of buyer at top, then items, then 'Total: .....' at the bottom underlined twice.",
+    "6. Handwritten dates: 12/7/2026 or 12-07-26 or '12th July 2026'.",
+    "7. If a word is ambiguous but looks like a common item name, include it and lower confidence slightly.",
+    "8. If you can partially read a line, include what you CAN read with nulls for unknowns — do not skip the entire line.",
+    "",
+    "Return strict JSON with this exact structure:",
     "{",
-    '  "merchantName": string | null,',
+    '  "merchantName": string | null (store / seller name if found; very often handwritten at top as "From: X" or business name),',
+    '  "customerName": string | null (buyer / customer name if written at top),',
     '  "date": string | null (ISO date format YYYY-MM-DD if found, else null),',
     '  "currency": "NGN",',
+    '  "isHandwritten": boolean (true if mostly/partially handwritten, false if fully printed POS),',
     '  "items": [',
     "    {",
-    '      "name": string (product / item name),',
-    '      "quantity": number | null (defaults to 1 if unsure),',
+    '      "name": string (product / item name — transcribe exactly as written, do not over-correct),',
+    '      "quantity": number | null (defaults to 1 if you know a single item was sold but count is not shown),',
     '      "unitPrice": number | null (price per single unit in NGN),',
-    '      "lineTotal": number | null (quantity x unitPrice, or the line amount shown)' ,
+    '      "lineTotal": number | null (quantity × unitPrice, or the line/item amount written on the receipt)' ,
     "    }",
     "  ],",
-    '  "subtotal": number | null (sum of all line totals before tax/discount),',
-    '  "tax": number | null (VAT / tax amount, null if not shown),',
-    '  "total": number | null (grand / final amount paid),',
-    '  "confidence": number (between 0 and 1 — how confident you are in the overall extraction)',
+    '  "subtotal": number | null (sum before VAT/discount/shipping),',
+    '  "tax": number | null (VAT or any tax amount, null if not shown — most handwritten receipts omit tax),',
+    '  "total": number | null (grand / final amount paid — often at bottom underlined or preceded by "Total", "T:", "Amount =N=" ),',
+    '  "confidence": number (between 0 and 1 — lower for difficult-to-read handwriting, higher for clear printed POS)',
     "}",
     "",
-    "Rules:",
-    "1. If you cannot read an item price or quantity, use null, not 0.",
-    "2. Include every line item you can read, even if partial.",
-    "3. Always populate the items array — never return an empty array unless there is genuinely no item data.",
-    "4. Match lineTotal = quantity x unitPrice wherever possible.",
-    "5. Nigerian receipts sometimes list amount before qty; use the layout and labels to infer correctly.",
+    "CRITICAL RULES:",
+    "A. Populate items array with EVERY line entry you can possibly read, even partial. Empty items array is ONLY allowed if there is genuinely zero item data on the image.",
+    "B. Set isHandwritten = true if ANY part of receipt is handwritten (not 100% printed).",
+    "C. Null is strictly used for UNKNOWN / unreadable values — never 0 for missing numbers.",
+    "D. When handwritten line only says 'Rice: 5000' with no qty — name='Rice', unitPrice=5000, quantity=1, lineTotal=5000.",
+    "E. Nigerian formatting: commas as thousands separators (₦12,500) — ignore them, return plain numbers.",
   ].join("\n");
 
   const parsed = await callGeminiJson({
@@ -485,16 +656,20 @@ export async function extractReceipt({ imageFile }) {
       }))
     : [];
 
+  const isHandwritten = Boolean(parsed?.isHandwritten);
+
   return {
     parsed: {
       merchantName: parsed?.merchantName || null,
+      customerName: parsed?.customerName || null,
       date: parsed?.date || null,
       currency: "NGN",
+      isHandwritten,
       items: normalizedItems,
       subtotal: asNumberOrNull(parsed?.subtotal),
       tax: asNumberOrNull(parsed?.tax),
       total: asNumberOrNull(parsed?.total),
-      confidence: asNumberOrNull(parsed?.confidence) ?? 0.75,
+      confidence: asNumberOrNull(parsed?.confidence) ?? (isHandwritten ? 0.7 : 0.85),
     },
   };
 }

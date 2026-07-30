@@ -148,14 +148,57 @@ export function VerificationScreen() {
         showsVerticalScrollIndicator={false}
       >
         {parsedReceipt ? (
-          <View style={styles.aiBadge}>
-            <Icon name="checkmark-circle" size={16} color={colors.primaryMid} />
-            <Text style={styles.aiText}>
-              AI parsed receipt
-              {parsedReceipt.confidence > 0
-                ? ` · Confidence ${(parsedReceipt.confidence * 100).toFixed(0)}%`
-                : ""}
-            </Text>
+          <View>
+            <View style={styles.aiBadge}>
+              <Icon name="checkmark-circle" size={16} color={colors.primaryMid} />
+              <Text style={styles.aiText}>
+                AI parsed receipt
+                {parsedReceipt.confidence > 0
+                  ? ` · Confidence ${(parsedReceipt.confidence * 100).toFixed(0)}%`
+                  : ""}
+              </Text>
+            </View>
+
+            <View style={styles.receiptMeta}>
+              {parsedReceipt.isHandwritten ? (
+                <View style={[styles.metaChip, { backgroundColor: "#FFF3E8" }]}>
+                  <Icon name="create" size={12} color={colors.warningOrange} />
+                  <Text style={[styles.metaChipText, { color: colors.warningOrange }]}>
+                    Handwritten detected
+                  </Text>
+                </View>
+              ) : null}
+              {parsedReceipt.merchantName ? (
+                <View style={styles.metaChip}>
+                  <Icon name="store" size={12} color={colors.primaryMid} />
+                  <Text style={styles.metaChipText} numberOfLines={1}>
+                    {parsedReceipt.merchantName}
+                  </Text>
+                </View>
+              ) : null}
+              {parsedReceipt.customerName ? (
+                <View style={styles.metaChip}>
+                  <Icon name="person" size={12} color={colors.primaryMid} />
+                  <Text style={styles.metaChipText} numberOfLines={1}>
+                    Customer: {parsedReceipt.customerName}
+                  </Text>
+                </View>
+              ) : null}
+              {parsedReceipt.date ? (
+                <View style={styles.metaChip}>
+                  <Icon name="calendar" size={12} color={colors.primaryMid} />
+                  <Text style={styles.metaChipText}>{parsedReceipt.date}</Text>
+                </View>
+              ) : null}
+              {parsedReceipt.subtotal != null ? (
+                <View style={styles.metaChip}>
+                  <Icon name="receipt" size={12} color={colors.primaryMid} />
+                  <Text style={styles.metaChipText}>
+                    Subtotal ₦{parsedReceipt.subtotal.toLocaleString()}
+                  </Text>
+                </View>
+              ) : null}
+            </View>
           </View>
         ) : null}
 
@@ -402,6 +445,31 @@ const styles = StyleSheet.create({
     color: colors.primaryMid,
     fontWeight: "600",
     flex: 1,
+  },
+
+  receiptMeta: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+    marginTop: spacing.sm,
+  },
+  metaChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: radius.pill,
+    backgroundColor: colors.accentLight,
+    borderWidth: 1,
+    borderColor: colors.border,
+    maxWidth: "100%",
+  },
+  metaChipText: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: colors.primaryDeep,
+    maxWidth: 220,
   },
 
   card: {
