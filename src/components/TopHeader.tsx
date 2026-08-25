@@ -1,10 +1,3 @@
-/**
- * TopHeader — KudiNode AI
- *
- * Key fix: The greeting header INCLUDES the balance-card slot in its gradient,
- * so nothing "hangs under" the nav. Inner screens use SafeAreaView edges={['top']}
- * so the gradient starts at the very top of the screen (covers status bar).
- */
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, StatusBar } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -15,13 +8,11 @@ import { Avatar } from './Avatar';
 import { useNavigation } from '@react-navigation/native';
 
 interface TopHeaderProps {
-  // Greeting mode
   showGreeting?: boolean;
   greetingName?: string;
   verified?: boolean;
   avatarUri?: string;
   onNotificationPress?: () => void;
-  // Inner screen mode
   title?: string;
   subtitle?: string;
   showBack?: boolean;
@@ -44,7 +35,7 @@ export function TopHeader({
   if (showGreeting) {
     return (
       <LinearGradient
-        colors={[colors.primaryDeep, colors.primaryMid]}
+        colors={[colors.primaryDeep, colors.primaryMid, '#2A0B4D']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
       >
@@ -56,7 +47,7 @@ export function TopHeader({
               onPress={() => navigation.navigate('Profile')}
               activeOpacity={0.85}
             >
-              <Avatar size={44} uri={avatarUri} initials="AB" verified={verified} verifiedSize={15} />
+              <Avatar size={46} uri={avatarUri} initials="AB" verified={verified} verifiedSize={16} />
             </TouchableOpacity>
             <View style={styles.greetText}>
               <Text style={styles.greetHello}>Good morning,</Text>
@@ -67,7 +58,7 @@ export function TopHeader({
               onPress={onNotificationPress ?? (() => navigation.navigate('Notifications'))}
               activeOpacity={0.8}
             >
-              <Icon name="bell" size={22} color={colors.white} />
+              <Icon name="bell" size={20} color={colors.white} />
               <View style={styles.notifDot} />
             </TouchableOpacity>
           </View>
@@ -77,14 +68,12 @@ export function TopHeader({
               <Text style={styles.verifiedText}>Tier-1 Verified · KN-783462</Text>
             </View>
           )}
-          {/* spacer so balance card has room to overlap */}
           <View style={{ height: spacing.xxxl + spacing.xl }} />
         </SafeAreaView>
       </LinearGradient>
     );
   }
 
-  // Inner screen header
   return (
     <LinearGradient
       colors={[colors.primaryDeep, colors.primaryMid]}
@@ -96,16 +85,16 @@ export function TopHeader({
         <View style={styles.innerRow}>
           {showBack ? (
             <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.goBack()} activeOpacity={0.8}>
-              <Icon name="arrow-back" size={22} color={colors.white} />
+              <Icon name="arrow-back" size={20} color={colors.white} />
             </TouchableOpacity>
           ) : (
-            <View style={{ width: 44 }} />
+            <View style={{ width: 42 }} />
           )}
           <View style={styles.titleBlock}>
             {title && <Text style={styles.innerTitle} numberOfLines={1}>{title}</Text>}
             {subtitle && <Text style={styles.innerSubtitle} numberOfLines={1}>{subtitle}</Text>}
           </View>
-          {rightSlot ? rightSlot : <View style={{ width: 44 }} />}
+          {rightSlot ? rightSlot : <View style={{ width: 42 }} />}
         </View>
       </SafeAreaView>
     </LinearGradient>
@@ -113,31 +102,32 @@ export function TopHeader({
 }
 
 const styles = StyleSheet.create({
-  // Greeting
   greetRow: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.md,
-    paddingBottom: spacing.md,
+    paddingBottom: spacing.sm,
     gap: spacing.md,
   },
   avatarBtn: {},
   greetText: { flex: 1 },
-  greetHello: { fontSize: typography.sizes.tiny, color: 'rgba(255,255,255,0.7)', fontWeight: '500' },
-  greetName:  { fontSize: typography.sizes.h3, color: colors.white, fontWeight: '800' },
+  greetHello: { fontSize: typography.sizes.tiny, color: 'rgba(255,255,255,0.75)', fontWeight: '500' },
+  greetName: { fontSize: typography.sizes.h3, color: colors.white, fontWeight: '800' },
   iconBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.13)',
+    width: 42,
+    height: 42,
+    borderRadius: radius.md,
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.15)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   notifDot: {
     position: 'absolute',
-    top: 10,
-    right: 10,
+    top: 9,
+    right: 9,
     width: 8,
     height: 8,
     borderRadius: 4,
@@ -149,29 +139,30 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    backgroundColor: 'rgba(255,255,255,0.10)',
+    backgroundColor: 'rgba(255,255,255,0.12)',
     alignSelf: 'flex-start',
     marginLeft: spacing.lg,
     paddingHorizontal: spacing.md,
-    paddingVertical: 5,
+    paddingVertical: 4,
     borderRadius: radius.pill,
-    marginBottom: spacing.sm,
+    marginBottom: spacing.xs,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.15)',
   },
   verifiedText: {
     fontSize: typography.sizes.tiny,
     color: colors.white,
-    fontWeight: '600',
+    fontWeight: '700',
   },
-  // Inner
   innerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
-    minHeight: 54,
+    minHeight: 56,
   },
   titleBlock: { flex: 1, alignItems: 'center' },
   innerTitle: { fontSize: typography.sizes.h4, fontWeight: '800', color: colors.white },
-  innerSubtitle: { fontSize: typography.sizes.tiny, color: 'rgba(255,255,255,0.7)', marginTop: 2 },
+  innerSubtitle: { fontSize: typography.sizes.tiny, color: 'rgba(255,255,255,0.75)', marginTop: 2 },
 });

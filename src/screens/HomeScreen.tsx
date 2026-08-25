@@ -15,215 +15,251 @@ import { RootStackParamList } from '../AppNavigator';
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 const QUICK_ACTIONS = [
-  { icon: 'send' as const, label: 'Transfer', color: '#4A1D7A', bg: '#F3EBFB', route: 'VoiceTransfer' as const, params: undefined },
-  { icon: 'mic' as const, label: 'Log Voice', color: '#1FA84C', bg: '#E8FFF2', route: 'SalesIntake' as const, params: { initialMode: 'VOICE' as const } },
-  { icon: 'camera' as const, label: 'Scan', color: '#E8A93A', bg: '#FFF8E7', route: 'SalesIntake' as const, params: { initialMode: 'PHOTO' as const } },
-  { icon: 'receipt' as const, label: 'Ledger', color: '#1565C0', bg: '#EBF5FF', route: 'Ledger' as const, params: undefined },
+  {
+    icon: 'send' as const,
+    label: 'Transfer',
+    color: '#7C3AED',
+    bg: '#F3E8FF',
+    route: 'VoiceTransfer' as const,
+    params: undefined,
+  },
+  {
+    icon: 'mic' as const,
+    label: 'Voice Log',
+    color: '#059669',
+    bg: '#D1FAE5',
+    route: 'SalesIntake' as const,
+    params: { initialMode: 'VOICE' as const },
+  },
+  {
+    icon: 'camera' as const,
+    label: 'Scan',
+    color: '#D97706',
+    bg: '#FEF3C7',
+    route: 'SalesIntake' as const,
+    params: { initialMode: 'PHOTO' as const },
+  },
+  {
+    icon: 'receipt' as const,
+    label: 'Ledger',
+    color: '#1D4ED8',
+    bg: '#DBEAFE',
+    route: 'Ledger' as const,
+    params: undefined,
+  },
 ];
 
 const RECENT_TXN = [
-  { id: 1, label: 'Amara Foods – Rice', amount: '+₦23,000', type: 'sale', date: 'Today 09:14' },
-  { id: 2, label: 'Esusu Contribution', amount: '-₦5,000', type: 'debit', date: 'Today 07:00' },
+  { id: 1, label: 'Amara Foods – Rice', amount: '+₦23,000', type: 'sale', date: 'Today · 09:14' },
+  { id: 2, label: 'Esusu Contribution', amount: '-₦5,000', type: 'debit', date: 'Today · 07:00' },
   { id: 3, label: 'Beans & Oil', amount: '+₦10,700', type: 'sale', date: 'Yesterday' },
-  { id: 4, label: 'KudiNode Credit Topup', amount: '+₦50,000', type: 'credit', date: 'Jul 27' },
+  { id: 4, label: 'KudiNode Credit', amount: '+₦50,000', type: 'credit', date: 'Jul 27' },
 ];
+
+function TxnIcon({ type }: { type: string }) {
+  const cfg =
+    type === 'sale'
+      ? { name: 'checkmark-circle' as const, color: '#059669', bg: '#D1FAE5' }
+      : type === 'credit'
+      ? { name: 'card' as const, color: '#1D4ED8', bg: '#DBEAFE' }
+      : { name: 'transfer' as const, color: '#D97706', bg: '#FEF3C7' };
+  return (
+    <View style={[s.txnIcon, { backgroundColor: cfg.bg }]}>
+      <Icon name={cfg.name} size={18} color={cfg.color} />
+    </View>
+  );
+}
 
 export function HomeScreen() {
   const { t } = useLanguage();
   const nav = useNavigation<Nav>();
   const [showBalance, setShowBalance] = useState(true);
 
-  const handleCopyWemaAccount = () => {
-    Alert.alert('Account Details Copied', 'Wema Account · 0129384756 (Amina Babangida Bello) copied to clipboard.');
-  };
+  const handleCopyWema = () =>
+    Alert.alert('Copied', 'Account · 0129384756 (Amina Babangida Bello)');
 
   return (
-    <View style={styles.root}>
-      <StatusBar barStyle="light-content" backgroundColor={colors.primaryDeep} translucent={false} />
+    <View style={s.root}>
+      <StatusBar barStyle="light-content" backgroundColor="#1A0840" translucent={false} />
 
-      {/* ── COMPACT GRADIENT HEADER ── */}
+      {/* ─── Header gradient ─── */}
       <LinearGradient
-        colors={[colors.primaryDeep, colors.primaryMid]}
+        colors={['#1A0840', colors.primaryDeep, '#4C1D95']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
       >
         <SafeAreaView edges={['top', 'left', 'right']}>
-          {/* Header Row: Wema Account Pill (Left) + Notification Bell (Right) */}
-          <View style={styles.greetRow}>
-            <TouchableOpacity
-              style={styles.headerWemaPill}
-              onPress={handleCopyWemaAccount}
-              activeOpacity={0.8}
-            >
-              <View style={styles.wemaPillLeft}>
-                <Icon name="bank" size={13} color={colors.white} />
-                <Text style={styles.headerWemaText}>
-                  Wema Account · <Text style={styles.wemaBoldNum}>0129 3847 56</Text>
-                </Text>
-              </View>
-              <Icon name="copy" size={11} color="rgba(255,255,255,0.75)" />
+          {/* Top bar */}
+          <View style={s.topBar}>
+            {/* Account pill */}
+            <TouchableOpacity style={s.accountPill} onPress={handleCopyWema} activeOpacity={0.8}>
+              <Icon name="bank" size={13} color="rgba(255,255,255,0.85)" />
+              <Text style={s.accountPillText}>
+                Wema · <Text style={{ fontWeight: '800' }}>0129 3847 56</Text>
+              </Text>
+              <Icon name="copy" size={11} color="rgba(255,255,255,0.55)" />
             </TouchableOpacity>
 
+            {/* Notification */}
             <TouchableOpacity
-              style={styles.headerIconBtn}
+              style={s.iconBtn}
               onPress={() => nav.navigate('Notifications')}
               activeOpacity={0.8}
             >
-              <Icon name="bell" size={20} color={colors.white} />
-              <View style={styles.notifDot} />
+              <Icon name="notifications-outline" size={19} color={colors.white} />
+              <View style={s.notifBadge} />
             </TouchableOpacity>
           </View>
 
-          {/* Verified Merchant Badge */}
-          <View style={styles.tierBadge}>
-            <Icon name="shield-checkmark" size={11} color={colors.successGreen} />
-            <Text style={styles.tierText}>Tier-1 Verified Merchant · Amina Bello</Text>
+          {/* Merchant status row */}
+          <View style={s.statusRow}>
+            <Icon name="shield-checkmark" size={12} color="#34D399" />
+            <Text style={s.statusText}>Tier-1 Verified · Amina Bello</Text>
           </View>
 
-          {/* ── PREMIER FINTECH BALANCE CARD ── */}
-          <View style={[styles.balanceCard, shadows.cardLg]}>
-            {/* Header: Cash in Hand / Account Label + Eye Toggle */}
-            <View style={styles.cardHeaderRow}>
-              <View style={styles.labelWithIcon}>
-                <View style={styles.bankIconWrap}>
-                  <Icon name="bank" size={15} color={colors.primaryDeep} />
+          {/* ─── Balance card ─── */}
+          <View style={[s.balCard, shadows.cardLg]}>
+            {/* Card header */}
+            <View style={s.balCardHeader}>
+              <View style={s.balCardLeft}>
+                <View style={s.balIconWrap}>
+                  <Icon name="wallet-outline" size={16} color={colors.primaryDeep} />
                 </View>
                 <View>
-                  <Text style={styles.balanceLbl}>Cash in Hand</Text>
-                  <Text style={styles.balanceSub}>Merchant Settlement Account</Text>
+                  <Text style={s.balLabel}>Cash in Hand</Text>
+                  <Text style={s.balSublabel}>Settlement Account</Text>
                 </View>
               </View>
-              <TouchableOpacity
-                onPress={() => setShowBalance(!showBalance)}
-                style={styles.eyeBtn}
-                activeOpacity={0.7}
-              >
-                <Icon name={showBalance ? 'eye' : 'eye-off'} size={18} color={colors.textMuted} />
+              <TouchableOpacity onPress={() => setShowBalance(!showBalance)} activeOpacity={0.7}>
+                <Icon
+                  name={showBalance ? 'eye-outline' : 'eye-off-outline'}
+                  size={19}
+                  color={colors.textMuted}
+                />
               </TouchableOpacity>
             </View>
 
-            {/* Main Balance Display */}
-            <View style={styles.balanceDisplayRow}>
-              <Text style={styles.balanceAmt}>
-                {showBalance ? '₦57,300.00' : '••••••••'}
-              </Text>
-            </View>
+            {/* Amount */}
+            <Text style={s.balAmount}>{showBalance ? '₦57,300.00' : '  ••••••  '}</Text>
 
-            {/* 2 Clean Stat Boxes (Today's Profit & KudiNode Credit) */}
-            <View style={styles.statsGrid}>
-              {/* Today's Profit Box */}
-              <View style={styles.statBox}>
-                <Text style={styles.statBoxLabel}>Today's Net Profit</Text>
-                <Text style={styles.statBoxValue}>{showBalance ? '₦24,680' : '••••••'}</Text>
-                <View style={styles.growthPill}>
-                  <Icon name="trending-up" size={10} color={colors.successGreen} />
-                  <Text style={styles.growthPillText}>▲ 18% vs yesterday</Text>
+            {/* Stats row */}
+            <View style={s.statsRow}>
+              <View style={s.statItem}>
+                <View style={s.statLabelRow}>
+                  <Icon name="trending-up" size={11} color="#059669" />
+                  <Text style={s.statLabel}>Today's Profit</Text>
                 </View>
+                <Text style={s.statValue}>{showBalance ? '₦24,680' : '••••'}</Text>
               </View>
 
-              {/* KudiNode Credit Box */}
-              <View style={styles.statBox}>
-                <Text style={styles.statBoxLabel}>KudiNode Credit</Text>
-                <Text style={styles.statBoxValue}>{showBalance ? '₦150,000' : '••••••'}</Text>
-                <Text style={styles.statBoxSub}>Instant Loan Limit</Text>
+              <View style={s.statDivider} />
+
+              <View style={s.statItem}>
+                <View style={s.statLabelRow}>
+                  <Icon name="flash" size={11} color={colors.primaryLight} />
+                  <Text style={s.statLabel}>Credit Limit</Text>
+                </View>
+                <Text style={s.statValue}>{showBalance ? '₦150,000' : '••••'}</Text>
               </View>
             </View>
 
-            {/* Pristine Action Row */}
-            <View style={styles.cardActionRow}>
+            {/* Action buttons */}
+            <View style={s.cardActions}>
               <TouchableOpacity
-                style={styles.withdrawBtn}
+                style={s.actionBtnPrimary}
                 onPress={() => nav.navigate('VoiceTransfer')}
                 activeOpacity={0.85}
               >
                 <Icon name="send" size={14} color={colors.white} />
-                <Text style={styles.withdrawTxt} numberOfLines={1}>Transfer</Text>
+                <Text style={s.actionBtnPrimaryText}>Transfer</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={styles.topupBtn}
+                style={s.actionBtnSecondary}
                 onPress={() => nav.navigate('ApplyLoan')}
                 activeOpacity={0.85}
               >
-                <Icon name="bank" size={14} color={colors.primaryDeep} />
-                <Text style={styles.topupTxt} numberOfLines={1}>Get Credit</Text>
+                <Icon name="flash-outline" size={14} color={colors.primaryDeep} />
+                <Text style={s.actionBtnSecondaryText}>Get Credit</Text>
               </TouchableOpacity>
             </View>
           </View>
         </SafeAreaView>
       </LinearGradient>
 
-      {/* ── SCROLLABLE BODY CONTENT ── */}
+      {/* ─── Scrollable body ─── */}
       <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
+        style={s.scroll}
+        contentContainerStyle={s.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* ── QUICK ACTIONS (4 Grid Tiles) ── */}
-        <Text style={styles.sectionTitle}>{t('quickActions')}</Text>
-        <View style={styles.quickGrid}>
-          {QUICK_ACTIONS.map(action => (
+        {/* ── Quick Actions ── */}
+        <Text style={s.sectionTitle}>Quick Actions</Text>
+        <View style={s.quickGrid}>
+          {QUICK_ACTIONS.map((a) => (
             <TouchableOpacity
-              key={action.label}
-              style={[styles.quickTile, shadows.card]}
-              onPress={() => nav.navigate(action.route as any, action.params as any)}
+              key={a.label}
+              style={[s.quickTile, shadows.card]}
+              onPress={() => nav.navigate(a.route as any, a.params as any)}
               activeOpacity={0.82}
             >
-              <View style={[styles.quickTileIcon, { backgroundColor: action.bg }]}>
-                <Icon name={action.icon} size={22} color={action.color} />
+              <View style={[s.quickTileIcon, { backgroundColor: a.bg }]}>
+                <Icon name={a.icon} size={21} color={a.color} />
               </View>
-              <Text style={styles.quickTileLabel}>{action.label}</Text>
+              <Text style={s.quickTileLabel}>{a.label}</Text>
             </TouchableOpacity>
           ))}
         </View>
 
-        {/* ── AI CREDIT OFFER BANNER ── */}
+        {/* ── Credit offer ── */}
         <TouchableOpacity
-          style={[styles.creditBanner, shadows.card]}
+          style={[s.creditBanner, shadows.card]}
           onPress={() => nav.navigate('ApplyLoan')}
           activeOpacity={0.85}
         >
-          <View style={styles.creditBannerLeft}>
-            <View style={styles.creditBannerIcon}>
-              <Icon name="flash" size={22} color={colors.primaryDeep} />
+          <LinearGradient
+            colors={['#4C1D95', '#3B1566']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={s.creditBannerGrad}
+          >
+            <View style={s.creditBannerIconWrap}>
+              <Icon name="flash" size={20} color="#FCD34D" />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={styles.creditBannerTitle}>Pre-Approved Loan: ₦150,000</Text>
-              <Text style={styles.creditBannerSub}>0.5% daily interest · 1-click disbursement to account</Text>
+              <Text style={s.creditBannerTitle}>Pre-Approved: ₦150,000</Text>
+              <Text style={s.creditBannerSub}>0.5% daily · 1-click disbursement</Text>
             </View>
-          </View>
-          <Icon name="arrow-forward" size={16} color={colors.primaryMid} />
+            <Icon name="chevron-forward" size={18} color="rgba(255,255,255,0.7)" />
+          </LinearGradient>
         </TouchableOpacity>
 
-        {/* ── RECENT TRANSACTIONS ── */}
-        <View style={styles.txnHeader}>
-          <Text style={styles.sectionTitle}>Recent Activity</Text>
+        {/* ── Recent activity ── */}
+        <View style={s.sectionRow}>
+          <Text style={s.sectionTitle}>Recent Activity</Text>
           <TouchableOpacity onPress={() => nav.navigate('AllTransactions')} activeOpacity={0.7}>
-            <Text style={styles.seeAll}>See All</Text>
+            <Text style={s.seeAll}>See all</Text>
           </TouchableOpacity>
         </View>
 
-        <View style={[styles.txnCard, shadows.card]}>
-          {RECENT_TXN.map((txn, i) => {
-            const iconData =
-              txn.type === 'sale' ? { name: 'receipt' as const, color: colors.successGreen, bg: '#E8FFF2' } :
-                txn.type === 'credit' ? { name: 'card' as const, color: '#1565C0', bg: '#EBF5FF' } :
-                  { name: 'transfer' as const, color: colors.warningOrange, bg: '#FFF3E8' };
-            return (
-              <View key={txn.id} style={[styles.txnRow, i < RECENT_TXN.length - 1 && styles.txnBorder]}>
-                <View style={[styles.txnDot, { backgroundColor: iconData.bg }]}>
-                  <Icon name={iconData.name} size={18} color={iconData.color} />
-                </View>
-                <View style={styles.txnInfo}>
-                  <Text style={styles.txnLabel}>{txn.label}</Text>
-                  <Text style={styles.txnDate}>{txn.date}</Text>
-                </View>
-                <Text style={[styles.txnAmount, { color: txn.amount.startsWith('+') ? colors.successGreen : colors.textDark }]}>
-                  {txn.amount}
-                </Text>
+        <View style={[s.txnCard, shadows.card]}>
+          {RECENT_TXN.map((txn, i) => (
+            <View key={txn.id} style={[s.txnRow, i < RECENT_TXN.length - 1 && s.txnSep]}>
+              <TxnIcon type={txn.type} />
+              <View style={s.txnInfo}>
+                <Text style={s.txnLabel} numberOfLines={1}>{txn.label}</Text>
+                <Text style={s.txnDate}>{txn.date}</Text>
               </View>
-            );
-          })}
+              <Text
+                style={[
+                  s.txnAmount,
+                  { color: txn.amount.startsWith('+') ? '#059669' : colors.textDark },
+                ]}
+              >
+                {txn.amount}
+              </Text>
+            </View>
+          ))}
         </View>
 
         <View style={{ height: spacing.xxxl * 2 }} />
@@ -232,231 +268,204 @@ export function HomeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.grayBG },
+const s = StyleSheet.create({
+  root: { flex: 1, backgroundColor: '#F1F5F9' },
 
-  greetRow: {
+  topBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.xs,
+    paddingBottom: spacing.xs,
   },
-  headerWemaPill: {
+  accountPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    gap: 5,
+    backgroundColor: 'rgba(255,255,255,0.13)',
     borderRadius: radius.pill,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.25)',
+    borderColor: 'rgba(255,255,255,0.18)',
   },
-  wemaPillLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  headerWemaText: {
+  accountPillText: {
     fontSize: 11,
     color: colors.white,
     fontWeight: '600',
   },
-  wemaBoldNum: {
-    fontWeight: '800',
-  },
-  headerIconBtn: {
+  iconBtn: {
     width: 36,
     height: 36,
-    borderRadius: 10,
+    borderRadius: radius.md,
     backgroundColor: 'rgba(255,255,255,0.13)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.18)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  notifDot: {
+  notifBadge: {
     position: 'absolute',
-    top: 7,
-    right: 7,
+    top: 8,
+    right: 8,
     width: 7,
     height: 7,
     borderRadius: 4,
-    backgroundColor: colors.warningOrange,
+    backgroundColor: '#F59E0B',
     borderWidth: 1.5,
     borderColor: colors.primaryDeep,
   },
-  tierBadge: {
+
+  statusRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    backgroundColor: 'rgba(255,255,255,0.10)',
+    backgroundColor: 'rgba(52,211,153,0.15)',
     alignSelf: 'flex-start',
     marginLeft: spacing.lg,
-    marginTop: 4,
+    marginTop: 2,
     paddingHorizontal: 10,
     paddingVertical: 3,
     borderRadius: radius.pill,
-  },
-  tierText: { fontSize: 10, color: colors.white, fontWeight: '600' },
-
-  // Balance Card — COMPACT & SHIFTED UP
-  balanceCard: {
-    backgroundColor: colors.white,
-    borderRadius: radius.xl,
-    padding: spacing.md,
-    marginHorizontal: spacing.lg,
-    marginTop: spacing.xs,
-    marginBottom: spacing.xs,
     borderWidth: 1,
-    borderColor: 'rgba(74, 29, 122, 0.08)',
+    borderColor: 'rgba(52,211,153,0.3)',
   },
-  cardHeaderRow: {
+  statusText: { fontSize: 10, color: '#34D399', fontWeight: '700' },
+
+  balCard: {
+    backgroundColor: colors.white,
+    borderRadius: radius.xxl,
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.md,
+    marginBottom: spacing.sm,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  balCardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    marginBottom: spacing.xs,
   },
-  labelWithIcon: {
+  balCardLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.xs,
+    gap: spacing.sm,
     flex: 1,
   },
-  bankIconWrap: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
+  balIconWrap: {
+    width: 34,
+    height: 34,
+    borderRadius: radius.md,
     backgroundColor: colors.accentLight,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  balanceLbl: {
+  balLabel: {
     fontSize: typography.sizes.small,
-    color: colors.textDark,
     fontWeight: '800',
+    color: colors.textDark,
   },
-  balanceSub: {
-    fontSize: 10,
-    color: colors.textMuted,
-    marginTop: 1,
-  },
-  eyeBtn: {
-    padding: 4,
-  },
-  balanceDisplayRow: {
-    marginVertical: 4,
-  },
-  balanceAmt: {
+  balSublabel: { fontSize: 10, color: colors.textMuted },
+  balAmount: {
     fontSize: 30,
     fontWeight: '900',
     color: colors.primaryDeep,
-    letterSpacing: 0.5,
+    letterSpacing: -0.5,
+    marginVertical: spacing.xs,
   },
 
-  // Stats Grid (2 Boxes)
-  statsGrid: {
+  statsRow: {
     flexDirection: 'row',
-    gap: spacing.sm,
-    marginVertical: spacing.sm,
-  },
-  statBox: {
-    flex: 1,
-    backgroundColor: '#F9F6FC',
+    backgroundColor: '#F8FAFC',
     borderRadius: radius.lg,
-    padding: 10,
     borderWidth: 1,
-    borderColor: 'rgba(74, 29, 122, 0.06)',
+    borderColor: '#E2E8F0',
+    padding: spacing.md,
+    marginBottom: spacing.md,
+    gap: spacing.md,
+    alignItems: 'center',
   },
-  statBoxLabel: {
-    fontSize: 10,
-    color: colors.textMuted,
-    fontWeight: '600',
-  },
-  statBoxValue: {
-    fontSize: typography.sizes.body,
-    fontWeight: '800',
-    color: colors.textDark,
-    marginTop: 2,
-  },
-  growthPill: {
+  statItem: { flex: 1 },
+  statLabelRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 3,
-    backgroundColor: '#E8FFF2',
-    paddingHorizontal: 5,
-    paddingVertical: 2,
-    borderRadius: radius.pill,
-    marginTop: 4,
-    alignSelf: 'flex-start',
+    marginBottom: 2,
   },
-  growthPillText: {
-    fontSize: 9,
-    color: colors.successGreen,
-    fontWeight: '700',
+  statLabel: { fontSize: 10, color: colors.textMuted, fontWeight: '700' },
+  statValue: {
+    fontSize: typography.sizes.body,
+    fontWeight: '800',
+    color: colors.textDark,
   },
-  statBoxSub: {
-    fontSize: 9,
-    color: colors.textMuted,
-    marginTop: 4,
-    fontWeight: '500',
+  statDivider: {
+    width: 1,
+    height: 28,
+    backgroundColor: colors.border,
   },
 
-  // Action Buttons
-  cardActionRow: {
-    flexDirection: 'row',
-    gap: spacing.xs,
-  },
-  withdrawBtn: {
+  cardActions: { flexDirection: 'row', gap: spacing.sm },
+  actionBtnPrimary: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 5,
+    gap: 6,
     backgroundColor: colors.primaryDeep,
-    paddingVertical: 10,
-    paddingHorizontal: spacing.xs,
-    borderRadius: radius.lg,
+    paddingVertical: 12,
+    borderRadius: radius.xl,
   },
-  withdrawTxt: {
-    fontSize: typography.sizes.tiny,
+  actionBtnPrimaryText: {
+    fontSize: typography.sizes.small,
     fontWeight: '800',
     color: colors.white,
   },
-  topupBtn: {
+  actionBtnSecondary: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 5,
+    gap: 6,
     backgroundColor: colors.accentLight,
-    paddingVertical: 10,
-    paddingHorizontal: spacing.xs,
-    borderRadius: radius.lg,
+    paddingVertical: 12,
+    borderRadius: radius.xl,
     borderWidth: 1,
-    borderColor: 'rgba(74, 29, 122, 0.15)',
+    borderColor: 'rgba(91,33,182,0.2)',
   },
-  topupTxt: {
-    fontSize: typography.sizes.tiny,
+  actionBtnSecondaryText: {
+    fontSize: typography.sizes.small,
     fontWeight: '800',
     color: colors.primaryDeep,
   },
 
-  // Scroll Content
   scroll: { flex: 1 },
-  scrollContent: { paddingHorizontal: spacing.lg, paddingTop: spacing.md },
+  scrollContent: { paddingHorizontal: spacing.lg, paddingTop: spacing.lg },
 
   sectionTitle: {
     fontSize: typography.sizes.body,
     fontWeight: '800',
     color: colors.textDark,
-    marginBottom: spacing.xs,
+    marginBottom: spacing.sm,
   },
-
-  // Quick Actions Grid (4 Tiles)
-  quickGrid: {
+  sectionRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: spacing.md,
-    gap: spacing.xs,
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+  },
+  seeAll: {
+    fontSize: typography.sizes.small,
+    fontWeight: '700',
+    color: colors.primaryLight,
+  },
+
+  quickGrid: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginBottom: spacing.lg,
   },
   quickTile: {
     flex: 1,
@@ -465,48 +474,87 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.xs,
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
   },
   quickTileIcon: {
-    width: 42,
-    height: 42,
-    borderRadius: 14,
+    width: 44,
+    height: 44,
+    borderRadius: radius.lg,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 6,
   },
   quickTileLabel: {
     fontSize: 11,
-    fontWeight: '700',
+    fontWeight: '800',
     color: colors.textDark,
     textAlign: 'center',
   },
 
-  // Credit Offer Banner
   creditBanner: {
+    borderRadius: radius.xl,
+    overflow: 'hidden',
+    marginBottom: spacing.lg,
+  },
+  creditBannerGrad: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    gap: spacing.md,
+    padding: spacing.md,
+  },
+  creditBannerIconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.md,
+    backgroundColor: 'rgba(252,211,77,0.18)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(252,211,77,0.3)',
+  },
+  creditBannerTitle: {
+    fontSize: typography.sizes.small,
+    fontWeight: '800',
+    color: colors.white,
+  },
+  creditBannerSub: { fontSize: 10, color: 'rgba(255,255,255,0.7)', marginTop: 2 },
+
+  txnCard: {
     backgroundColor: colors.white,
     borderRadius: radius.xl,
-    padding: spacing.md,
-    marginBottom: spacing.md,
     borderWidth: 1,
-    borderColor: '#F3EBFB',
+    borderColor: '#E2E8F0',
+    overflow: 'hidden',
   },
-  creditBannerLeft: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, flex: 1 },
-  creditBannerIcon: { width: 40, height: 40, borderRadius: 12, backgroundColor: colors.accentLight, alignItems: 'center', justifyContent: 'center' },
-  creditBannerTitle: { fontSize: typography.sizes.small, fontWeight: '800', color: colors.textDark },
-  creditBannerSub: { fontSize: 10, color: colors.textMuted, marginTop: 2 },
-
-  // Transactions
-  txnHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.xs },
-  seeAll: { fontSize: typography.sizes.tiny, fontWeight: '800', color: colors.primaryMid },
-  txnCard: { backgroundColor: colors.white, borderRadius: radius.xl, overflow: 'hidden' },
-  txnRow: { flexDirection: 'row', alignItems: 'center', padding: spacing.md, gap: spacing.md },
-  txnBorder: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
-  txnDot: { width: 36, height: 36, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
+  txnRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    gap: spacing.md,
+  },
+  txnSep: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: '#E2E8F0',
+  },
+  txnIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
   txnInfo: { flex: 1 },
-  txnLabel: { fontSize: typography.sizes.small, fontWeight: '700', color: colors.textDark },
-  txnDate: { fontSize: 10, color: colors.textMuted, marginTop: 1 },
-  txnAmount: { fontSize: typography.sizes.small, fontWeight: '800' },
+  txnLabel: {
+    fontSize: typography.sizes.small,
+    fontWeight: '700',
+    color: colors.textDark,
+  },
+  txnDate: { fontSize: 10, color: colors.textMuted, marginTop: 2 },
+  txnAmount: {
+    fontSize: typography.sizes.small,
+    fontWeight: '800',
+  },
 });

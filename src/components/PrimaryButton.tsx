@@ -8,6 +8,7 @@ import {
   TouchableOpacityProps,
   ViewStyle,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { colors, spacing, radius, typography, shadows } from '../theme/theme';
 import { Ionicons } from './Icon';
 
@@ -34,57 +35,64 @@ export function PrimaryButton({
   ...rest
 }: PrimaryButtonProps) {
   const isGreen = variant === 'green';
+  const gradColors: [string, string] = isGreen
+    ? ['#10B981', '#059669']
+    : [colors.primaryLight, colors.primaryDeep];
 
   return (
     <TouchableOpacity
       style={[
-        styles.button,
+        styles.buttonWrapper,
         fullWidth && styles.fullWidth,
-        isGreen ? styles.greenBg : styles.purpleBg,
         (disabled || loading) && styles.disabled,
         shadows.button,
         style,
       ]}
       disabled={disabled || loading}
-      activeOpacity={0.85}
+      activeOpacity={0.88}
       {...rest}
     >
-      {loading ? (
-        <ActivityIndicator color={colors.white} size="small" />
-      ) : (
-        <View style={styles.content}>
-          {icon && <View style={styles.iconLeft}>{icon}</View>}
-          <Text style={styles.text}>{title}</Text>
-          {showArrow && (
-            <Ionicons
-              name="arrow-forward"
-              size={18}
-              color={colors.white}
-              style={styles.arrow}
-            />
-          )}
-        </View>
-      )}
+      <LinearGradient
+        colors={gradColors}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={styles.gradient}
+      >
+        {loading ? (
+          <ActivityIndicator color={colors.white} size="small" />
+        ) : (
+          <View style={styles.content}>
+            {icon && <View style={styles.iconLeft}>{icon}</View>}
+            <Text style={styles.text}>{title}</Text>
+            {showArrow && (
+              <Ionicons
+                name="arrow-forward"
+                size={18}
+                color={colors.white}
+                style={styles.arrow}
+              />
+            )}
+          </View>
+        )}
+      </LinearGradient>
     </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
-  button: {
-    height: 54,
-    borderRadius: radius.lg,
-    paddingHorizontal: spacing.xl,
-    alignItems: 'center',
-    justifyContent: 'center',
+  buttonWrapper: {
+    height: 52,
+    borderRadius: radius.xl,
+    overflow: 'hidden',
   },
   fullWidth: {
     width: '100%',
   },
-  purpleBg: {
-    backgroundColor: colors.primaryDeep,
-  },
-  greenBg: {
-    backgroundColor: colors.successGreen,
+  gradient: {
+    flex: 1,
+    paddingHorizontal: spacing.xl,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   disabled: {
     opacity: 0.5,
@@ -100,8 +108,8 @@ const styles = StyleSheet.create({
   text: {
     color: colors.white,
     fontSize: typography.sizes.body,
-    fontWeight: '700',
-    letterSpacing: 0.2,
+    fontWeight: '800',
+    letterSpacing: 0.3,
   },
   arrow: {
     marginLeft: spacing.sm,

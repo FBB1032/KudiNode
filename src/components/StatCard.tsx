@@ -50,9 +50,11 @@ export function StatCard({
 const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.white,
-    borderRadius: radius.lg,
+    borderRadius: radius.xl,
     padding: spacing.md,
     flex: 1,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
   },
   headerRow: {
     flexDirection: 'row',
@@ -61,10 +63,10 @@ const styles = StyleSheet.create({
   },
   label: {
     color: colors.textMuted,
-    fontSize: typography.sizes.tiny,
-    fontWeight: '600',
+    fontSize: 10,
+    fontWeight: '700',
     textTransform: 'uppercase',
-    letterSpacing: 0.4,
+    letterSpacing: 0.5,
   },
   value: {
     color: colors.textDark,
@@ -77,8 +79,8 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   subtext: {
-    fontSize: typography.sizes.tiny,
-    fontWeight: '600',
+    fontSize: 10,
+    fontWeight: '700',
   },
   subtextGreen: { color: colors.successGreen },
   subtextOrange: { color: colors.warningOrange },

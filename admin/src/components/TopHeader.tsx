@@ -34,16 +34,16 @@ const notifications: Notif[] = [
 ]
 
 const notifIcon: Record<string, React.ReactNode> = {
-  danger:  <AlertCircle  size={13} className="text-red-500"     />,
-  warning: <AlertTriangle size={13} className="text-amber-500"  />,
-  success: <CheckCircle  size={13} className="text-emerald-500" />,
-  info:    <Info          size={13} className="text-blue-500"   />,
+  danger:  <AlertCircle  size={14} className="text-red-500"     />,
+  warning: <AlertTriangle size={14} className="text-amber-500"  />,
+  success: <CheckCircle  size={14} className="text-emerald-500" />,
+  info:    <Info          size={14} className="text-blue-500"   />,
 }
 const notifBg: Record<string, string> = {
-  danger:  'bg-red-50 dark:bg-red-900/20',
-  warning: 'bg-amber-50 dark:bg-amber-900/20',
-  success: 'bg-emerald-50 dark:bg-emerald-900/20',
-  info:    'bg-blue-50 dark:bg-blue-900/20',
+  danger:  'bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800/50',
+  warning: 'bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/50',
+  success: 'bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/50',
+  info:    'bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/50',
 }
 
 const GLOBAL_DATABASE = [
@@ -76,7 +76,6 @@ export default function TopHeader({ activeView }: Props) {
     setTimeout(() => setToastMessage(null), 3000)
   }
 
-  // REAL CSV Download trigger on Export button click
   const handleRealExportCSV = () => {
     const csvContent = `ID,Merchant Name,Location,Region,KYC Status,Trust Score,Wema Account Number,Wema Account Name,Status
 M-1042,Amina Bello,"Ikeja, Lagos",Lagos,Tier 1,87,0129384756,Amina Babangida Bello,Active
@@ -99,32 +98,32 @@ M-1048,Tayo Abiodun,"GRA, Port Harcourt",Port Harcourt,Tier 1,82,0133221100,Tayo
   }
 
   return (
-    <header className="fixed top-0 right-0 left-[260px] z-30 h-16 flex items-center gap-3 px-6 bg-white/95 dark:bg-[#080D14]/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800/80">
-      {/* Breadcrumb */}
+    <header className="fixed top-0 right-0 left-[260px] z-30 h-16 flex items-center gap-3.5 px-6 bg-white/90 dark:bg-[#06090E]/90 backdrop-blur-xl border-b border-slate-200/90 dark:border-slate-800/80">
+      {/* Title & Greeting */}
       <div className="flex-1 min-w-0">
-        <h1 className="text-[15px] font-bold text-slate-900 dark:text-white truncate leading-tight">
+        <h1 className="text-sm font-extrabold text-slate-900 dark:text-white truncate leading-tight tracking-tight">
           {viewLabels[activeView]}
         </h1>
         {activeView === 'dashboard' && (
-          <p className="text-[11px] text-slate-400 leading-tight">
-            {getGreeting()}, Ahmad — here's what's happening across the network today.
+          <p className="text-[11px] text-slate-400 dark:text-slate-500 font-medium leading-tight mt-0.5">
+            {getGreeting()}, Ahmad — network monitoring active.
           </p>
         )}
       </div>
 
-      {/* Global Interactive Search Input */}
+      {/* Global Search Input */}
       <div className="relative hidden md:block">
-        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700/80 w-64 xl:w-80 focus-within:ring-2 focus-within:ring-violet-500/30 focus-within:border-violet-500 transition-all">
-          <Search size={13} className="text-slate-400 flex-shrink-0" />
+        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-100/90 dark:bg-[#0D1321] border border-slate-200 dark:border-slate-800 w-64 xl:w-80 focus-within:ring-2 focus-within:ring-violet-500/30 focus-within:border-violet-500 transition-all shadow-inner">
+          <Search size={14} className="text-slate-400 flex-shrink-0" />
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Search merchants, loans, accounts..."
-            className="bg-transparent text-[13px] text-slate-700 dark:text-slate-300 placeholder:text-slate-400 outline-none w-full"
+            className="bg-transparent text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-600 outline-none w-full font-medium"
           />
           {search && (
             <button onClick={() => setSearch('')} className="text-slate-400 hover:text-slate-600 flex-shrink-0">
-              <X size={12} />
+              <X size={13} />
             </button>
           )}
         </div>
@@ -138,10 +137,10 @@ M-1048,Tayo Abiodun,"GRA, Port Harcourt",Port Harcourt,Tier 1,82,0133221100,Tayo
               exit={{ opacity: 0, y: 6 }}
               className="absolute left-0 top-full mt-2 w-80 xl:w-96 card shadow-2xl z-50 p-2 border border-slate-200 dark:border-slate-800"
             >
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-3 py-1.5 border-b border-slate-100 dark:border-slate-800">
+              <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider px-3 py-1.5 border-b border-slate-100 dark:border-slate-800/80">
                 Search Results ({searchResults.length} matches)
               </p>
-              <div className="max-h-64 overflow-y-auto divide-y divide-slate-50 dark:divide-slate-800/40">
+              <div className="max-h-64 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/50">
                 {searchResults.length > 0 ? (
                   searchResults.map((res, i) => (
                     <div
@@ -156,14 +155,14 @@ M-1048,Tayo Abiodun,"GRA, Port Harcourt",Port Harcourt,Tier 1,82,0133221100,Tayo
                         {res.icon}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-[12px] font-bold text-slate-900 dark:text-white truncate">{res.title}</p>
-                        <p className="text-[10px] text-slate-400 truncate">{res.subtitle}</p>
+                        <p className="text-xs font-bold text-slate-900 dark:text-white truncate">{res.title}</p>
+                        <p className="text-[10px] text-slate-400 truncate mt-0.5">{res.subtitle}</p>
                       </div>
                       <ArrowRight size={12} className="text-slate-400 flex-shrink-0" />
                     </div>
                   ))
                 ) : (
-                  <div className="p-4 text-center text-xs text-slate-400">
+                  <div className="p-4 text-center text-xs text-slate-400 font-medium">
                     No matching records found for "{search}"
                   </div>
                 )}
@@ -173,20 +172,23 @@ M-1048,Tayo Abiodun,"GRA, Port Harcourt",Port Harcourt,Tier 1,82,0133221100,Tayo
         </AnimatePresence>
       </div>
 
-      {/* Real Export Button (Triggers browser CSV download directly) */}
-      <button onClick={handleRealExportCSV} className="btn-primary h-9 px-4 inline-flex gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs">
-        <Download size={14} />
-        Export CSV
+      {/* Export CSV Button */}
+      <button
+        onClick={handleRealExportCSV}
+        className="btn-success h-9 px-3.5 inline-flex items-center gap-1.5 text-xs font-bold shadow-md shadow-emerald-600/15"
+      >
+        <Download size={13} />
+        <span>Export CSV</span>
       </button>
 
       {/* Notifications */}
       <div className="relative">
         <button
           onClick={() => setShowNotif(v => !v)}
-          className="btn-icon relative h-9 w-9"
+          className="btn-icon relative h-9 w-9 flex items-center justify-center rounded-xl bg-slate-100/80 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60"
         >
-          <Bell size={16} />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-[#080D14]" />
+          <Bell size={15} />
+          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full border-2 border-white dark:border-[#06090E]" />
         </button>
 
         <AnimatePresence>
@@ -198,10 +200,10 @@ M-1048,Tayo Abiodun,"GRA, Port Harcourt",Port Harcourt,Tier 1,82,0133221100,Tayo
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: -6, scale: 0.97 }}
                 transition={{ duration: 0.14, ease: 'easeOut' }}
-                className="absolute right-0 top-full mt-2 w-80 card shadow-2xl z-50 overflow-hidden"
+                className="absolute right-0 top-full mt-2 w-80 card shadow-2xl z-50 overflow-hidden border border-slate-200 dark:border-slate-800"
               >
-                <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 dark:border-slate-800">
-                  <span className="font-bold text-sm text-slate-900 dark:text-white">Notifications</span>
+                <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200/80 dark:border-slate-800/80">
+                  <span className="font-extrabold text-xs text-slate-900 dark:text-white uppercase tracking-wider">Alerts & Notifications</span>
                   <span className="badge-danger">{notifications.length} new</span>
                 </div>
                 <div className="divide-y divide-slate-100 dark:divide-slate-800/60 max-h-64 overflow-y-auto">
@@ -209,8 +211,8 @@ M-1048,Tayo Abiodun,"GRA, Port Harcourt",Port Harcourt,Tier 1,82,0133221100,Tayo
                     <div key={n.id} className="flex items-start gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/40 cursor-pointer transition-colors">
                       <span className={`mt-0.5 p-1 rounded-md flex-shrink-0 ${notifBg[n.type]}`}>{notifIcon[n.type]}</span>
                       <div className="flex-1 min-w-0">
-                        <p className="text-[12px] text-slate-700 dark:text-slate-300 leading-snug">{n.text}</p>
-                        <p className="text-[10px] text-slate-400 mt-0.5">{n.time}</p>
+                        <p className="text-xs text-slate-700 dark:text-slate-300 leading-snug font-medium">{n.text}</p>
+                        <p className="text-[10px] text-slate-400 mt-1 font-semibold">{n.time}</p>
                       </div>
                     </div>
                   ))}
@@ -224,18 +226,18 @@ M-1048,Tayo Abiodun,"GRA, Port Harcourt",Port Harcourt,Tier 1,82,0133221100,Tayo
       {/* Theme Toggle */}
       <motion.button
         onClick={toggleTheme}
-        whileTap={{ scale: 0.88 }}
-        className="btn-icon h-9 w-9"
+        whileTap={{ scale: 0.9 }}
+        className="btn-icon h-9 w-9 flex items-center justify-center rounded-xl bg-slate-100/80 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60"
         title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
       >
         <AnimatePresence mode="wait" initial={false}>
           {isDark ? (
             <motion.span key="sun" initial={{ rotate: -80, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 80, opacity: 0 }} transition={{ duration: 0.18 }} className="block">
-              <Sun size={16} className="text-amber-400" />
+              <Sun size={15} className="text-amber-400" />
             </motion.span>
           ) : (
             <motion.span key="moon" initial={{ rotate: 80, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: -80, opacity: 0 }} transition={{ duration: 0.18 }} className="block">
-              <Moon size={16} className="text-slate-600" />
+              <Moon size={15} className="text-slate-600" />
             </motion.span>
           )}
         </AnimatePresence>

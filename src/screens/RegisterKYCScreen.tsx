@@ -14,11 +14,11 @@ import {
   StatusBar,
 } from "react-native";
 import { CameraView, useCameraPermissions } from "expo-camera";
+import { LinearGradient } from "expo-linear-gradient";
 import { colors, spacing, radius, typography, shadows } from "../theme/theme";
-import { TopHeader } from "../components/TopHeader";
+import { Icon } from "../components/Icon";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { SecondaryButton } from "../components/SecondaryButton";
-import { Icon } from "../components/Icon";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -258,49 +258,86 @@ export function RegisterKYCScreen() {
     }
   };
 
+  const STEP_LABELS = ['Personal', 'Trade', 'Documents'];
+  const STEP_ICONS: string[] = [
+    'person-outline',
+    'storefront-outline',
+    'document-text-outline',
+  ];
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar
         barStyle="light-content"
-        backgroundColor={colors.primaryDeep}
+        backgroundColor="#1A0840"
         translucent={false}
       />
-      <TopHeader
-        showBack
-        title="Merchant KYC Registration"
-        subtitle="Tier-1 Regulatory Identity Intake"
-      />
 
-      {/* Stepper Bar */}
+      {/* ── Hero header ── */}
+      <LinearGradient
+        colors={['#1A0840', colors.primaryDeep, '#4C1D95']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.heroHeader}
+      >
+        <TouchableOpacity
+          style={styles.backBtn}
+          onPress={handlePrevStep}
+          activeOpacity={0.8}
+        >
+        <Icon name="arrow-back" size={20} color={colors.white} />
+        </TouchableOpacity>
+        <View style={styles.heroTextBlock}>
+          <Text style={styles.heroTitle}>Merchant Registration</Text>
+          <Text style={styles.heroSub}>Tier-1 Identity Verification</Text>
+        </View>
+        <View style={styles.heroBadge}>
+          <Icon name="shield-checkmark" size={12} color="#34D399" />
+          <Text style={styles.heroBadgeText}>KYC</Text>
+        </View>
+      </LinearGradient>
+
+      {/* ── Premium stepper ── */}
       <View style={styles.stepperBar}>
-        {[1, 2, 3].map((s) => {
+        {[1, 2, 3].map((s, idx) => {
           const active = s === currentStep;
           const done = s < currentStep;
           return (
-            <View key={s} style={styles.stepItem}>
-              <View
-                style={[
-                  styles.stepDot,
-                  done && styles.stepDotDone,
-                  active && styles.stepDotActive,
-                ]}
-              >
-                {done ? (
-                  <Icon name="checkmark" size={14} color={colors.white} />
-                ) : (
-                  <Text
-                    style={[styles.stepNum, active && styles.stepNumActive]}
-                  >
-                    {s}
-                  </Text>
-                )}
+            <React.Fragment key={s}>
+              {/* connector line */}
+              {idx > 0 && (
+                <View
+                  style={[
+                    styles.stepConnector,
+                    done && styles.stepConnectorDone,
+                  ]}
+                />
+              )}
+              <View style={styles.stepItem}>
+                <View
+                  style={[
+                    styles.stepDot,
+                    done && styles.stepDotDone,
+                    active && styles.stepDotActive,
+                  ]}
+                >
+                  {done ? (
+                    <Icon name="checkmark" size={14} color={colors.white} />
+                  ) : (
+                    <Icon
+                      name={STEP_ICONS[idx] as string}
+                      size={14}
+                      color={active ? colors.primaryDeep : colors.textMuted}
+                    />
+                  )}
+                </View>
+                <Text
+                  style={[styles.stepLabel, active && styles.stepLabelActive]}
+                >
+                  {STEP_LABELS[idx]}
+                </Text>
               </View>
-              <Text
-                style={[styles.stepLabel, active && styles.stepLabelActive]}
-              >
-                {s === 1 ? "Personal" : s === 2 ? "Trade" : "Documents"}
-              </Text>
-            </View>
+            </React.Fragment>
           );
         })}
       </View>
@@ -318,22 +355,18 @@ export function RegisterKYCScreen() {
           {currentStep === 1 && (
             <View style={[styles.card, shadows.card]}>
               <View style={styles.cardHeaderRow}>
-                <Icon name="person" size={22} color={colors.primaryMid} />
+                <View style={[styles.cardIconWrap, { backgroundColor: '#F3E8FF' }]}>
+                  <Icon name="person" size={18} color={colors.primaryMid} />
+                </View>
                 <View style={{ flex: 1, marginLeft: spacing.sm }}>
-                  <Text style={styles.cardTitle}>1. Personal Identity</Text>
-                  <Text style={styles.cardSub}>
-                    BVN & NIN real-time identity validation
-                  </Text>
+                  <Text style={styles.cardTitle}>Personal Identity</Text>
+                  <Text style={styles.cardSub}>Identity &amp; credentials</Text>
                 </View>
               </View>
 
               {formError && (
                 <View style={styles.errorBanner}>
-                  <Icon
-                    name="alert-circle"
-                    size={16}
-                    color={colors.warningOrange}
-                  />
+                  <Icon name="alert-circle" size={16} color="#D97706" />
                   <Text style={styles.errorText}>{formError}</Text>
                 </View>
               )}
@@ -378,7 +411,7 @@ export function RegisterKYCScreen() {
               />
 
               <FloatingLabelInput
-                label="Bank Verification Number (11-Digit BVN)"
+                label="BVN (11-Digit)"
                 leadingIcon="card"
                 keyboardType="number-pad"
                 secureTextEntry
@@ -386,16 +419,12 @@ export function RegisterKYCScreen() {
                 onChangeText={setBvn}
                 maxLength={11}
                 trailingIcon={
-                  <Icon
-                    name="shield-checkmark"
-                    size={18}
-                    color={colors.successGreen}
-                  />
+                  <Icon name="shield-checkmark" size={18} color={colors.successGreen} />
                 }
               />
 
               <FloatingLabelInput
-                label="National Identification Number (11-Digit NIN)"
+                label="NIN (11-Digit)"
                 leadingIcon="card"
                 keyboardType="number-pad"
                 value={nin}
@@ -447,21 +476,17 @@ export function RegisterKYCScreen() {
           {currentStep === 2 && (
             <View style={[styles.card, shadows.card]}>
               <View style={styles.cardHeaderRow}>
-                <Icon name="receipt" size={22} color={colors.primaryMid} />
+                <View style={[styles.cardIconWrap, { backgroundColor: '#FEF3C7' }]}>
+                  <Icon name="storefront-outline" size={18} color="#D97706" />
+                </View>
                 <View style={{ flex: 1, marginLeft: spacing.sm }}>
-                  <Text style={styles.cardTitle}>
-                    2. Trade & Settlement Details
-                  </Text>
-                  <Text style={styles.cardSub}>
-                    Market cluster & settlement account assignment
-                  </Text>
+                  <Text style={styles.cardTitle}>Trade &amp; Settlement</Text>
+                  <Text style={styles.cardSub}>Market &amp; account details</Text>
                 </View>
               </View>
 
               <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>
-                  Primary Market Location Cluster
-                </Text>
+                <Text style={styles.inputLabel}>Market Location</Text>
                 <View style={styles.pickerOptionsWrap}>
                   {MARKETS.map((mkt) => {
                     const selected = marketCluster === mkt;
@@ -496,7 +521,7 @@ export function RegisterKYCScreen() {
               </View>
 
               <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Commodities Sold</Text>
+                <Text style={styles.inputLabel}>Commodities</Text>
                 <View style={styles.pickerOptionsWrap}>
                   {COMMODITIES.map((item) => {
                     const selected = commodityType === item;
@@ -531,15 +556,14 @@ export function RegisterKYCScreen() {
               </View>
 
               <FloatingLabelInput
-                label="Market Association / Esusu Co-op Name (Optional)"
+                label="Esusu Co-op Name (Optional)"
                 leadingIcon="people"
                 value={esusuCoopName}
                 onChangeText={setEsusuCoopName}
               />
 
-              {/* Wema Bank Account Details for Settlement */}
               <FloatingLabelInput
-                label="Wema Bank Account Number (10 Digits)"
+                label="Wema Account Number"
                 leadingIcon="bank"
                 keyboardType="number-pad"
                 value={wemaAccountNumber}
@@ -548,30 +572,25 @@ export function RegisterKYCScreen() {
               />
 
               <FloatingLabelInput
-                label="Wema Account Name (Verified via NIP)"
+                label="Wema Account Name"
                 value={wemaAccountName}
                 onChangeText={setWemaAccountName}
                 trailingIcon={
-                  <Icon
-                    name="checkmark-circle"
-                    size={18}
-                    color={colors.successGreen}
-                  />
+                  <Icon name="checkmark-circle" size={18} color={colors.successGreen} />
                 }
               />
 
               <View style={styles.settlementBanner}>
-                <Icon name="bank" size={24} color={colors.primaryDeep} />
-                <View style={{ flex: 1, marginLeft: spacing.sm }}>
-                  <Text style={styles.settlementTitle}>
-                    Wema Settlement Account Verified
-                  </Text>
+                <View style={styles.settlementIconWrap}>
+                  <Icon name="bank-outline" size={22} color={colors.primaryDeep} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                    <Text style={styles.settlementTitle}>Settlement Account</Text>
+                    <Icon name="checkmark-circle" size={13} color={colors.successGreen} />
+                  </View>
                   <Text style={styles.settlementAccNum}>
                     {wemaAccountNumber} · {wemaAccountName}
-                  </Text>
-                  <Text style={styles.settlementSub}>
-                    Direct NIP settlement linked for daily sales payouts &
-                    credit disbursement
                   </Text>
                 </View>
               </View>
@@ -582,22 +601,18 @@ export function RegisterKYCScreen() {
           {currentStep === 3 && (
             <View style={[styles.card, shadows.card]}>
               <View style={styles.cardHeaderRow}>
-                <Icon name="camera" size={22} color={colors.primaryMid} />
+                <View style={[styles.cardIconWrap, { backgroundColor: '#D1FAE5' }]}>
+                  <Icon name="camera-outline" size={18} color="#059669" />
+                </View>
                 <View style={{ flex: 1, marginLeft: spacing.sm }}>
-                  <Text style={styles.cardTitle}>
-                    3. Camera Capture & Biometrics
-                  </Text>
-                  <Text style={styles.cardSub}>
-                    Liveness selfie match & ID document scan
-                  </Text>
+                  <Text style={styles.cardTitle}>Biometrics &amp; Documents</Text>
+                  <Text style={styles.cardSub}>Selfie &amp; ID scan</Text>
                 </View>
               </View>
 
               {/* ID Document Selector & Camera Scan */}
               <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>
-                  Government Identification Type
-                </Text>
+                <Text style={styles.inputLabel}>Government ID Type</Text>
                 <View style={styles.idTypeRow}>
                   {[
                     { id: "NIN", label: "NIN Slip" },
@@ -635,28 +650,22 @@ export function RegisterKYCScreen() {
                   activeOpacity={0.8}
                 >
                   <Icon
-                    name={idCaptured ? "checkmark-circle" : "camera"}
+                    name={idCaptured ? "checkmark-circle" : "camera-outline"}
                     size={32}
                     color={idCaptured ? colors.successGreen : colors.primaryMid}
                   />
                   <Text style={styles.uploadBoxTitle}>
-                    {idCaptured
-                      ? "Primary ID Document Scanned"
-                      : "Scan ID Document with Camera"}
+                    {idCaptured ? "ID Document Scanned" : "Scan ID Document"}
                   </Text>
                   <Text style={styles.uploadBoxSub}>
-                    {idCaptured
-                      ? "Photo captured & verified via Prembly sandbox"
-                      : "Tap to open camera and scan your ID document"}
+                    {idCaptured ? "Captured & verified" : "Tap to open camera"}
                   </Text>
                 </TouchableOpacity>
               </View>
 
               {/* Live Selfie Camera Capture */}
               <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>
-                  Live Selfie / Liveness Biometric Match
-                </Text>
+                <Text style={styles.inputLabel}>Live Selfie Capture</Text>
                 <TouchableOpacity
                   style={[
                     styles.selfieBox,
@@ -667,31 +676,23 @@ export function RegisterKYCScreen() {
                 >
                   <View style={styles.faceMeshGuide}>
                     <Icon
-                      name={selfieCaptured ? "shield-checkmark" : "person"}
+                      name={selfieCaptured ? "shield-checkmark" : "person-outline"}
                       size={40}
-                      color={
-                        selfieCaptured ? colors.successGreen : colors.white
-                      }
+                      color={selfieCaptured ? '#34D399' : colors.white}
                     />
                   </View>
                   <Text style={styles.selfieTitle}>
-                    {selfieCaptured
-                      ? "Liveness Selfie Captured"
-                      : "Take Live Selfie with Camera"}
+                    {selfieCaptured ? "Selfie Captured" : "Take Live Selfie"}
                   </Text>
                   <Text style={styles.selfieSub}>
-                    {selfieCaptured
-                      ? "Matched 99.4% against BVN facial database"
-                      : "Tap to open front camera and take liveness selfie"}
+                    {selfieCaptured ? "Liveness verified" : "Tap to open front camera"}
                   </Text>
                 </TouchableOpacity>
               </View>
 
               {/* Proof of Business / Trade Evidence Scan */}
               <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>
-                  Proof of Business / Trade Ledger Scan (Optional)
-                </Text>
+                <Text style={styles.inputLabel}>Trade Ledger Scan <Text style={{ color: colors.textMuted, fontWeight: '400' }}>(Optional)</Text></Text>
                 <TouchableOpacity
                   style={[
                     styles.uploadBox,
@@ -701,21 +702,15 @@ export function RegisterKYCScreen() {
                   activeOpacity={0.8}
                 >
                   <Icon
-                    name={ledgerCaptured ? "checkmark-circle" : "document-text"}
+                    name={ledgerCaptured ? "checkmark-circle" : "document-text-outline"}
                     size={32}
-                    color={
-                      ledgerCaptured ? colors.successGreen : colors.primaryMid
-                    }
+                    color={ledgerCaptured ? colors.successGreen : colors.primaryMid}
                   />
                   <Text style={styles.uploadBoxTitle}>
-                    {ledgerCaptured
-                      ? "Handwritten Sales Ledger Uploaded"
-                      : "Scan Paper Receipts / Exercise Book"}
+                    {ledgerCaptured ? "Sales Ledger Uploaded" : "Scan Trade Ledger"}
                   </Text>
                   <Text style={styles.uploadBoxSub}>
-                    {ledgerCaptured
-                      ? "AI parsed 14 trade entries for Trust Score credit"
-                      : "Tap camera to scan paper sales ledger photo"}
+                    {ledgerCaptured ? "AI-parsed for Trust Score" : "Tap to scan paper receipts"}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -833,11 +828,7 @@ export function RegisterKYCScreen() {
           ) : (
             <View style={styles.modalCard}>
               <View style={styles.successIconCircle}>
-                <Icon
-                  name="checkmark-circle"
-                  size={48}
-                  color={colors.successGreen}
-                />
+                <Icon name="checkmark-circle" size={48} color={colors.successGreen} />
               </View>
               <Text style={styles.successTitle}>KYC Submitted!</Text>
               <Text style={styles.successSub}>
@@ -893,22 +884,80 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.grayBG,
   },
+
+  /* Hero header */
+  heroHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    gap: spacing.sm,
+  },
+  backBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: radius.md,
+    backgroundColor: 'rgba(255,255,255,0.13)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  heroTextBlock: { flex: 1 },
+  heroTitle: {
+    fontSize: typography.sizes.body,
+    fontWeight: '800',
+    color: colors.white,
+    letterSpacing: 0.2,
+  },
+  heroSub: {
+    fontSize: 10,
+    color: 'rgba(255,255,255,0.65)',
+    fontWeight: '600',
+  },
+  heroBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(52,211,153,0.18)',
+    borderRadius: radius.pill,
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(52,211,153,0.35)',
+  },
+  heroBadgeText: {
+    fontSize: 10,
+    color: '#34D399',
+    fontWeight: '800',
+  },
+
+  /* Premium stepper */
   stepperBar: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-around",
+    justifyContent: "center",
     backgroundColor: colors.white,
     paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
+  },
+  stepConnector: {
+    flex: 1,
+    height: 2,
+    backgroundColor: colors.border,
+    marginHorizontal: spacing.xs,
+    marginBottom: 16,
+  },
+  stepConnectorDone: {
+    backgroundColor: colors.successGreen,
   },
   stepItem: {
     alignItems: "center",
   },
   stepDot: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     backgroundColor: colors.grayBG,
     borderWidth: 1.5,
     borderColor: colors.border,
@@ -923,14 +972,6 @@ const styles = StyleSheet.create({
     borderColor: colors.successGreen,
     backgroundColor: colors.successGreen,
   },
-  stepNum: {
-    fontSize: typography.sizes.tiny,
-    fontWeight: "700",
-    color: colors.textMuted,
-  },
-  stepNumActive: {
-    color: colors.primaryDeep,
-  },
   stepLabel: {
     fontSize: 10,
     fontWeight: "600",
@@ -939,7 +980,7 @@ const styles = StyleSheet.create({
   },
   stepLabelActive: {
     color: colors.primaryDeep,
-    fontWeight: "700",
+    fontWeight: "800",
   },
   scrollContent: {
     padding: spacing.lg,
@@ -948,11 +989,21 @@ const styles = StyleSheet.create({
     backgroundColor: colors.white,
     borderRadius: radius.xl,
     padding: spacing.lg,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
   },
   cardHeaderRow: {
     flexDirection: "row",
     alignItems: "center",
     marginBottom: spacing.lg,
+    gap: spacing.sm,
+  },
+  cardIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   cardTitle: {
     fontSize: typography.sizes.h4,
@@ -962,7 +1013,7 @@ const styles = StyleSheet.create({
   cardSub: {
     fontSize: typography.sizes.tiny,
     color: colors.textMuted,
-    marginTop: 2,
+    marginTop: 1,
   },
   inputGroup: {
     marginBottom: spacing.lg,
@@ -1072,6 +1123,15 @@ const styles = StyleSheet.create({
     borderRadius: radius.xl,
     padding: spacing.md,
     marginTop: spacing.sm,
+    gap: spacing.md,
+  },
+  settlementIconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.md,
+    backgroundColor: 'rgba(59,21,102,0.08)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   settlementTitle: {
     fontSize: typography.sizes.tiny,

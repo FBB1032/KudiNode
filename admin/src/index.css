@@ -4,7 +4,7 @@
 
 @layer base {
   :root {
-    --bg-page: #F1F5F9;
+    --bg-page: #F8FAFC;
     --bg-card: #FFFFFF;
     --bg-sidebar: #FFFFFF;
     --border: #E2E8F0;
@@ -15,140 +15,151 @@
   }
 
   .dark {
-    --bg-page: #080D14;
-    --bg-card: #111827;
-    --bg-sidebar: #0D1321;
+    --bg-page: #06090E;
+    --bg-card: #0D1321;
+    --bg-sidebar: #090E17;
     --border: #1E293B;
-    --text-primary: #F1F5F9;
+    --text-primary: #F8FAFC;
     --text-muted: #94A3B8;
     --accent: #8B5CF6;
     --accent-light: #1E1040;
   }
 
-  html { font-family: 'Inter', system-ui, sans-serif; }
+  html { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
 
   body {
-    @apply bg-slate-100 dark:bg-[#080D14] text-slate-900 dark:text-slate-100;
+    @apply bg-[#F8FAFC] dark:bg-[#06090E] text-slate-900 dark:text-slate-100 antialiased;
     transition: background-color 0.25s ease, color 0.25s ease;
   }
 
-  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
   ::-webkit-scrollbar-track { @apply bg-transparent; }
-  ::-webkit-scrollbar-thumb { @apply bg-slate-300 dark:bg-slate-700 rounded-full; }
+  ::-webkit-scrollbar-thumb { @apply bg-slate-300/80 dark:bg-slate-700/80 rounded-full hover:bg-slate-400 dark:hover:bg-slate-600; }
 }
 
 @layer components {
   /* ── Cards ─────────────────────────────────────── */
   .card {
-    @apply bg-white dark:bg-[#111827] border border-slate-200/80 dark:border-slate-800 rounded-2xl;
-    box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 4px 16px rgba(0,0,0,.04);
+    @apply bg-white dark:bg-[#0D1321] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl;
+    box-shadow: 0 1px 3px rgba(0,0,0,.03), 0 6px 20px rgba(15, 23, 42, 0.03);
   }
   .dark .card {
-    box-shadow: 0 1px 2px rgba(0,0,0,.4), 0 4px 16px rgba(0,0,0,.25);
+    box-shadow: 0 1px 3px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
   }
   .card-accent {
-    @apply card border-l-4;
+    @apply card border-l-4 border-l-violet-600 dark:border-l-violet-500;
+  }
+  .card-glow {
+    @apply relative overflow-hidden;
+  }
+  .card-glow::before {
+    content: '';
+    @apply absolute -top-24 -right-24 w-48 h-48 rounded-full bg-violet-500/10 dark:bg-violet-500/15 blur-3xl pointer-events-none;
   }
 
   /* ── KPI cards ─────────────────────────────────── */
   .kpi-card {
-    @apply bg-white dark:bg-[#111827] border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 relative overflow-hidden;
-    box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 4px 16px rgba(0,0,0,.04);
+    @apply bg-white dark:bg-[#0D1321] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl p-5 relative overflow-hidden transition-all duration-200 hover:border-violet-300 dark:hover:border-violet-500/40 hover:shadow-lg hover:shadow-violet-500/5;
+    box-shadow: 0 1px 3px rgba(0,0,0,.03), 0 6px 20px rgba(15, 23, 42, 0.03);
+  }
+  .dark .kpi-card {
+    box-shadow: 0 1px 3px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.3);
   }
   .kpi-card::after {
     content: '';
-    @apply absolute inset-0 opacity-[0.03] dark:opacity-[0.06];
-    background: radial-gradient(ellipse at top right, var(--kpi-color, #8B5CF6) 0%, transparent 65%);
+    @apply absolute inset-0 opacity-[0.04] dark:opacity-[0.08];
+    background: radial-gradient(ellipse at top right, var(--kpi-color, #8B5CF6) 0%, transparent 70%);
     pointer-events: none;
   }
 
   /* ── Stat pills ─────────────────────────────────── */
   .stat-pill-up {
-    @apply inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 dark:text-emerald-400
-           bg-emerald-100 dark:bg-emerald-900/25 px-2 py-0.5 rounded-full;
+    @apply inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 dark:text-emerald-400
+           bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/50 px-2 py-0.5 rounded-full;
   }
   .stat-pill-down {
-    @apply inline-flex items-center gap-1 text-[11px] font-semibold text-red-600 dark:text-red-400
-           bg-red-100 dark:bg-red-900/25 px-2 py-0.5 rounded-full;
+    @apply inline-flex items-center gap-1 text-[11px] font-bold text-red-600 dark:text-red-400
+           bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800/50 px-2 py-0.5 rounded-full;
   }
 
   /* ── Buttons ────────────────────────────────────── */
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-1.5
-           bg-violet-600 hover:bg-violet-700 active:bg-violet-800
-           dark:bg-violet-600 dark:hover:bg-violet-500
-           text-white font-semibold text-sm px-4 py-2 rounded-xl
-           transition-all duration-150 shadow-sm select-none;
+    @apply inline-flex items-center justify-center gap-2
+           bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 active:from-violet-700 active:to-indigo-700
+           text-white font-bold text-xs tracking-wide px-4 py-2.5 rounded-xl
+           transition-all duration-150 shadow-md shadow-violet-600/20 active:scale-[0.98] select-none;
   }
   .btn-outline {
-    @apply inline-flex items-center justify-center gap-1.5
-           border border-slate-300 dark:border-slate-700
-           hover:bg-slate-100 dark:hover:bg-slate-800
-           text-slate-700 dark:text-slate-300
-           font-medium text-sm px-4 py-2 rounded-xl
-           transition-all duration-150 select-none;
+    @apply inline-flex items-center justify-center gap-2
+           border border-slate-300 dark:border-slate-700/80
+           bg-white dark:bg-slate-900/60
+           hover:bg-slate-50 dark:hover:bg-slate-800
+           text-slate-700 dark:text-slate-200
+           font-semibold text-xs px-4 py-2.5 rounded-xl
+           transition-all duration-150 active:scale-[0.98] select-none shadow-sm;
   }
   .btn-ghost {
     @apply inline-flex items-center justify-center gap-1.5
            text-slate-600 dark:text-slate-400
-           hover:bg-slate-100 dark:hover:bg-slate-800
+           hover:bg-slate-100 dark:hover:bg-slate-800/60
            hover:text-slate-900 dark:hover:text-slate-100
-           font-medium text-sm px-3 py-2 rounded-xl
+           font-medium text-xs px-3 py-2 rounded-xl
            transition-all duration-150 select-none;
   }
   .btn-danger {
     @apply inline-flex items-center justify-center gap-1.5
-           bg-red-600 hover:bg-red-700 text-white
-           font-semibold text-sm px-4 py-2 rounded-xl
-           transition-all duration-150 shadow-sm select-none;
+           bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 active:from-rose-700 active:to-red-700
+           text-white font-bold text-xs px-4 py-2.5 rounded-xl
+           transition-all duration-150 shadow-md shadow-red-600/20 active:scale-[0.98] select-none;
   }
   .btn-success {
     @apply inline-flex items-center justify-center gap-1.5
-           bg-emerald-600 hover:bg-emerald-700 text-white
-           font-semibold text-sm px-4 py-2 rounded-xl
-           transition-all duration-150 shadow-sm select-none;
+           bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 active:from-emerald-700 active:to-teal-700
+           text-white font-bold text-xs px-4 py-2.5 rounded-xl
+           transition-all duration-150 shadow-md shadow-emerald-600/20 active:scale-[0.98] select-none;
   }
   .btn-icon {
-    @apply p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800
-           text-slate-500 dark:text-slate-400
-           transition-colors duration-150 select-none;
+    @apply p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800/80
+           text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100
+           border border-transparent hover:border-slate-200 dark:hover:border-slate-700/60
+           transition-all duration-150 select-none;
   }
 
   /* ── Badges ─────────────────────────────────────── */
   .badge-success {
-    @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold
-           bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400;
+    @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold
+           bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/50;
   }
   .badge-warning {
-    @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold
-           bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400;
+    @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold
+           bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800/50;
   }
   .badge-danger {
-    @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold
-           bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400;
+    @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold
+           bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800/50;
   }
   .badge-info {
-    @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold
-           bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400;
+    @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold
+           bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800/50;
   }
   .badge-purple {
-    @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold
-           bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-400;
+    @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold
+           bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-400 border border-purple-200 dark:border-purple-800/50;
   }
   .badge-slate {
-    @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold
-           bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400;
+    @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold
+           bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700/60;
   }
 
   /* ── Form inputs ─────────────────────────────────── */
   .input {
-    @apply w-full px-3 py-2 text-sm rounded-xl
-           bg-slate-100 dark:bg-slate-800/70
-           border border-slate-200 dark:border-slate-700
+    @apply w-full px-3.5 py-2.5 text-xs rounded-xl
+           bg-slate-50 dark:bg-[#090E17]
+           border border-slate-200 dark:border-slate-800
            text-slate-900 dark:text-slate-100
-           placeholder:text-slate-400
+           placeholder:text-slate-400 dark:placeholder:text-slate-600
            outline-none ring-0
-           focus:ring-2 focus:ring-violet-500/40 focus:border-violet-500
+           focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500
            dark:focus:border-violet-500
            transition-all duration-150;
   }
@@ -156,27 +167,27 @@
     @apply input border-red-400 dark:border-red-600 focus:ring-red-500/40 focus:border-red-500;
   }
   .label {
-    @apply block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5;
+    @apply block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 uppercase tracking-wide text-[10px];
   }
 
   /* ── Section header ──────────────────────────────── */
   .section-label {
-    @apply text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-[0.12em] mb-3;
+    @apply text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-[0.14em] mb-3;
   }
 
   /* ── Table ───────────────────────────────────────── */
   .table-head-cell {
-    @apply px-4 py-3 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-[0.08em] text-left whitespace-nowrap;
+    @apply px-4 py-3 text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-[0.1em] text-left whitespace-nowrap bg-slate-50/50 dark:bg-slate-900/30 border-b border-slate-200/80 dark:border-slate-800/80;
   }
   .table-row {
-    @apply hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors duration-100;
+    @apply hover:bg-violet-50/40 dark:hover:bg-violet-950/20 transition-colors duration-100;
   }
   .table-cell {
-    @apply px-4 py-3 text-sm text-slate-700 dark:text-slate-300;
+    @apply px-4 py-3 text-xs font-medium text-slate-700 dark:text-slate-300 border-b border-slate-100 dark:border-slate-800/60;
   }
 
   /* ── Divider ─────────────────────────────────────── */
   .divider {
-    @apply border-t border-slate-200 dark:border-slate-800;
+    @apply border-t border-slate-200 dark:border-slate-800/80;
   }
 }

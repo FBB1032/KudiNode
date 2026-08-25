@@ -8,7 +8,6 @@ import {
   ViewStyle,
 } from 'react-native';
 import { colors, spacing, radius, typography } from '../theme/theme';
-import { Ionicons } from './Icon';
 
 interface SecondaryButtonProps extends TouchableOpacityProps {
   title: string;
@@ -35,7 +34,7 @@ export function SecondaryButton({
         style,
       ]}
       disabled={disabled}
-      activeOpacity={0.85}
+      activeOpacity={0.82}
       {...rest}
     >
       <View style={styles.content}>
@@ -48,14 +47,14 @@ export function SecondaryButton({
 
 const styles = StyleSheet.create({
   button: {
-    height: 50,
-    borderRadius: radius.lg,
+    height: 52,
+    borderRadius: radius.xl,
     paddingHorizontal: spacing.xl,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#EAE7F0',
+    backgroundColor: '#F1F5F9',
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: '#E2E8F0',
   },
   fullWidth: {
     width: '100%',
@@ -72,8 +71,9 @@ const styles = StyleSheet.create({
     marginRight: spacing.sm,
   },
   text: {
-    color: colors.textDark,
+    color: colors.primaryDeep,
     fontSize: typography.sizes.body,
-    fontWeight: '600',
+    fontWeight: '700',
+    letterSpacing: 0.2,
   },
 });

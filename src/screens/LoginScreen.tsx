@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  TextInput,
   TouchableOpacity,
   ScrollView,
   KeyboardAvoidingView,
@@ -35,15 +34,13 @@ export function LoginScreen() {
 
   const handleLogin = async () => {
     if (!phone.trim() || !password.trim()) {
-      setError("Please enter your phone number and password.");
+      setError("Enter your phone number and password.");
       return;
     }
     setError(null);
     setLoading(true);
     try {
       await signIn(phone.trim(), password);
-      // Only approved merchants reach here — the backend blocks
-      // pending/rejected/suspended accounts and returns a 403 with a message.
       nav.reset({ index: 0, routes: [{ name: "MainTabs" }] });
     } catch (e: any) {
       setError(e?.message || "Sign in failed. Please try again.");
@@ -57,325 +54,232 @@ export function LoginScreen() {
       style={{ flex: 1 }}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      <StatusBar
-        barStyle="light-content"
-        backgroundColor={colors.primaryDeep}
-      />
+      <StatusBar barStyle="light-content" backgroundColor={colors.primaryDeep} />
+
+      {/* Hero gradient panel */}
       <LinearGradient
-        colors={[colors.primaryDeep, "#2D1060"]}
-        style={[styles.gradient, { paddingTop: insets.top }]}
+        colors={["#1A0840", colors.primaryDeep, "#4C1D95"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={[styles.heroBand, { paddingTop: insets.top + spacing.xl }]}
       >
-        {/* Brand header */}
-        <View style={styles.brand}>
-          <KudiNodeLogo size="large" variant="light" />
-          <View style={styles.bankBadge}>
-            <View style={styles.bankDot} />
-            <Text style={styles.bankText}>Powered by Wema Bank Sandbox</Text>
-          </View>
+        <View style={styles.brandCenter}>
+          <KudiNodeLogo size="large" variant="light" showSub={true} />
         </View>
       </LinearGradient>
 
-      {/* White card sheet */}
+      {/* White lift sheet */}
       <ScrollView
         style={styles.sheet}
-        contentContainerStyle={styles.sheetContent}
+        contentContainerStyle={[
+          styles.sheetContent,
+          { paddingBottom: insets.bottom + spacing.xxxl },
+        ]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.sheetHandle} />
-        <Text style={styles.sheetTitle}>Merchant Sign In</Text>
-        <Text style={styles.sheetSub}>
-          Enter your registered phone number and password
-        </Text>
+        <View style={styles.dragHandle} />
 
-        {/* Approval / error banner */}
+        <Text style={styles.heading}>Welcome back</Text>
+        <Text style={styles.subheading}>Sign in to your merchant account</Text>
+
         {error && (
-          <View style={styles.errorBanner}>
-            <Icon name="alert-circle" size={16} color={colors.warningOrange} />
-            <Text style={styles.errorText}>{error}</Text>
+          <View style={styles.errorBox}>
+            <Icon name="alert-circle" size={15} color="#D97706" />
+            <Text style={styles.errorMsg}>{error}</Text>
           </View>
         )}
 
-        {/* Phone number */}
-        <FloatingLabelInput
-          label="Phone Number"
-          prefix="+234"
-          keyboardType="phone-pad"
-          value={phone}
-          onChangeText={setPhone}
-          maxLength={11}
-          trailingIcon="call"
-        />
+        <View style={styles.fieldsBlock}>
+          <FloatingLabelInput
+            label="Phone Number"
+            prefix="+234"
+            keyboardType="phone-pad"
+            value={phone}
+            onChangeText={setPhone}
+            maxLength={11}
+            trailingIcon="call"
+          />
 
-        {/* Password */}
-        <FloatingLabelInput
-          label="Password"
-          secureTextEntry={!showPassword}
-          value={password}
-          onChangeText={setPassword}
-          autoCapitalize="none"
-          trailingIcon={showPassword ? "eye-off" : "eye"}
-          onTrailingIconPress={() => setShowPassword((p) => !p)}
-        />
+          <FloatingLabelInput
+            label="Password"
+            secureTextEntry={!showPassword}
+            value={password}
+            onChangeText={setPassword}
+            autoCapitalize="none"
+            trailingIcon={showPassword ? "eye-off" : "eye"}
+            onTrailingIconPress={() => setShowPassword((p) => !p)}
+          />
 
-        {/* Sign in button */}
+          <TouchableOpacity activeOpacity={0.7} style={styles.forgotRow}>
+            <Text style={styles.forgotText}>Forgot password?</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Sign in CTA */}
         <TouchableOpacity
-          style={[styles.signInBtn, shadows.button]}
+          style={[styles.ctaBtn, shadows.button]}
           onPress={handleLogin}
           activeOpacity={0.88}
+          disabled={loading}
         >
           <LinearGradient
-            colors={[colors.primaryMid, colors.primaryDeep]}
+            colors={[colors.primaryLight, colors.primaryDeep]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
-            style={styles.signInGrad}
+            style={styles.ctaGrad}
           >
             {loading ? (
-              <Text style={styles.signInText}>Authenticating...</Text>
+              <Icon name="sync" size={20} color={colors.white} />
             ) : (
               <>
-                <Text style={styles.signInText}>Sign In to Merchant Hub</Text>
+                <Text style={styles.ctaText}>Sign In</Text>
                 <Icon name="arrow-forward" size={18} color={colors.white} />
               </>
             )}
           </LinearGradient>
         </TouchableOpacity>
 
-        {/* Register */}
-        <View style={styles.registerWrap}>
-          <Text style={styles.registerText}>New merchant?</Text>
-          <TouchableOpacity
-            onPress={() => nav.navigate("RegisterKYC")}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.registerLink}>Create Tier-1 Account</Text>
-          </TouchableOpacity>
+        {/* Divider */}
+        <View style={styles.dividerRow}>
+          <View style={styles.dividerLine} />
+          <Text style={styles.dividerText}>New to KudiNode?</Text>
+          <View style={styles.dividerLine} />
         </View>
 
-        <View style={{ height: spacing.xxxl }} />
+        {/* Register link */}
+        <TouchableOpacity
+          style={styles.registerBtn}
+          onPress={() => nav.navigate("RegisterKYC")}
+          activeOpacity={0.8}
+        >
+          <Icon name="person-add" size={16} color={colors.primaryMid} />
+          <Text style={styles.registerBtnText}>Create Merchant Account</Text>
+        </TouchableOpacity>
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  gradient: {
-    paddingHorizontal: spacing.lg,
+  heroBand: {
+    paddingHorizontal: spacing.xl,
     paddingBottom: spacing.xxxl + spacing.xl,
   },
-  brand: { alignItems: "center", paddingTop: spacing.xxl },
-  logo: {
-    width: 64,
-    height: 64,
-    borderRadius: 20,
-    backgroundColor: "rgba(255,255,255,0.15)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.25)",
+  brandCenter: {
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: spacing.md,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
   },
-  brandName: {
-    fontSize: 26,
-    fontWeight: "800",
-    color: colors.white,
-    letterSpacing: 0.3,
-  },
-  brandTag: {
-    fontSize: typography.sizes.small,
-    color: "rgba(255,255,255,0.7)",
-    marginTop: 3,
-  },
-  bankBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-    marginTop: spacing.md,
-    backgroundColor: "rgba(255,255,255,0.1)",
-    paddingHorizontal: spacing.md,
-    paddingVertical: 5,
-    borderRadius: radius.pill,
-  },
-  bankDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: colors.successGreen,
-  },
-  bankText: {
-    fontSize: typography.sizes.tiny,
-    color: colors.white,
-    fontWeight: "600",
-  },
-
-  // Sheet
   sheet: {
     flex: 1,
     backgroundColor: colors.white,
-    marginTop: -spacing.xxl,
+    marginTop: -(spacing.xxxl),
     borderTopLeftRadius: radius.xxl,
     borderTopRightRadius: radius.xxl,
   },
-  sheetContent: { paddingHorizontal: spacing.xl, paddingTop: spacing.md },
-  sheetHandle: {
-    width: 36,
+  sheetContent: {
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.md,
+  },
+  dragHandle: {
+    width: 40,
     height: 4,
     borderRadius: 2,
     backgroundColor: colors.border,
     alignSelf: "center",
     marginBottom: spacing.xl,
   },
-  sheetTitle: {
+  heading: {
     fontSize: typography.sizes.h2,
-    fontWeight: "800",
+    fontWeight: "900",
     color: colors.textDark,
+    letterSpacing: -0.3,
   },
-  sheetSub: {
+  subheading: {
     fontSize: typography.sizes.small,
     color: colors.textMuted,
-    marginTop: 4,
-    marginBottom: spacing.xl,
+    marginTop: 3,
+    marginBottom: spacing.lg,
+    fontWeight: "500",
   },
-
-  // Fields
-  fieldGroup: { marginBottom: spacing.lg },
-  fieldLabel: {
-    fontSize: typography.sizes.small,
-    fontWeight: "700",
-    color: colors.textDark,
-    marginBottom: 6,
-  },
-  labelRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  forgot: {
-    fontSize: typography.sizes.tiny,
-    color: colors.primaryMid,
-    fontWeight: "700",
-  },
-  inputRow: {
+  errorBox: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: colors.grayBG,
-    borderRadius: radius.lg,
-    paddingHorizontal: spacing.md,
-    height: 54,
+    gap: spacing.sm,
+    backgroundColor: "#FFFBEB",
     borderWidth: 1,
-    borderColor: colors.border,
-    gap: spacing.sm,
-  },
-  codeBox: {
-    paddingRight: spacing.sm,
-    borderRightWidth: 1,
-    borderRightColor: colors.border,
-  },
-  codeText: {
-    fontSize: typography.sizes.body,
-    fontWeight: "700",
-    color: colors.textDark,
-  },
-  input: {
-    flex: 1,
-    fontSize: typography.sizes.body,
-    color: colors.textDark,
-    fontWeight: "600",
-  },
-
-  // Biometric
-  bioBox: {
-    alignItems: "center",
-    backgroundColor: colors.grayBG,
-    borderRadius: radius.xl,
-    padding: spacing.xl,
-    borderWidth: 1.5,
-    borderColor: colors.border,
-    borderStyle: "dashed",
-    marginBottom: spacing.lg,
-    gap: spacing.sm,
-  },
-  bioTitle: {
-    fontSize: typography.sizes.body,
-    fontWeight: "700",
-    color: colors.primaryDeep,
-  },
-  bioSub: {
-    fontSize: typography.sizes.tiny,
-    color: colors.textMuted,
-    textAlign: "center",
-  },
-  bioToggle: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    justifyContent: "center",
-    paddingVertical: spacing.sm,
-    marginBottom: spacing.lg,
-  },
-  bioToggleText: {
-    fontSize: typography.sizes.small,
-    fontWeight: "700",
-    color: colors.primaryMid,
-  },
-
-  // Buttons
-  signInBtn: {
-    borderRadius: radius.xl,
-    overflow: "hidden",
-    marginBottom: spacing.md,
-  },
-  signInGrad: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.sm,
-    paddingVertical: 16,
-  },
-  signInText: {
-    fontSize: typography.sizes.body,
-    fontWeight: "800",
-    color: colors.white,
-  },
-  demoBtn: {
-    alignItems: "center",
-    paddingVertical: spacing.md,
-    marginBottom: spacing.lg,
-  },
-  demoText: {
-    fontSize: typography.sizes.small,
-    color: colors.textMuted,
-    fontWeight: "600",
-  },
-  registerWrap: {
-    flexDirection: "row",
-    justifyContent: "center",
-    gap: 6,
-    alignItems: "center",
-  },
-  registerText: { fontSize: typography.sizes.small, color: colors.textMuted },
-  registerLink: {
-    fontSize: typography.sizes.small,
-    fontWeight: "800",
-    color: colors.primaryMid,
-  },
-
-  // Error / approval-gate banner
-  errorBanner: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    backgroundColor: "#FFF3E8",
-    borderWidth: 1,
-    borderColor: colors.warningOrange,
+    borderColor: "#FCD34D",
     borderRadius: radius.lg,
     padding: spacing.md,
     marginBottom: spacing.lg,
   },
-  errorText: {
+  errorMsg: {
     flex: 1,
     fontSize: typography.sizes.small,
-    color: colors.textDark,
+    color: "#92400E",
     fontWeight: "600",
+  },
+  fieldsBlock: { gap: 0 },
+  forgotRow: {
+    alignSelf: "flex-end",
+    marginTop: -spacing.sm,
+    marginBottom: spacing.lg,
+  },
+  forgotText: {
+    fontSize: typography.sizes.small,
+    color: colors.primaryMid,
+    fontWeight: "700",
+  },
+  ctaBtn: {
+    borderRadius: radius.xl,
+    overflow: "hidden",
+    marginBottom: spacing.xl,
+  },
+  ctaGrad: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.sm,
+    paddingVertical: 17,
+  },
+  ctaText: {
+    fontSize: typography.sizes.body,
+    fontWeight: "800",
+    color: colors.white,
+    letterSpacing: 0.4,
+  },
+  dividerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    marginBottom: spacing.lg,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: colors.border,
+  },
+  dividerText: {
+    fontSize: typography.sizes.small,
+    color: colors.textMuted,
+    fontWeight: "600",
+  },
+  registerBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.sm,
+    paddingVertical: 14,
+    borderRadius: radius.xl,
+    borderWidth: 1.5,
+    borderColor: colors.primaryLight,
+    backgroundColor: colors.accentLight,
+  },
+  registerBtnText: {
+    fontSize: typography.sizes.body,
+    fontWeight: "800",
+    color: colors.primaryMid,
   },
 });
