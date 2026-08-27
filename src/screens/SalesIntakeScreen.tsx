@@ -163,7 +163,7 @@ export function SalesIntakeScreen() {
       const errorMessage = error?.message || "Unknown error occurred";
       
       if (errorMessage.includes("AI features are temporarily unavailable") || 
-          errorMessage.includes("GEMINI_API_KEY")) {
+          errorMessage.includes("OPENROUTER_API_KEY")) {
         Alert.alert(
           "AI Service Unavailable",
           "Receipt scanning AI is currently unavailable. Please contact support or try again later.",

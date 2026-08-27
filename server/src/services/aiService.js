@@ -3,6 +3,7 @@ import { badRequest } from "../utils/AppError.js";
 
 const GROQ_API_BASE = "https://api.groq.com/openai/v1";
 const GEMINI_API_BASE = "https://generativelanguage.googleapis.com/v1beta";
+const OPENROUTER_API_BASE = "https://openrouter.ai/api/v1";
 
 function asNumberOrNull(value) {
   if (value === null || value === undefined) return null;
@@ -186,6 +187,73 @@ async function callGeminiJson({ prompt, systemPrompt = "You are a helpful AI ass
   const parsed = tryParseJson(outputText);
   if (!parsed) {
     throw badRequest("Gemini output was not valid JSON");
+  }
+
+  return parsed;
+}
+
+async function callVisionJson({ prompt, systemPrompt, image }) {
+  if (!env.openrouterApiKey) {
+    throw badRequest(
+      "Missing OPENROUTER_API_KEY on backend. Add it to server/.env first.",
+    );
+  }
+
+  if (!image?.base64) {
+    throw badRequest("No image data provided for vision analysis");
+  }
+
+  const url = `${OPENROUTER_API_BASE}/chat/completions`;
+
+  const body = {
+    model: env.openrouterVisionModel,
+    messages: [
+      { role: "system", content: systemPrompt },
+      {
+        role: "user",
+        content: [
+          { type: "text", text: prompt },
+          {
+            type: "image_url",
+            image_url: {
+              url: `data:${image.mimeType || "image/jpeg"};base64,${image.base64}`,
+            },
+          },
+        ],
+      },
+    ],
+    temperature: 0.1,
+  };
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${env.openrouterApiKey}`,
+      "HTTP-Referer": "https://kudinode.onrender.com",
+      "X-Title": "KudiNode",
+    },
+    body: JSON.stringify(body),
+  });
+
+  const rawText = await response.text();
+  if (!response.ok) {
+    throw badRequest(
+      `OpenRouter API request failed (${response.status}): ${rawText.slice(0, 300)}`,
+    );
+  }
+
+  let data;
+  try {
+    data = JSON.parse(rawText);
+  } catch {
+    throw badRequest("OpenRouter API returned non-JSON output");
+  }
+
+  const outputText = data?.choices?.[0]?.message?.content?.trim?.() || "";
+  const parsed = tryParseJson(outputText);
+  if (!parsed) {
+    throw badRequest("OpenRouter output was not valid JSON");
   }
 
   return parsed;
@@ -634,17 +702,13 @@ export async function extractReceipt({ imageFile }) {
     "E. Nigerian formatting: commas as thousands separators (₦12,500) — ignore them, return plain numbers.",
   ].join("\n");
 
-  const parsed = await callGeminiJson({
+  const parsed = await callVisionJson({
     prompt,
     systemPrompt,
-    inlineParts: [
-      {
-        inline_data: {
-          mime_type: mime,
-          data: imageFile.buffer.toString("base64"),
-        },
-      },
-    ],
+    image: {
+      mimeType: mime,
+      base64: imageFile.buffer.toString("base64"),
+    },
   });
 
   const normalizedItems = Array.isArray(parsed?.items)

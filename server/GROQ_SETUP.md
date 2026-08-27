@@ -6,7 +6,7 @@ Your KudiNode backend now uses **Groq** instead of Gemini for AI features!
 
 - **Voice Transfer**: Now uses Groq Llama 3.3 70B (MUCH faster than Gemini!)
 - **Audio Transcription**: Now uses Groq Whisper (faster and more accurate)
-- **Receipt Scanning**: Still needs Gemini (Groq doesn't support vision yet)
+- **Receipt Scanning**: Now uses OpenRouter free vision models (no Gemini/Groq vision needed)
 
 ## 🔑 Get Your Free Groq API Key
 
@@ -30,7 +30,7 @@ Your KudiNode backend now uses **Groq** instead of Gemini for AI features!
 | Cost | 💰 Much cheaper | Expensive |
 | Voice Transfer | ✅ Works great | ✅ Works |
 | Audio Transcription | ✅ Whisper v3 Turbo | ❌ Requires setup |
-| Receipt Scanning | ❌ No vision yet | ✅ Works |
+| Receipt Scanning | ✅ OpenRouter free vision | ❌ Not needed |
 
 ## 📝 Current Configuration
 
@@ -40,10 +40,10 @@ GROQ_API_KEY=gsk_your_key_here
 GROQ_MODEL=openai/gpt-oss-120b
 ```
 
-### For Receipt Scanning (Needs Gemini):
+### For Receipt Scanning (OpenRouter free vision):
 ```env
-GEMINI_API_KEY=your_gemini_key
-GEMINI_MODEL=gemini-2.0-flash
+OPENROUTER_API_KEY=your_openrouter_key
+OPENROUTER_VISION_MODEL=qwen/qwen-2.5-vl-7b-instruct:free
 ```
 
 ## 🧪 Test It
@@ -58,13 +58,13 @@ curl -X POST http://localhost:4000/api/ai/voice-transfer \
   }'
 ```
 
-### Test Receipt Scanning (Gemini - if configured):
+### Test Receipt Scanning (OpenRouter - if configured):
 This requires a multipart form with an image file.
 
 ## 🚨 Important Notes
 
 1. **Groq is FREE** for moderate usage (perfect for testing!)
-2. **Receipt scanning still requires Gemini** (or you can switch to OpenAI GPT-4 Vision)
+2. **Receipt scanning uses OpenRouter free vision models** — no Gemini key needed for scans
 3. **Voice transfer is MUCH faster now** with Groq
 4. **Audio transcription uses Groq Whisper** (no external service needed!)
 
@@ -78,22 +78,16 @@ This is MORE than enough for your app!
 
 ## 🔄 Fallback Strategy
 
-If you want receipt scanning to work:
+Receipt scanning now runs on OpenRouter free vision models:
 
-**Option 1: Keep using Gemini for images**
-- Add valid `GEMINI_API_KEY` to `.env`
-- Receipt scanning will use Gemini
-- Voice transfer uses Groq (faster!)
+**Option 1: Use OpenRouter (current default)**
+- Add `OPENROUTER_API_KEY` to `.env` (free key from https://openrouter.ai/keys, enable free models)
+- Model is configurable via `OPENROUTER_VISION_MODEL`
+- Free tier ~50 requests/day — fine for dev/light use
 
-**Option 2: Use OpenAI GPT-4 Vision**
-- Would require code changes
-- More expensive than Gemini
-- Very accurate for receipts
-
-**Option 3: Use OCR + Groq**
-- Use a separate OCR service (Tesseract, Google Vision OCR)
-- Extract text from image
-- Use Groq to parse the extracted text
+**Option 2: Switch the vision model**
+- If the default `:free` model is removed/paid, pick another listed free vision model
+- OpenRouter has many free vision models — just change `OPENROUTER_VISION_MODEL`
 
 ## 🎉 Ready to Go!
 

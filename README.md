@@ -35,11 +35,11 @@ At the same time, transferring money still requires navigating complex bank apps
 
 ##  Our Solution
 
-**KudiNode AI** is a full-stack mobile-first fintech platform purpose-built for Nigerian informal merchants. It combines a React Native (Expo) mobile app, a Node.js secure backend, a Supabase PostgreSQL database, Groq for text and audio AI, and Gemini for receipt images to deliver three transformational capabilities:
+**KudiNode AI** is a full-stack mobile-first fintech platform purpose-built for Nigerian informal merchants. It combines a React Native (Expo) mobile app, a Node.js secure backend, a Supabase PostgreSQL database, Groq for text and audio AI, and OpenRouter free vision models for receipt scanning to deliver three transformational capabilities:
 
 1. **Voice-First Banking**: Users speak a transfer command in *any* Nigerian language or Pidgin (e.g., *"Send five thousand naira to Emeka, GTBank, zero-eight-zero-one..."*). Groq powers the speech parsing pipeline and converts the command into structured transfer fields recipient name, bank, account number, and amount before routing to a PIN confirmation screen. No typing required.
 
-2. **AI Receipt & Sales Logging**: Merchants point their phone camera at a paper receipt or speak their daily sales aloud. Groq handles the voice sales log flow, while Gemini handles receipt image extraction, turning itemized transaction data (merchant name, items, quantities, unit prices, totals in NGN) into ledger entries.
+2. **AI Receipt & Sales Logging**: Merchants point their phone camera at a paper receipt or speak their daily sales aloud. Groq handles the voice sales log flow, while OpenRouter free vision models handle receipt image extraction, turning itemized transaction data (merchant name, items, quantities, unit prices, totals in NGN) into ledger entries.
 
 3. **Cooperative (Esusu) Management**: Members can create and join Esusu savings circles digitally. Contribution schedules, payout queues, and balances are tracked in real time, giving cooperative groups the digital infrastructure they have always lacked.
 
@@ -65,7 +65,7 @@ Underpinning everything is a **KYC Tier System** (Tier 0 → Tier 3) and a **Tru
 - **Runtime:** Node.js 20+ (ESM modules)
 - **Framework:** Express 4 with Helmet (security headers), CORS, Morgan (HTTP logging), `express-rate-limit`
 - **Validation:** Zod schema validation on all incoming request bodies
-- **File Uploads:** Multer (in-memory) — audio buffers go to Groq-backed parsing and image buffers go to Gemini, never written to disk
+- **File Uploads:** Multer (in-memory) — audio buffers go to Groq-backed parsing and image buffers go to OpenRouter vision, never written to disk
 - **API Routes:** `/api/auth`, `/api/profile`, `/api/uploads`, `/api/admin`, `/api/ai`
 
 ### Database
@@ -83,7 +83,7 @@ Underpinning everything is a **KYC Tier System** (Tier 0 → Tier 3) and a **Tru
   - Voice sales logging (audio → structured ledger entries)
   - Supports English, Pidgin, Yoruba, Hausa, Igbo, and mixed code-switching
   - Optional faster-whisper sidecar for offline-capable transcription, with Groq as the primary AI provider for text and audio
-- **Gemini 2.0 Flash** via Google AI Studio REST API:
+- **OpenRouter free vision models** via OpenAI-compatible API:
   - Receipt extraction (image → itemized NGN ledger entry)
 
 ### Admin Dashboard
@@ -108,7 +108,7 @@ Underpinning everything is a **KYC Tier System** (Tier 0 → Tier 3) and a **Tru
 - Expo Go app installed on a physical Android or iOS device
 - A Supabase project
 - A Groq API key
-- A Google AI Studio Gemini API key for receipt images
+- An OpenRouter API key for receipt scanning (free at https://openrouter.ai/keys)
 
 ---
 
@@ -154,11 +154,11 @@ GROQ_API_BASE=https://api.groq.com/openai/v1
 GROQ_API_KEY=
 GROQ_MODEL=openai/gpt-oss-120b
 
-GEMINI_API_KEY=
-GEMINI_MODEL=gemini-2.0-flash
+OPENROUTER_API_KEY=
+OPENROUTER_VISION_MODEL=qwen/qwen-2.5-vl-7b-instruct:free
 ```
 
-Receipt image extraction still uses Gemini, while voice transfer and voice sales logging use Groq.
+Receipt image extraction uses OpenRouter free vision models, while voice transfer and voice sales logging use Groq.
 
 Run the dev server:
 
@@ -227,7 +227,7 @@ Dashboard available at `https://kudinode.vercel.app/`.
 | Feature | Description |
 |---|---|
 | **Voice Transfer** | Speak a bank transfer in any Nigerian language; Groq parses it to structured fields with confidence score |
-| **AI Receipt Scan** | Camera captures a paper receipt; Gemini returns itemized NGN ledger entry |
+| **AI Receipt Scan** | Camera captures a paper receipt; OpenRouter vision returns itemized NGN ledger entry |
 | **Voice Sales Log** | Speak daily sales aloud; Groq converts it to ledger entries in real time |
 | **Esusu / Cooperative** | Create or join digital savings circles with contribution tracking and payout queues |
 | **KYC Tier System** | Progressive verification (Tier 0–3) — each tier unlocks higher limits and new features |
@@ -255,7 +255,7 @@ kudinode/
 │   └── src/
 │       ├── routes/             # authRoutes, profileRoutes, uploadRoutes, adminRoutes, aiRoutes
 │       ├── controllers/        # Request handlers for each domain
-│       ├── services/           # aiService.js — Groq voice parsing & Gemini receipt extraction
+│       ├── services/           # aiService.js — Groq voice parsing & OpenRouter receipt extraction
 │       ├── middleware/         # errorHandler, auth guards
 │       ├── schemas/            # Zod validation schemas
 │       ├── utils/              # AppError, helpers
@@ -289,7 +289,7 @@ Node.js Backend (Express)
     │                                                             │
     ├── [Groq Llama + Groq Whisper] ─ audio STT + NLU for voice flows │
     │                                                             │
-    └── [Gemini 2.0 Flash] ─── receipt image extraction            │
+    └── [OpenRouter free vision] ── receipt image extraction       │
                 │                                                 │
                 └──────────────── structured JSON response ◄──────┘
                                   (transfer fields / receipt items)
@@ -308,7 +308,7 @@ Node.js Backend (Express)
 - **Supabase RLS** — Row Level Security on all tables; users are strictly scoped to their own records
 - **Service Role isolation** — the `SUPABASE_SERVICE_ROLE_KEY` (which bypasses RLS) lives on the server only; never shipped to the mobile client
 - **JWT Auth** — tokens issued by Supabase Auth, stored encrypted on-device via `expo-secure-store`
-- **In-memory file processing** — Multer holds uploaded files in RAM and streams them to Groq-backed audio parsing or Gemini image extraction; nothing is ever written to the server's disk
+- **In-memory file processing** — Multer holds uploaded files in RAM and streams them to Groq-backed audio parsing or OpenRouter vision image extraction; nothing is ever written to the server's disk
 
 **Admin login details** : email=fahdbadamasi320@gmail.com  password=*FahdBad2026#
 ---

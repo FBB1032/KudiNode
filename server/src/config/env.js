@@ -37,6 +37,10 @@ export const env = {
   geminiApiKey: process.env.GEMINI_API_KEY || "",
   geminiModel: process.env.GEMINI_MODEL || "gemini-2.0-flash",
 
+  openrouterApiKey: process.env.OPENROUTER_API_KEY || "",
+  openrouterVisionModel:
+    process.env.OPENROUTER_VISION_MODEL || "qwen/qwen-2.5-vl-7b-instruct:free",
+
   fastWhisperUrl: process.env.FAST_WHISPER_URL || "",
   fastWhisperApiKey: process.env.FAST_WHISPER_API_KEY || "",
   fastWhisperLanguageHint: process.env.FAST_WHISPER_LANGUAGE_HINT || "",

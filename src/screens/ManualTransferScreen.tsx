@@ -218,9 +218,11 @@ export function ManualTransferScreen() {
                 <Icon name="mic" size={18} color={colors.white} />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={styles.voiceBannerTitle}>Voice Command Parsed</Text>
+                <Text style={styles.voiceBannerTitle}>
+                  Voice Command Parsed
+                </Text>
                 <Text style={styles.voiceBannerSub}>
-                  {`Transcription: ${aiMeta?.transcriptionProvider || "unknown"} · Language: ${aiMeta?.languageDetected || "unknown"}`}
+                  {`Language: ${aiMeta?.languageDetected || "unknown"}`}
                 </Text>
                 {aiConfidence !== null ? (
                   <Text style={styles.voiceBannerSub}>
@@ -293,7 +295,9 @@ export function ManualTransferScreen() {
                 <Text
                   style={[
                     styles.bankTriggerText,
-                    { color: selectedBank ? colors.textDark : colors.textMuted },
+                    {
+                      color: selectedBank ? colors.textDark : colors.textMuted,
+                    },
                   ]}
                 >
                   {selectedBank || "Select bank…"}
@@ -323,7 +327,11 @@ export function ManualTransferScreen() {
               voiceActive={fromVoice && !!accountNum}
               trailingIcon={
                 accountNum.length === 10 ? (
-                  <Icon name="checkmark-circle" size={16} color={colors.successGreen} />
+                  <Icon
+                    name="checkmark-circle"
+                    size={16}
+                    color={colors.successGreen}
+                  />
                 ) : undefined
               }
             />
