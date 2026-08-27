@@ -29,7 +29,7 @@ export const env = {
   supabaseServiceRoleKey: required("SUPABASE_SERVICE_ROLE_KEY"),
 
   groqApiKey: process.env.GROQ_API_KEY || "",
-  groqModel: process.env.GROQ_MODEL || "llama-3.3-70b-versatile",
+  groqModel: process.env.GROQ_MODEL || "openai/gpt-oss-120b",
 
   kycBucket: process.env.KYC_BUCKET || "kyc-documents",
   ledgerBucket: process.env.LEDGER_BUCKET || "ledger-images",

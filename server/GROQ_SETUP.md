@@ -17,7 +17,7 @@ Your KudiNode backend now uses **Groq** instead of Gemini for AI features!
 5. Add to `server/.env`:
    ```env
    GROQ_API_KEY=gsk_YourActualKeyHere
-   GROQ_MODEL=llama-3.3-70b-versatile
+   GROQ_MODEL=openai/gpt-oss-120b
    ```
 6. Restart server
 
@@ -37,7 +37,7 @@ Your KudiNode backend now uses **Groq** instead of Gemini for AI features!
 ### For Voice Transfer (Working with Groq):
 ```env
 GROQ_API_KEY=gsk_your_key_here
-GROQ_MODEL=llama-3.3-70b-versatile
+GROQ_MODEL=openai/gpt-oss-120b
 ```
 
 ### For Receipt Scanning (Needs Gemini):

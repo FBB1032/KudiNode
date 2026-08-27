@@ -89,7 +89,7 @@ async function callGroqJson({ prompt, systemPrompt = "You are a helpful AI assis
   const url = `${GROQ_API_BASE}/chat/completions`;
 
   const body = {
-    model: env.groqModel || "llama-3.3-70b-versatile",
+    model: env.groqModel || "openai/gpt-oss-120b",
     messages: [
       { role: "system", content: systemPrompt },
       { role: "user", content: prompt },
@@ -392,7 +392,7 @@ async function callGroqChat({ messages, systemPrompt }) {
   }
 
   const body = {
-    model: env.groqModel || "llama-3.3-70b-versatile",
+    model: env.groqModel || "openai/gpt-oss-120b",
     messages: finalMessages,
     temperature: 0.6,
     max_tokens: 1024,
