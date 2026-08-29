@@ -155,7 +155,7 @@ GROQ_API_KEY=
 GROQ_MODEL=openai/gpt-oss-120b
 
 OPENROUTER_API_KEY=
-OPENROUTER_VISION_MODEL=qwen/qwen-2.5-vl-7b-instruct:free
+OPENROUTER_VISION_MODEL=minimax/minimax-m3:free
 ```
 
 Receipt image extraction uses OpenRouter free vision models, while voice transfer and voice sales logging use Groq.

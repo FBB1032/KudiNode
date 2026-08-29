@@ -648,12 +648,12 @@ export async function extractReceipt({ imageFile }) {
 
   const mime = normalizeImageMimeType(imageFile.mimetype, imageFile.originalname);
   const systemPrompt = [
-    "You are an AI receipt scanner for Nigerian small merchants and market traders.",
+    "You are an elite AI receipt scanner for Nigerian small merchants, market traders, and POS terminals.",
     "You read receipt images of ALL TYPES including:",
-    "  • Printed POS / supermarket receipts",
+    "  • Printed POS / supermarket / pharmacy receipts (Interswitch, Paystack, eTranzact, bank POS)",
     "  • HANDWRITTEN paper receipts (exercise book paper, plain paper, tissue, card slips)",
     "  • Scribbled notes and tallys on any paper surface",
-    "  • Customer invoices, waybills, 'received by' slips",
+    "  • Customer invoices, waybills, 'received by' slips, credit notes",
     "  • Mixed printed + handwritten receipts (very common in Nigeria)",
     "Handwriting is usually in Biro / ballpoint pen. Can be cursive, all caps, or shorthand. Expect spelling variations and shortened words.",
     "Currency is always Nigerian Naira (NGN). Expect: N, ₦, #, NGN, 'naira' written by hand, or no symbol but context implies Naira.",
@@ -661,45 +661,72 @@ export async function extractReceipt({ imageFile }) {
   ].join("\n");
 
   const prompt = [
-    "Analyze this receipt image with SPECIAL ATTENTION to HANDWRITING. This could be a printed, handwritten, or mixed receipt. Read every single word, number, and symbol you can.",
+    "Analyze this receipt image carefully. It may be printed, handwritten, or mixed. Read EVERY word, number, and symbol — including headers, footers, and fine print.",
     "",
-    "HANDWRITING GUIDELINES (very important for Nigerian market receipts):",
-    "1. Read carefully — ink can be smudged, paper creased, lighting uneven, handwriting cursive or rushed.",
-    "2. Naira might be written as: N 5000, #2500, ₦1,500, '=N= 800', just '500' with context of price, or '2k' meaning 2000.",
-    "3. Item names often use shorthand: 'Rice' could be Rc, 'Tomatoe' Tmt, 'Beans' Bns, 'Garri' Gr, 'Palm oil' PO, 'Semovita' Smvt.",
-    "4. A typical handwritten line format in Nigeria is:  Item Name   Qty   UnitPrice   Amount — or just Amount per item.",
-    "5. Some handwritten receipts write: Name of buyer at top, then items, then 'Total: .....' at the bottom underlined twice.",
-    "6. Handwritten dates: 12/7/2026 or 12-07-26 or '12th July 2026'.",
-    "7. If a word is ambiguous but looks like a common item name, include it and lower confidence slightly.",
-    "8. If you can partially read a line, include what you CAN read with nulls for unknowns — do not skip the entire line.",
+    "LAYOUT & COLUMN READING:",
+    "1. Printed POS receipts use columns (QTY | ITEM | PRICE | AMOUNT, or ITEM | PRICE | AMOUNT). Columns often don't line up visually — align by reading each row left-to-right using the printed labels.",
+    "2. A typical item row: '2 x Rice 5000 10000' or 'Rice 2 5000 10000' or '2 @3500=7000'. Identify quantity (how many), unit price (price per ONE), and line total (the row's final amount).",
+    "3. If a row shows only item + one number (e.g. 'Rice 5000'), treat the number as line total with quantity=1 and unitPrice=5000.",
+    "4. If quantity and unitPrice are visible but lineTotal is missing, compute lineTotal = quantity × unitPrice.",
+    "5. Handwritten receipts: 'Item | Qty | UnitPrice | Amount' or just 'Item: Amount'. Buyer name at top, then items, then 'Total:' underlined twice at bottom.",
+    "",
+    "HANDWRITING GUIDELINES:",
+    "6. Ink can be smudged, paper creased, lighting uneven, handwriting cursive or rushed. Use context from the whole receipt.",
+    "7. Naira may be: N 5000, #2500, ₦1,500, '=N= 800', '500' with context, or '2k' = 2000. Ignore commas and symbols (₦12,500 = 12500).",
+    "8. Shortened items: 'Rice'→Rc, 'Tomatoe'→Tmt, 'Beans'→Bns, 'Garri'→Gr, 'Palm oil'→PO, 'Semovita'→Smvt, 'Indomie'→Ind, 'Peak milk'→Pk. Expand to the most likely full name.",
+    "9. Handwritten dates: 12/7/2026, 12-07-26, '12th July 2026', '27/8/26'. Output ISO YYYY-MM-DD.",
+    "10. If a word is ambiguous but looks like a common item, include it and lower confidence slightly.",
+    "11. If you can partially read a line, include what you CAN read with nulls for unknowns — never skip the line.",
+    "",
+    "HEADER & FOOTER DETAILS:",
+    "12. Extract merchant name (store/seller; often 'From: X' at top or printed banner).",
+    "13. Extract merchant address / phone / city / RC number if printed anywhere.",
+    "14. Extract receipt or invoice number (e.g. 'RCT-000123', 'INV 8901', 'Receipt No:', 'Serial:', bold serial near top/bottom).",
+    "15. Detect payment method at bottom: CASH, CARD (POS), TRANSFER, MOBILE (QR/bank app), or 'Paid'. Output: cash, card, transfer, pos, mobile, or null.",
+    "",
+    "MONEY MATH (very important):",
+    "16. VAT: Nigerian VAT is 7.5%. If the receipt shows 'VAT 7.5%', capture vatRate (7.5) and the VAT amount in 'tax' (NGN).",
+    "17. Discounts: a 'Discount' line reduces the total — capture amount separately.",
+    "18. Service charges / card fees: lines like 'Service Charge', 'Card Fee', 'Settlement' are ADDED fees — capture separately as serviceCharge.",
+    "19. Subtotal = sum of item line totals BEFORE VAT/discount/service charge. Total = final amount paid (often 'Total', 'T:', 'Amount =N=', 'Pay:'). 'Change' or 'Balance' is NOT the total.",
+    "20. Verify the math: subtotal + tax + serviceCharge - discount should equal total. If it doesn't, trust the printed 'total' line but note the discrepancy via lower confidence.",
     "",
     "Return strict JSON with this exact structure:",
     "{",
-    '  "merchantName": string | null (store / seller name if found; very often handwritten at top as "From: X" or business name),',
-    '  "customerName": string | null (buyer / customer name if written at top),',
-    '  "date": string | null (ISO date format YYYY-MM-DD if found, else null),',
+    '  "merchantName": string | null (store / seller name),',
+    '  "merchantAddress": string | null (address, phone, city, or RC number if printed),',
+    '  "customerName": string | null (buyer / customer name if written),',
+    '  "receiptNumber": string | null (receipt / invoice / serial number),',
+    '  "date": string | null (ISO YYYY-MM-DD if found, else null),',
     '  "currency": "NGN",',
-    '  "isHandwritten": boolean (true if mostly/partially handwritten, false if fully printed POS),',
+    '  "isHandwritten": boolean (true if ANY part is handwritten),',
+    '  "paymentMethod": "cash" | "card" | "transfer" | "pos" | "mobile" | null,',
     '  "items": [',
     "    {",
-    '      "name": string (product / item name — transcribe exactly as written, do not over-correct),',
+    '      "name": string (item name — expand shorthand, do not include barcodes),',
+    '      "itemCode": string | null (SKU / PLU / barcode number if printed beside the item),',
     '      "quantity": number | null (defaults to 1 if you know a single item was sold but count is not shown),',
     '      "unitPrice": number | null (price per single unit in NGN),',
-    '      "lineTotal": number | null (quantity × unitPrice, or the line/item amount written on the receipt)' ,
+    '      "lineTotal": number | null (quantity × unitPrice, or the line/item amount written on the receipt)',
     "    }",
     "  ],",
-    '  "subtotal": number | null (sum before VAT/discount/shipping),',
-    '  "tax": number | null (VAT or any tax amount, null if not shown — most handwritten receipts omit tax),',
-    '  "total": number | null (grand / final amount paid — often at bottom underlined or preceded by "Total", "T:", "Amount =N=" ),',
-    '  "confidence": number (between 0 and 1 — lower for difficult-to-read handwriting, higher for clear printed POS)',
+    '  "subtotal": number | null (sum of item line totals before VAT/discount/service charge),',
+    '  "tax": number | null (VAT amount in NGN, null if not shown),',
+    '  "vatRate": number | null (e.g. 7.5 — only if the rate is shown or clearly implied),',
+    '  "discount": number | null (total discount applied, null if none),',
+    '  "serviceCharge": number | null (card/service fee, null if none),',
+    '  "total": number | null (grand / final amount paid),',
+    '  "confidence": number (between 0 and 1 — lower for difficult-to-read handwriting or when totals don\'t add up, higher for clear printed POS)',
     "}",
     "",
     "CRITICAL RULES:",
-    "A. Populate items array with EVERY line entry you can possibly read, even partial. Empty items array is ONLY allowed if there is genuinely zero item data on the image.",
-    "B. Set isHandwritten = true if ANY part of receipt is handwritten (not 100% printed).",
-    "C. Null is strictly used for UNKNOWN / unreadable values — never 0 for missing numbers.",
-    "D. When handwritten line only says 'Rice: 5000' with no qty — name='Rice', unitPrice=5000, quantity=1, lineTotal=5000.",
-    "E. Nigerian formatting: commas as thousands separators (₦12,500) — ignore them, return plain numbers.",
+    "A. Populate items with EVERY line entry you can possibly read, even partial. Empty items is ONLY allowed if there is genuinely zero item data.",
+    "B. Never turn header/footer noise (address, phone, barcode, RRR, THANK YOU) into items.",
+    "C. Null is strictly for UNKNOWN / unreadable values — never 0 for missing numbers.",
+    "D. Quantity defaults to 1 only when a single item was clearly sold.",
+    "E. Compute lineTotal whenever you know quantity and unitPrice, and verify it matches the printed row amount.",
+    "F. Ignore commas and currency symbols in numbers; return plain numbers (12500, not 12,500 or ₦12,500).",
+    "G. If a receipt contains multiple unrelated receipts taped together, parse the primary one and set confidence low.",
   ].join("\n");
 
   const parsed = await callVisionJson({
@@ -711,29 +738,91 @@ export async function extractReceipt({ imageFile }) {
     },
   });
 
-  const normalizedItems = Array.isArray(parsed?.items)
-    ? parsed.items.map((item) => ({
-        name: String(item?.name || "").trim() || "Unknown item",
-        quantity: asNumberOrNull(item?.quantity),
-        unitPrice: asNumberOrNull(item?.unitPrice),
-        lineTotal: asNumberOrNull(item?.lineTotal),
-      }))
-    : [];
+  const rawItems = Array.isArray(parsed?.items) ? parsed.items : [];
+  const warnings = [];
+
+  const normalizedItems = rawItems.map((item) => {
+    const quantity = asNumberOrNull(item?.quantity);
+    const unitPrice = asNumberOrNull(item?.unitPrice);
+    let lineTotal = asNumberOrNull(item?.lineTotal);
+    if (lineTotal == null && quantity != null && unitPrice != null) {
+      lineTotal = Math.round(quantity * unitPrice);
+    }
+    return {
+      name: String(item?.name || "").trim() || "Unknown item",
+      itemCode: item?.itemCode ? String(item.itemCode).trim() || null : null,
+      quantity,
+      unitPrice,
+      lineTotal,
+    };
+  });
 
   const isHandwritten = Boolean(parsed?.isHandwritten);
+
+  const subtotal = asNumberOrNull(parsed?.subtotal);
+  const tax = asNumberOrNull(parsed?.tax);
+  const discount = asNumberOrNull(parsed?.discount);
+  const serviceCharge = asNumberOrNull(parsed?.serviceCharge);
+  let total = asNumberOrNull(parsed?.total);
+
+  const sumLineTotals = normalizedItems.reduce(
+    (s, it) => s + (it.lineTotal ?? 0),
+    0,
+  );
+
+  let resolvedSubtotal = subtotal;
+  if (resolvedSubtotal == null && sumLineTotals > 0) {
+    resolvedSubtotal = Math.round(sumLineTotals);
+  }
+
+  let resolvedTotal = total;
+  if (resolvedTotal == null && resolvedSubtotal != null) {
+    const computed =
+      resolvedSubtotal +
+      (tax ?? 0) +
+      (serviceCharge ?? 0) -
+      (discount ?? 0);
+    if (computed > 0) resolvedTotal = Math.round(computed);
+  }
+
+  if (
+    resolvedSubtotal != null &&
+    sumLineTotals > 0 &&
+    Math.abs(resolvedSubtotal - sumLineTotals) > 1
+  ) {
+    warnings.push("Item totals don't match subtotal");
+  }
+  if (resolvedTotal != null && resolvedSubtotal != null) {
+    const expected =
+      resolvedSubtotal + (tax ?? 0) + (serviceCharge ?? 0) - (discount ?? 0);
+    if (expected > 0 && Math.abs(expected - resolvedTotal) > 1) {
+      warnings.push("Total doesn't match subtotal + tax/discount");
+    }
+  }
+
+  let confidence =
+    asNumberOrNull(parsed?.confidence) ?? (isHandwritten ? 0.7 : 0.85);
+  if (warnings.length > 0) confidence = Math.max(0.3, confidence - 0.1);
 
   return {
     parsed: {
       merchantName: parsed?.merchantName || null,
+      merchantAddress: parsed?.merchantAddress || null,
       customerName: parsed?.customerName || null,
+      receiptNumber: parsed?.receiptNumber || null,
       date: parsed?.date || null,
       currency: "NGN",
       isHandwritten,
+      paymentMethod: parsed?.paymentMethod || null,
       items: normalizedItems,
-      subtotal: asNumberOrNull(parsed?.subtotal),
-      tax: asNumberOrNull(parsed?.tax),
-      total: asNumberOrNull(parsed?.total),
-      confidence: asNumberOrNull(parsed?.confidence) ?? (isHandwritten ? 0.7 : 0.85),
+      subtotal: resolvedSubtotal,
+      tax,
+      vatRate: asNumberOrNull(parsed?.vatRate),
+      discount,
+      serviceCharge,
+      total: resolvedTotal,
+      confidence,
+      warning: warnings.join(" · ") || null,
     },
   };
 }

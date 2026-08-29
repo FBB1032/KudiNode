@@ -159,6 +159,13 @@ export function VerificationScreen() {
               </Text>
             </View>
 
+            {parsedReceipt.warning ? (
+              <View style={styles.warningBanner}>
+                <Icon name="alert-circle" size={14} color={colors.warningOrange} />
+                <Text style={styles.warningText}>{parsedReceipt.warning}</Text>
+              </View>
+            ) : null}
+
             <View style={styles.receiptMeta}>
               {parsedReceipt.isHandwritten ? (
                 <View style={[styles.metaChip, { backgroundColor: "#FFF3E8" }]}>
@@ -170,9 +177,17 @@ export function VerificationScreen() {
               ) : null}
               {parsedReceipt.merchantName ? (
                 <View style={styles.metaChip}>
-                  <Icon name="store" size={12} color={colors.primaryMid} />
+                  <Icon name="storefront" size={12} color={colors.primaryMid} />
                   <Text style={styles.metaChipText} numberOfLines={1}>
                     {parsedReceipt.merchantName}
+                  </Text>
+                </View>
+              ) : null}
+              {parsedReceipt.merchantAddress ? (
+                <View style={styles.metaChip}>
+                  <Icon name="location" size={12} color={colors.primaryMid} />
+                  <Text style={styles.metaChipText} numberOfLines={1}>
+                    {parsedReceipt.merchantAddress}
                   </Text>
                 </View>
               ) : null}
@@ -181,6 +196,22 @@ export function VerificationScreen() {
                   <Icon name="person" size={12} color={colors.primaryMid} />
                   <Text style={styles.metaChipText} numberOfLines={1}>
                     Customer: {parsedReceipt.customerName}
+                  </Text>
+                </View>
+              ) : null}
+              {parsedReceipt.receiptNumber ? (
+                <View style={styles.metaChip}>
+                  <Icon name="document-text" size={12} color={colors.primaryMid} />
+                  <Text style={styles.metaChipText} numberOfLines={1}>
+                    #{parsedReceipt.receiptNumber}
+                  </Text>
+                </View>
+              ) : null}
+              {parsedReceipt.paymentMethod ? (
+                <View style={styles.metaChip}>
+                  <Icon name="card" size={12} color={colors.primaryMid} />
+                  <Text style={styles.metaChipText} numberOfLines={1}>
+                    Paid by {parsedReceipt.paymentMethod.toUpperCase()}
                   </Text>
                 </View>
               ) : null}
@@ -195,6 +226,33 @@ export function VerificationScreen() {
                   <Icon name="receipt" size={12} color={colors.primaryMid} />
                   <Text style={styles.metaChipText}>
                     Subtotal ₦{parsedReceipt.subtotal.toLocaleString()}
+                  </Text>
+                </View>
+              ) : null}
+              {parsedReceipt.tax != null ? (
+                <View style={styles.metaChip}>
+                  <Icon name="trending-up" size={12} color={colors.primaryMid} />
+                  <Text style={styles.metaChipText}>
+                    VAT ₦{parsedReceipt.tax.toLocaleString()}
+                    {parsedReceipt.vatRate != null
+                      ? ` (${parsedReceipt.vatRate}%)`
+                      : ""}
+                  </Text>
+                </View>
+              ) : null}
+              {parsedReceipt.discount != null ? (
+                <View style={styles.metaChip}>
+                  <Icon name="trending-up" size={12} color={colors.successGreen} />
+                  <Text style={styles.metaChipText}>
+                    Discount −₦{parsedReceipt.discount.toLocaleString()}
+                  </Text>
+                </View>
+              ) : null}
+              {parsedReceipt.serviceCharge != null ? (
+                <View style={styles.metaChip}>
+                  <Icon name="card" size={12} color={colors.warningOrange} />
+                  <Text style={styles.metaChipText}>
+                    Service fee +₦{parsedReceipt.serviceCharge.toLocaleString()}
                   </Text>
                 </View>
               ) : null}
@@ -452,6 +510,24 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     gap: 6,
     marginTop: spacing.sm,
+  },
+  warningBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "#FFF3E8",
+    borderWidth: 1,
+    borderColor: "#F6C7A0",
+    borderRadius: radius.lg,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 8,
+    marginTop: spacing.sm,
+  },
+  warningText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: colors.warningOrange,
+    flex: 1,
   },
   metaChip: {
     flexDirection: "row",

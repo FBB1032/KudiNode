@@ -39,7 +39,7 @@ export const env = {
 
   openrouterApiKey: process.env.OPENROUTER_API_KEY || "",
   openrouterVisionModel:
-    process.env.OPENROUTER_VISION_MODEL || "qwen/qwen-2.5-vl-7b-instruct:free",
+    process.env.OPENROUTER_VISION_MODEL || "minimax/minimax-m3:free",
 
   fastWhisperUrl: process.env.FAST_WHISPER_URL || "",
   fastWhisperApiKey: process.env.FAST_WHISPER_API_KEY || "",

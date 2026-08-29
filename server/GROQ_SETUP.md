@@ -43,7 +43,7 @@ GROQ_MODEL=openai/gpt-oss-120b
 ### For Receipt Scanning (OpenRouter free vision):
 ```env
 OPENROUTER_API_KEY=your_openrouter_key
-OPENROUTER_VISION_MODEL=qwen/qwen-2.5-vl-7b-instruct:free
+OPENROUTER_VISION_MODEL=minimax/minimax-m3:free
 ```
 
 ## 🧪 Test It
@@ -86,8 +86,11 @@ Receipt scanning now runs on OpenRouter free vision models:
 - Free tier ~50 requests/day — fine for dev/light use
 
 **Option 2: Switch the vision model**
-- If the default `:free` model is removed/paid, pick another listed free vision model
-- OpenRouter has many free vision models — just change `OPENROUTER_VISION_MODEL`
+- Free vision model roster changes frequently. Check current availability:
+  ```bash
+  curl -H "Authorization: Bearer YOUR_KEY" https://openrouter.ai/api/v1/models | jq '.data[] | select(.id | contains(":free")) | select(.architecture.input_modalities | index("image")) | .id'
+  ```
+- Current working default: `minimax/minimax-m3:free`
 
 ## 🎉 Ready to Go!
 
