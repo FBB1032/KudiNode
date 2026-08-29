@@ -19,6 +19,10 @@ import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../AppNavigator";
 import { extractReceiptFromImage, parseVoiceSalesLog } from "../services/aiApi";
+import {
+  WHISPER_RECORDING_OPTIONS,
+  LANG_OPTIONS,
+} from "../constants/voice";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type Route = RouteProp<RootStackParamList, "SalesIntake">;
@@ -35,6 +39,7 @@ export function SalesIntakeScreen() {
   const [permission, requestPermission] = useCameraPermissions();
   const [isProcessingPhoto, setIsProcessingPhoto] = useState(false);
   const [isProcessingVoice, setIsProcessingVoice] = useState(false);
+  const [voiceLanguage, setVoiceLanguage] = useState("auto");
 
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const pulseLoop = useRef<Animated.CompositeAnimation | null>(null);
@@ -88,7 +93,7 @@ export function SalesIntakeScreen() {
         }
 
         // Call the voice sales log API
-        const result = await parseVoiceSalesLog(uri);
+        const result = await parseVoiceSalesLog(uri, voiceLanguage);
         
         // Navigate to verification with parsed items
         nav.navigate("Verification", { parsedSalesLog: result.parsed });
@@ -130,9 +135,7 @@ export function SalesIntakeScreen() {
         });
 
         const recording = new Audio.Recording();
-        await recording.prepareToRecordAsync(
-          Audio.RecordingOptionsPresets.HIGH_QUALITY,
-        );
+        await recording.prepareToRecordAsync(WHISPER_RECORDING_OPTIONS);
         await recording.startAsync();
         audioRecordingRef.current = recording;
         setIsRecording(true);
@@ -339,6 +342,34 @@ export function SalesIntakeScreen() {
               ? "Speak items & prices in English, Pidgin, Hausa, Yoruba or Igbo"
               : "Tap mic to record your sales. AI will parse items & amounts."}
           </Text>
+
+          {!isRecording && (
+            <View style={styles.langRow}>
+              {LANG_OPTIONS.map((opt) => {
+                const active = voiceLanguage === opt.value;
+                return (
+                  <TouchableOpacity
+                    key={opt.value}
+                    style={[
+                      styles.langPill,
+                      active && styles.langPillActive,
+                    ]}
+                    onPress={() => setVoiceLanguage(opt.value)}
+                    activeOpacity={0.75}
+                  >
+                    <Text
+                      style={[
+                        styles.langPillText,
+                        active && styles.langPillTextActive,
+                      ]}
+                    >
+                      {opt.label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          )}
         </View>
       )}
 
@@ -664,6 +695,34 @@ const styles = StyleSheet.create({
     textAlign: "center",
     lineHeight: 20,
     fontWeight: "500",
+  },
+  langRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    gap: 6,
+    marginTop: spacing.lg,
+    maxWidth: 320,
+  },
+  langPill: {
+    backgroundColor: "rgba(255,255,255,0.15)",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: "transparent",
+  },
+  langPillActive: {
+    backgroundColor: colors.white,
+    borderColor: colors.white,
+  },
+  langPillText: {
+    fontSize: 10,
+    fontWeight: "800",
+    color: "rgba(255,255,255,0.85)",
+  },
+  langPillTextActive: {
+    color: colors.primaryDeep,
   },
 
   // Bottom Container

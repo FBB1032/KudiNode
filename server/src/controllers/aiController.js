@@ -10,6 +10,8 @@ import {
 export const parseVoiceTransferIntent = asyncHandler(async (req, res) => {
   const transcript = req.body?.transcript;
   const audioFile = req.file;
+  const languageHint =
+    req.body?.languageHint ?? req.body?.language ?? "auto";
 
   if (!transcript && !audioFile) {
     throw badRequest(
@@ -17,7 +19,11 @@ export const parseVoiceTransferIntent = asyncHandler(async (req, res) => {
     );
   }
 
-  const result = await parseVoiceTransfer({ transcript, audioFile });
+  const result = await parseVoiceTransfer({
+    transcript,
+    audioFile,
+    languageHint,
+  });
   res.json(result);
 });
 
@@ -33,6 +39,8 @@ export const extractReceiptItems = asyncHandler(async (req, res) => {
 export const parseVoiceSalesLogIntent = asyncHandler(async (req, res) => {
   const transcript = req.body?.transcript;
   const audioFile = req.file;
+  const languageHint =
+    req.body?.languageHint ?? req.body?.language ?? "auto";
 
   if (!transcript && !audioFile) {
     throw badRequest(
@@ -40,7 +48,11 @@ export const parseVoiceSalesLogIntent = asyncHandler(async (req, res) => {
     );
   }
 
-  const result = await parseVoiceSalesLog({ transcript, audioFile });
+  const result = await parseVoiceSalesLog({
+    transcript,
+    audioFile,
+    languageHint,
+  });
   res.json(result);
 });
 

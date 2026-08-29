@@ -38,6 +38,7 @@ Your KudiNode backend now uses **Groq** instead of Gemini for AI features!
 ```env
 GROQ_API_KEY=gsk_your_key_here
 GROQ_MODEL=openai/gpt-oss-120b
+GROQ_WHISPER_MODEL=whisper-large-v3-turbo
 ```
 
 ### For Receipt Scanning (OpenRouter free vision):

@@ -24,6 +24,10 @@ import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../AppNavigator";
 import { parseVoiceTransferFromAudio } from "../services/aiApi";
+import {
+  WHISPER_RECORDING_OPTIONS,
+  LANG_OPTIONS,
+} from "../constants/voice";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -34,6 +38,7 @@ export function VoiceTransferScreen() {
     "idle" | "recording" | "processing" | "done"
   >("idle");
   const [seconds, setSeconds] = useState(0);
+  const [language, setLanguage] = useState("auto");
   const recordingRef = useRef<Audio.Recording | null>(null);
 
   // Pulse animation for mic ring
@@ -47,6 +52,10 @@ export function VoiceTransferScreen() {
 
   useEffect(() => {
     let timer: any;
+    let meterTimer: any;
+    let waveLoop: Animated.CompositeAnimation[] = [];
+    let meteringOk = true;
+
     if (phase === "recording") {
       setSeconds(0);
       timer = setInterval(() => setSeconds((s) => s + 1), 1000);
@@ -68,8 +77,8 @@ export function VoiceTransferScreen() {
       );
       pulseLoop.current.start();
 
-      // Wave bars
-      waveAnims.forEach((anim, i) => {
+      // Wave bars — simulated loop first (fallback)
+      waveLoop = waveAnims.map((anim, i) =>
         Animated.loop(
           Animated.sequence([
             Animated.timing(anim, {
@@ -85,10 +94,49 @@ export function VoiceTransferScreen() {
               useNativeDriver: false,
             }),
           ]),
-        ).start();
-      });
+        ),
+      );
+      waveLoop.forEach((l) => l.start());
+
+      // Real metering — takes over the waveform when available
+      meterTimer = setInterval(async () => {
+        const recording = recordingRef.current;
+        if (!recording) return;
+        try {
+          const status = await recording.getStatusAsync();
+          if (
+            status &&
+            typeof status.metering === "number" &&
+            Number.isFinite(status.metering)
+          ) {
+            if (meteringOk) {
+              waveLoop.forEach((l) => l.stop());
+              meteringOk = false;
+            }
+            const level = Math.min(
+              1,
+              Math.max(0.08, (status.metering + 55) / 55),
+            );
+            waveAnims.forEach((anim, i) => {
+              const variance = 0.75 + ((i * 37) % 50) / 100;
+              const target = Math.min(
+                1,
+                Math.max(0.3, level * variance),
+              );
+              Animated.timing(anim, {
+                toValue: target,
+                duration: 120,
+                useNativeDriver: false,
+              }).start();
+            });
+          }
+        } catch {
+          // Metering unavailable — simulated loop keeps running.
+        }
+      }, 150);
     } else {
       clearInterval(timer);
+      clearInterval(meterTimer);
       pulseLoop.current?.stop();
       Animated.timing(pulseAnim, {
         toValue: 1,
@@ -103,7 +151,11 @@ export function VoiceTransferScreen() {
         }).start(),
       );
     }
-    return () => clearInterval(timer);
+    return () => {
+      clearInterval(timer);
+      clearInterval(meterTimer);
+      waveLoop.forEach((l) => l.stop());
+    };
   }, [phase]);
 
   useEffect(() => {
@@ -131,9 +183,7 @@ export function VoiceTransferScreen() {
       });
 
       const recording = new Audio.Recording();
-      await recording.prepareToRecordAsync(
-        Audio.RecordingOptionsPresets.HIGH_QUALITY,
-      );
+      await recording.prepareToRecordAsync(WHISPER_RECORDING_OPTIONS);
       await recording.startAsync();
       recordingRef.current = recording;
       setPhase("recording");
@@ -162,7 +212,7 @@ export function VoiceTransferScreen() {
         throw new Error("No audio file generated");
       }
 
-      const result = await parseVoiceTransferFromAudio(uri);
+      const result = await parseVoiceTransferFromAudio(uri, language);
       const amount = result.parsed.amount;
 
       const prefilled = {
@@ -335,14 +385,32 @@ export function VoiceTransferScreen() {
                 : "Redirecting to confirm details…"}
         </Text>
 
-        {/* Supported languages pills */}
+        {/* Supported languages chips */}
         {phase === "idle" && (
           <View style={styles.langRow}>
-            {["EN", "HA", "YO", "IG", "PID"].map((l) => (
-              <View key={l} style={styles.langPill}>
-                <Text style={styles.langPillText}>{l}</Text>
-              </View>
-            ))}
+            {LANG_OPTIONS.map((opt) => {
+              const active = language === opt.value;
+              return (
+                <TouchableOpacity
+                  key={opt.value}
+                  style={[
+                    styles.langPill,
+                    active && styles.langPillActive,
+                  ]}
+                  onPress={() => setLanguage(opt.value)}
+                  activeOpacity={0.75}
+                >
+                  <Text
+                    style={[
+                      styles.langPillText,
+                      active && styles.langPillTextActive,
+                    ]}
+                  >
+                    {opt.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
         )}
       </View>
@@ -469,17 +537,33 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
 
-  langRow: { flexDirection: "row", gap: 6, marginTop: spacing.lg },
+  langRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    gap: 6,
+    marginTop: spacing.lg,
+    maxWidth: 340,
+  },
   langPill: {
     backgroundColor: "rgba(255,255,255,0.15)",
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: "transparent",
+  },
+  langPillActive: {
+    backgroundColor: colors.white,
+    borderColor: colors.white,
   },
   langPillText: {
     fontSize: 10,
     fontWeight: "800",
     color: "rgba(255,255,255,0.85)",
+  },
+  langPillTextActive: {
+    color: colors.primaryDeep,
   },
 
   bottomBar: { paddingHorizontal: spacing.xl, gap: spacing.md },

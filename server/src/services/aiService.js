@@ -20,6 +20,101 @@ function normalizeAccountNumber(value) {
   return digits || null;
 }
 
+const LANG_HINTS = { en: "en", ha: "ha", yo: "yo", ig: "ig", pid: "en", auto: null };
+
+function resolveLanguageHint(hint) {
+  if (!hint || hint === "auto") return null;
+  const lower = String(hint).toLowerCase().trim();
+  return LANG_HINTS[lower] ?? null;
+}
+
+const WHISPER_CONTEXT_PROMPT = [
+  "The audio is a Nigerian banking/fintech voice command.",
+  "Speakers may use English, Nigerian Pidgin, Hausa, Yoruba, or Igbo, with code-switching.",
+  "Transcribe proper nouns (names, banks) and numbers (amounts, account digits) accurately.",
+  "Common banks: Wema Bank, Access Bank, GTBank, Zenith Bank, First Bank, UBA, Kuda, OPay, Palmpay, Moniepoint, Stanbic IBTC, Sterling, Fidelity, FCMB, Union Bank, Polaris.",
+  "Money terms: naira, kobo, N, dubu (thousand, Hausa), ẹgbẹ̀rún (thousand, Yoruba), puku (thousand, Igbo), grand, k (thousand).",
+].join(" ");
+
+const NIGERIAN_BANKS = [
+  "Wema Bank PLC",
+  "Access Bank PLC",
+  "Guaranty Trust Bank (GTBank)",
+  "Zenith Bank PLC",
+  "First Bank of Nigeria",
+  "United Bank for Africa (UBA)",
+  "Kuda Microfinance Bank",
+  "OPay / Paycom",
+  "Palmpay",
+  "Moniepoint MFB",
+  "Stanbic IBTC Bank",
+  "Sterling Bank PLC",
+  "Fidelity Bank PLC",
+  "First City Monument Bank (FCMB)",
+  "Union Bank",
+  "Polaris Bank PLC",
+];
+
+function normalizeBankName(value) {
+  if (!value) return value;
+  const original = String(value).trim();
+  const trimmed = original.toLowerCase();
+
+  const aliases = [
+    ["wema bank", "Wema Bank PLC"],
+    ["wema", "Wema Bank PLC"],
+    ["access bank", "Access Bank PLC"],
+    ["access", "Access Bank PLC"],
+    ["guaranty trust bank", "Guaranty Trust Bank (GTBank)"],
+    ["gtbank", "Guaranty Trust Bank (GTBank)"],
+    ["guaranty trust", "Guaranty Trust Bank (GTBank)"],
+    ["gtb", "Guaranty Trust Bank (GTBank)"],
+    ["zenith bank", "Zenith Bank PLC"],
+    ["zenith", "Zenith Bank PLC"],
+    ["first bank", "First Bank of Nigeria"],
+    ["united bank for africa", "United Bank for Africa (UBA)"],
+    ["uba", "United Bank for Africa (UBA)"],
+    ["kuda microfinance", "Kuda Microfinance Bank"],
+    ["kuda", "Kuda Microfinance Bank"],
+    ["opay", "OPay / Paycom"],
+    ["paycom", "OPay / Paycom"],
+    ["palmpay", "Palmpay"],
+    ["palm pay", "Palmpay"],
+    ["moniepoint", "Moniepoint MFB"],
+    ["stanbic ibtc", "Stanbic IBTC Bank"],
+    ["stanbic", "Stanbic IBTC Bank"],
+    ["sterling bank", "Sterling Bank PLC"],
+    ["sterling", "Sterling Bank PLC"],
+    ["fidelity bank", "Fidelity Bank PLC"],
+    ["fidelity", "Fidelity Bank PLC"],
+    ["first city monument", "First City Monument Bank (FCMB)"],
+    ["fcmb", "First City Monument Bank (FCMB)"],
+    ["union bank", "Union Bank"],
+    ["union", "Union Bank"],
+    ["polaris bank", "Polaris Bank PLC"],
+    ["polaris", "Polaris Bank PLC"],
+  ];
+
+  for (const [key, canonical] of aliases) {
+    if (
+      trimmed === key ||
+      trimmed.startsWith(`${key} `) ||
+      trimmed.endsWith(` ${key}`) ||
+      trimmed.includes(` ${key} `) ||
+      trimmed.includes(`(${key})`) ||
+      trimmed.includes(`${key}/`)
+    ) {
+      return canonical;
+    }
+  }
+
+  for (const bank of NIGERIAN_BANKS) {
+    if (trimmed === bank.toLowerCase()) return bank;
+  }
+
+  return original;
+}
+
 function tryParseJson(text) {
   if (!text) return null;
   const trimmed = text.trim();
@@ -259,7 +354,7 @@ async function callVisionJson({ prompt, systemPrompt, image }) {
   return parsed;
 }
 
-async function transcribeWithGroqWhisper(audioFile) {
+async function transcribeWithGroqWhisper(audioFile, languageHint) {
   if (!env.groqApiKey) return null;
 
   const url = `${GROQ_API_BASE}/audio/transcriptions`;
@@ -273,8 +368,12 @@ async function transcribeWithGroqWhisper(audioFile) {
     new Blob([audioFile.buffer], { type: mime }),
     fileName,
   );
-  form.append("model", "whisper-large-v3-turbo");
+  form.append("model", env.groqWhisperModel);
   form.append("response_format", "json");
+  form.append("prompt", WHISPER_CONTEXT_PROMPT);
+  if (languageHint) {
+    form.append("language", languageHint);
+  }
 
   const response = await fetch(url, {
     method: "POST",
@@ -306,7 +405,7 @@ async function transcribeWithGroqWhisper(audioFile) {
   };
 }
 
-async function transcribeWithFastWhisper(audioFile) {
+async function transcribeWithFastWhisper(audioFile, languageHint) {
   if (!env.fastWhisperUrl) return null;
 
   const url = `${env.fastWhisperUrl.replace(/\/$/, "")}/transcribe`;
@@ -317,9 +416,7 @@ async function transcribeWithFastWhisper(audioFile) {
     audioFile.originalname || "voice.webm",
   );
 
-  if (env.fastWhisperLanguageHint) {
-    form.append("language_hint", env.fastWhisperLanguageHint);
-  }
+  form.append("language_hint", languageHint || env.fastWhisperLanguageHint || "");
 
   const headers = {};
   if (env.fastWhisperApiKey) {
@@ -358,12 +455,18 @@ async function transcribeWithFastWhisper(audioFile) {
   };
 }
 
-async function transcribeWithGeminiAudio(audioFile) {
+async function transcribeWithGeminiAudio(audioFile, languageHint) {
   if (!env.geminiApiKey) return null;
+
+  const languageLine = languageHint
+    ? `The spoken language is ${languageHint}.`
+    : "The language is unknown; detect it from the audio.";
 
   const prompt = [
     "Transcribe this audio from Nigerian speech into plain text.",
+    languageLine,
     "The speaker may use English, Pidgin, Hausa, Yoruba, Igbo, or mixed code-switching.",
+    WHISPER_CONTEXT_PROMPT,
     "Return strict JSON only:",
     "{",
     '  "transcript": string,',
@@ -398,7 +501,22 @@ async function transcribeWithGeminiAudio(audioFile) {
   }
 }
 
-async function getTranscript({ transcript, audioFile }) {
+async function runTranscriptionChain(audioFile, languageHint) {
+  const fastWhisperResult = await transcribeWithFastWhisper(audioFile, languageHint);
+  if (fastWhisperResult) return fastWhisperResult;
+
+  const groqWhisperResult = await transcribeWithGroqWhisper(audioFile, languageHint);
+  if (groqWhisperResult) return groqWhisperResult;
+
+  const geminiResult = await transcribeWithGeminiAudio(audioFile, languageHint);
+  if (geminiResult) return geminiResult;
+
+  throw badRequest(
+    "All audio transcription providers failed. Please try again with a clearer recording or enter text manually.",
+  );
+}
+
+async function getTranscript({ transcript, audioFile, languageHint }) {
   if (transcript?.trim()) {
     return {
       transcript: transcript.trim(),
@@ -411,18 +529,29 @@ async function getTranscript({ transcript, audioFile }) {
     throw badRequest("Provide either transcript text or an audio file");
   }
 
-  const fastWhisperResult = await transcribeWithFastWhisper(audioFile);
-  if (fastWhisperResult) return fastWhisperResult;
+  const resolvedHint = resolveLanguageHint(languageHint);
+  const firstPass = await runTranscriptionChain(audioFile, resolvedHint);
 
-  const groqWhisperResult = await transcribeWithGroqWhisper(audioFile);
-  if (groqWhisperResult) return groqWhisperResult;
+  // Two-pass: when the hint was auto/empty and the first pass detected a
+  // supported non-English language, re-run with the detected language to
+  // lock accuracy. Keep the first-pass result if the re-run fails.
+  if (
+    resolvedHint == null &&
+    firstPass.languageDetected &&
+    ["ha", "yo", "ig"].includes(firstPass.languageDetected)
+  ) {
+    try {
+      const secondPass = await runTranscriptionChain(
+        audioFile,
+        firstPass.languageDetected,
+      );
+      if (secondPass) return secondPass;
+    } catch {
+      // Fall through and keep the first-pass transcript.
+    }
+  }
 
-  const geminiResult = await transcribeWithGeminiAudio(audioFile);
-  if (geminiResult) return geminiResult;
-
-  throw badRequest(
-    "All audio transcription providers failed. Please try again with a clearer recording or enter text manually.",
-  );
+  return firstPass;
 }
 
 function getAiJsonProvider() {
@@ -549,11 +678,39 @@ async function callGeminiChat({ messages, systemPrompt }) {
     content, provider: "gemini" };
 }
 
-export async function parseVoiceTransfer({ transcript, audioFile }) {
-  const transcriptResult = await getTranscript({ transcript, audioFile });
+const LANG_NAMES = {
+  en: "English",
+  ha: "Hausa",
+  yo: "Yoruba",
+  ig: "Igbo",
+  pid: "Pidgin",
+};
+
+export async function parseVoiceTransfer({ transcript, audioFile, languageHint }) {
+  const transcriptResult = await getTranscript({ transcript, audioFile, languageHint });
+
+  const languagePromptLine = languageHint
+    ? `The user selected the language ${LANG_NAMES[languageHint] || languageHint} before speaking. Confirm languageDetected matches if the transcript clearly matches, but trust auto-detect when it disagrees and appears correct.`
+    : "Detect the language from the transcript itself.";
 
   const prompt = [
-    "Input can be English, Pidgin, Hausa, Yoruba, Igbo, or mixed speech.",
+    "Input can be English, Pidgin, Hausa, Yoruba, Igbo, or mixed code-switching.",
+    "The speaker is a Nigerian user giving a voice transfer command.",
+    languagePromptLine,
+    "",
+    "AMOUNT RECOGNITION:",
+    "  - Numbers may be spoken in English, Pidgin, Hausa, Yoruba, or Igbo.",
+    "  - 'thousand'/'dubu'/'ẹgbẹ̀rún'/'puku'/'grand'/'k' are MULTIPLIERS, not addends.",
+    "  - Hausa: 'dubu biyu' = 2000, 'dubu ashirin' = 20000, 'dubu ashirin da biyar' = 25000 (twenty-five thousand), 'ashirin' alone = 20.",
+    "  - Yoruba: 'ẹgbẹ̀rún mẹ́ta' = 3000, 'ẹ̀ẹ́gbà' = 200, 'mẹ́ta' alone = 3.",
+    "  - Igbo: 'puku' = 1000, 'puku atọ' = 3000.",
+    "  - Pidgin/English: '25 grand' = 25000, '25k' = 25000, 'two thousand five hundred' = 2500.",
+    "  - Always output the amount as a plain number in naira. Do not add a standalone 'thousand' to another number unless it is a true multiplier (e.g. 'dubu ashirin da biyar' = 25000).",
+    "",
+    "BANK NAME:",
+    "  - Return the canonical Nigerian bank name from this list: Wema Bank PLC, Access Bank PLC, Guaranty Trust Bank (GTBank), Zenith Bank PLC, First Bank of Nigeria, United Bank for Africa (UBA), Kuda Microfinance Bank, OPay / Paycom, Palmpay, Moniepoint MFB, Stanbic IBTC Bank, Sterling Bank PLC, Fidelity Bank PLC, First City Monument Bank (FCMB), Union Bank, Polaris Bank PLC.",
+    "  - Map common aliases: GTB/GTBank → Guaranty Trust Bank (GTBank), UBA → United Bank for Africa (UBA), FCMB → First City Monument Bank (FCMB), 'first bank' → First Bank of Nigeria.",
+    "",
     "Extract transfer details and return strict JSON only.",
     "Do not invent values. Use null when unknown.",
     "Return this exact structure:",
@@ -563,7 +720,7 @@ export async function parseVoiceTransfer({ transcript, audioFile }) {
     '  "accountNumber": string | null,',
     '  "amount": number | null,',
     '  "narration": string | null,',
-    '  "languageDetected": string | null,',
+    '  "languageDetected": "en" | "pidgin" | "hausa" | "yoruba" | "igbo" | null,',
     '  "confidence": number (between 0 and 1)',
     "}",
     "",
@@ -573,23 +730,37 @@ export async function parseVoiceTransfer({ transcript, audioFile }) {
 
   const parsed = await callBestAiJson({
     prompt,
-    systemPrompt: "You are a Nigerian fintech AI that parses voice transfer commands. You understand English, Pidgin, Hausa, Yoruba, and Igbo.",
+    systemPrompt: "You are a Nigerian fintech AI that parses voice transfer commands. You understand English, Pidgin, Hausa, Yoruba, and Igbo with code-switching.",
   });
+
+  const requiredFields = ["recipientName", "bankName", "accountNumber", "amount"];
+  const presentCount = requiredFields.reduce(
+    (count, key) => count + (parsed?.[key] != null ? 1 : 0),
+    0,
+  );
+
+  let confidence = asNumberOrNull(parsed?.confidence) ?? 0.8;
+  if (presentCount === 4) {
+    confidence = Math.min(0.99, confidence + 0.05);
+  } else if (presentCount <= 2) {
+    confidence = Math.max(0.3, confidence - 0.15);
+  }
 
   return {
     transcript: transcriptResult.transcript,
     parsed: {
       recipientName: parsed?.recipientName || null,
-      bankName: parsed?.bankName || null,
+      bankName: normalizeBankName(parsed?.bankName) || null,
       accountNumber: normalizeAccountNumber(parsed?.accountNumber),
       amount: asNumberOrNull(parsed?.amount),
       narration: parsed?.narration || null,
       languageDetected:
         parsed?.languageDetected || transcriptResult.languageDetected || "en",
-      confidence: asNumberOrNull(parsed?.confidence) ?? 0.8,
+      confidence,
     },
     meta: {
       transcriptionProvider: transcriptResult.provider,
+      languageHint: languageHint || null,
     },
   };
 }
@@ -827,8 +998,12 @@ export async function extractReceipt({ imageFile }) {
   };
 }
 
-export async function parseVoiceSalesLog({ transcript, audioFile }) {
-  const transcriptResult = await getTranscript({ transcript, audioFile });
+export async function parseVoiceSalesLog({ transcript, audioFile, languageHint }) {
+  const transcriptResult = await getTranscript({ transcript, audioFile, languageHint });
+
+  const languagePromptLine = languageHint
+    ? `The user selected the language ${LANG_NAMES[languageHint] || languageHint} before speaking. Confirm languageDetected matches if the transcript clearly matches, but trust auto-detect when it disagrees and appears correct.`
+    : "Detect the language from the transcript itself.";
 
   const systemPrompt = [
     "You are a Nigerian merchant AI that parses spoken sales logs.",
@@ -839,8 +1014,19 @@ export async function parseVoiceSalesLog({ transcript, audioFile }) {
   ].join("\n");
 
   const prompt = [
-    "Input can be English, Pidgin, Hausa, Yoruba, Igbo, or mixed speech.",
+    "Input can be English, Pidgin, Hausa, Yoruba, Igbo, or mixed code-switching.",
     "The speaker is a Nigerian merchant listing today's sales.",
+    languagePromptLine,
+    "",
+    "AMOUNT RECOGNITION:",
+    "  - Numbers may be spoken in English, Pidgin, Hausa, Yoruba, or Igbo.",
+    "  - 'thousand'/'dubu'/'ẹgbẹ̀rún'/'puku'/'grand'/'k' are MULTIPLIERS, not addends.",
+    "  - Hausa: 'dubu biyu' = 2000, 'dubu ashirin' = 20000, 'dubu ashirin da biyar' = 25000, 'ashirin' alone = 20.",
+    "  - Yoruba: 'ẹgbẹ̀rún mẹ́ta' = 3000, 'ẹ̀ẹ́gbà' = 200, 'mẹ́ta' alone = 3.",
+    "  - Igbo: 'puku' = 1000, 'puku atọ' = 3000.",
+    "  - Pidgin/English: '25 grand' = 25000, '25k' = 25000, 'two thousand five hundred' = 2500.",
+    "  - Always output prices as plain numbers in naira. Do not add a standalone 'thousand' to another number unless it is a true multiplier.",
+    "",
     "Examples of what you'll hear:",
     "  - 'Two bags of rice at 35 thousand each'",
     "  - 'Akara 500 naira, 10 wraps'",
@@ -853,11 +1039,11 @@ export async function parseVoiceSalesLog({ transcript, audioFile }) {
     '      "name": string (product description, e.g. "Rice 50kg bag"),',
     '      "quantity": number | null (number sold — default 1 if ambiguous),',
     '      "unitPrice": number | null (price per single item in NGN),',
-    '      "lineTotal": number | null (quantity x unitPrice)' ,
+    '      "lineTotal": number | null (quantity x unitPrice)',
     "    }",
     "  ],",
     '  "totalAmount": number | null (sum of all line totals),',
-    '  "languageDetected": string | null,',
+    '  "languageDetected": "en" | "pidgin" | "hausa" | "yoruba" | "igbo" | null,',
     '  "confidence": number (between 0 and 1)',
     "}",
     "",
@@ -895,6 +1081,13 @@ export async function parseVoiceSalesLog({ transcript, audioFile }) {
     0,
   );
 
+  let confidence = asNumberOrNull(parsed?.confidence) ?? 0.8;
+  if (normalizedItems.length > 0) {
+    confidence = Math.min(0.99, confidence + 0.05);
+  } else {
+    confidence = Math.max(0.3, confidence - 0.15);
+  }
+
   return {
     transcript: transcriptResult.transcript,
     parsed: {
@@ -907,10 +1100,11 @@ export async function parseVoiceSalesLog({ transcript, audioFile }) {
             : null,
       languageDetected:
         parsed?.languageDetected || transcriptResult.languageDetected || "en",
-      confidence: asNumberOrNull(parsed?.confidence) ?? 0.8,
+      confidence,
     },
     meta: {
       transcriptionProvider: transcriptResult.provider,
+      languageHint: languageHint || null,
     },
   };
 }

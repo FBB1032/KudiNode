@@ -32,6 +32,13 @@ Not required with this repo setup. By default, backend can fall back to Gemini a
 Run your own faster-whisper HTTP service and provide `FAST_WHISPER_URL`.
 No external API key is required for this mode.
 
+### Language hint support
+
+The client can send a `language` field (`en`, `ha`, `yo`, `ig`, `pid`, or `auto`) with voice uploads. The backend uses this for:
+1. Whisper language hint (improves transcription accuracy for the selected language).
+2. NLU prompt context (informs the parser about the expected spoken language).
+3. Two-pass re-transcription: when `auto` and Whisper detects `ha`, `yo`, or `ig`, the transcription is re-run with the detected language as an explicit hint to lock accuracy.
+
 ---
 
 ## 2) API keys and environment variables
@@ -47,6 +54,11 @@ GEMINI_MODEL=gemini-2.0-flash
 FAST_WHISPER_URL=http://127.0.0.1:8000
 FAST_WHISPER_API_KEY=
 FAST_WHISPER_LANGUAGE_HINT=
+
+# Optional Groq (transcription + parsing). GROQ_WHISPER_MODEL defaults to whisper-large-v3-turbo.
+GROQ_API_KEY=
+GROQ_MODEL=openai/gpt-oss-120b
+GROQ_WHISPER_MODEL=whisper-large-v3-turbo
 ```
 
 Notes:
@@ -66,6 +78,7 @@ Notes:
 - Input:
   - Either JSON body with `transcript`
   - Or multipart file in `audio`
+  - Optional multipart/JSON field `language` (or `languageHint`) — one of `en`, `ha`, `yo`, `ig`, `pid`, or `auto` (default). When set, Whisper receives the hint and the NLU prompt includes the language context. When `auto`/empty, Whisper auto-detects and a two-pass re-transcription may fire for `ha`, `yo`, `ig` detected languages.
 
 Response shape:
 
@@ -186,6 +199,17 @@ npm run dev
    - `extractReceiptFromImage(imageUri)`
 
 6. Use returned `parsed` object to prefill transfer fields or ledger entries.
+
+### Language hint in API calls
+
+```typescript
+// English hint
+const result = await parseVoiceTransferFromAudio(uri, "en");
+// Hausa hint
+const result = await parseVoiceTransferFromAudio(uri, "ha");
+// Auto-detect (default)
+const result = await parseVoiceTransferFromAudio(uri);
+```
 
 ---
 

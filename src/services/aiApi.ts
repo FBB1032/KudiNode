@@ -82,13 +82,19 @@ export async function parseVoiceTransferFromText(transcript: string) {
   return api.post<VoiceTransferResponse>("/ai/voice-transfer", { transcript });
 }
 
-export async function parseVoiceTransferFromAudio(audioUri: string) {
+export async function parseVoiceTransferFromAudio(
+  audioUri: string,
+  language: string = "auto",
+) {
   const form = new FormData();
   form.append("audio", {
     uri: audioUri,
     name: `voice-${Date.now()}.m4a`,
     type: "audio/x-m4a",
   } as any);
+  if (language && language !== "auto") {
+    form.append("language", language);
+  }
 
   return api.postForm<VoiceTransferResponse>("/ai/voice-transfer", form);
 }
@@ -104,13 +110,19 @@ export async function extractReceiptFromImage(imageUri: string) {
   return api.postForm<ReceiptExtractionResponse>("/ai/receipt-extract", form);
 }
 
-export async function parseVoiceSalesLog(audioUri: string) {
+export async function parseVoiceSalesLog(
+  audioUri: string,
+  language: string = "auto",
+) {
   const form = new FormData();
   form.append("audio", {
     uri: audioUri,
     name: `sales-log-${Date.now()}.m4a`,
     type: "audio/x-m4a",
   } as any);
+  if (language && language !== "auto") {
+    form.append("language", language);
+  }
 
   return api.postForm<VoiceSalesLogResponse>("/ai/voice-sales-log", form);
 }

@@ -30,6 +30,7 @@ export const env = {
 
   groqApiKey: process.env.GROQ_API_KEY || "",
   groqModel: process.env.GROQ_MODEL || "openai/gpt-oss-120b",
+  groqWhisperModel: process.env.GROQ_WHISPER_MODEL || "whisper-large-v3-turbo",
 
   kycBucket: process.env.KYC_BUCKET || "kyc-documents",
   ledgerBucket: process.env.LEDGER_BUCKET || "ledger-images",
