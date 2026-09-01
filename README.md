@@ -323,7 +323,7 @@ Node.js Backend (Express)
 - **JWT Auth** — tokens issued by Supabase Auth, stored encrypted on-device via `expo-secure-store`
 - **In-memory file processing** — Multer holds uploaded files in RAM and streams them to Groq-backed audio parsing or OpenRouter vision image extraction; nothing is ever written to the server's disk
 
-**Admin login details** : email=fahdbadamasi320@gmail.com  password=*FahdBad2026#
+
 ---
 
 *Built by Team Alafia — Hackaholics 7.0*
