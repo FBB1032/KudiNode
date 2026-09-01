@@ -87,7 +87,7 @@ export default function AuditLogScreen() {
             <Filter size={13} className="text-slate-400" />
             <select value={actionFilter} onChange={(e) => { setActionFilter(e.target.value); setPage(1) }} className="input py-2 w-44 text-[12px]">
               <option>All Actions</option>
-              {Object.keys(ACTION_COLORS).map((a) => <option key={a}>{actionLabel(a)}</option>)}
+              {Object.keys(ACTION_COLORS).map((a) => <option key={a} value={a}>{actionLabel(a)}</option>)}
             </select>
           </div>
         </div>

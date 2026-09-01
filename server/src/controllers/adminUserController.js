@@ -238,7 +238,7 @@ export const getAuditLog = asyncHandler(async (req, res) => {
 
   let query = supabaseAdmin
     .from("admin_audit_log")
-    .select("*, admin:admin_id(full_name, email, role)", { count: "exact" })
+    .select("*", { count: "exact" })
     .order("created_at", { ascending: false })
     .range(from, to);
 
@@ -249,8 +249,27 @@ export const getAuditLog = asyncHandler(async (req, res) => {
   const { data, error, count } = await query;
   if (error) throw badRequest(error.message);
 
+  // admin_audit_log.admin_id references auth.users(id), not public.admin_users,
+  // so a PostgREST embedded join cannot pull in full_name/email/role here.
+  // Fetch the admin profiles in one batch and merge by id instead.
+  const adminIds = [...new Set((data || []).map((e) => e.admin_id))];
+  let adminMap = {};
+  if (adminIds.length) {
+    const { data: admins } = await supabaseAdmin
+      .from("admin_users")
+      .select("id, full_name, email, role")
+      .in("id", adminIds);
+    adminMap = Object.fromEntries(
+      (admins || []).map((a) => [a.id, a]),
+    );
+  }
+  const entries = (data || []).map((e) => ({
+    ...e,
+    admin: adminMap[e.admin_id] || null,
+  }));
+
   res.json({
-    entries: data,
+    entries,
     pagination: {
       page: pageNum,
       limit: pageSize,
