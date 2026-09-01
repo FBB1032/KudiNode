@@ -236,11 +236,14 @@ export const adminLogin = asyncHandler(async (req, res) => {
     throw forbidden("This admin account has been deactivated.");
   }
 
-  await supabaseAdmin
-    .from("admin_users")
-    .update({ last_login_at: new Date().toISOString() })
-    .eq("id", userId)
-    .catch(() => {});
+  try {
+    await supabaseAdmin
+      .from("admin_users")
+      .update({ last_login_at: new Date().toISOString() })
+      .eq("id", userId);
+  } catch {
+    // Non-fatal: last_login metadata is best-effort.
+  }
 
   await auditLog(userId, "admin_login", "auth", userId, { email }, req.ip);
 
