@@ -20,21 +20,22 @@ export const requireAuth = asyncHandler(async (req, _res, next) => {
 });
 
 /**
- * Requires the authenticated user to have an admin/super_admin role in
- * their profile. Must run after requireAuth.
+ * Requires the authenticated user to be an active admin in the `admin_users`
+ * RBAC table. Must run after requireAuth. Attaches `req.adminRole` and
+ * `req.adminName` for downstream permission checks.
  */
 export const requireAdmin = asyncHandler(async (req, _res, next) => {
   const { data, error } = await supabaseAdmin
-    .from("profiles")
-    .select("role")
+    .from("admin_users")
+    .select("role, full_name, is_active")
     .eq("id", req.user.id)
     .single();
 
-  if (error || !data) throw forbidden("Profile not found");
-  if (!["admin", "super_admin"].includes(data.role)) {
-    throw forbidden("Admin privileges required");
-  }
-  req.role = data.role;
+  if (error || !data) throw forbidden("Admin account not found");
+  if (!data.is_active) throw forbidden("Admin account is deactivated");
+
+  req.adminRole = data.role;
+  req.adminName = data.full_name;
   next();
 });
 

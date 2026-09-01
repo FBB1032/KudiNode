@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ShieldAlert, AlertCircle, AlertTriangle, TrendingDown, MapPin, Eye, X, Check, Lock } from 'lucide-react'
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts'
+import { useAdmin } from '../context/AdminContext'
 
 const TABS = ['Risk Heatmap','Risk Scores','High-Risk Clusters','Fraud Alerts','Portfolio Monitor']
 
@@ -42,6 +43,7 @@ const c = { hidden: {}, show: { transition: { staggerChildren: 0.05 } } }
 const it = { hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0, transition: { duration: 0.2 } } }
 
 export default function RiskScreen() {
+  const { can } = useAdmin()
   const [tab, setTab] = useState(0)
   const [hover, setHover] = useState<string|null>(null)
   const [selectedLoc, setSelectedLoc] = useState<Loc|null>(null)
@@ -233,9 +235,11 @@ export default function RiskScreen() {
 
               <div className="flex gap-2 pt-2">
                 <button onClick={() => setSelectedLoc(null)} className="btn-outline flex-1 text-[12px]">Close</button>
-                <button onClick={() => { alert(`Risk monitoring alert dispatched to ${selectedLoc.name} cluster merchants.`); setSelectedLoc(null); }} className="btn-primary flex-1 text-[12px] bg-red-600 hover:bg-red-700 text-white font-bold gap-1.5">
-                  <Lock size={13} /> Freeze Cluster Node
-                </button>
+                {can('risk', 'edit') && (
+                  <button onClick={() => { alert(`Risk monitoring alert dispatched to ${selectedLoc.name} cluster merchants.`); setSelectedLoc(null); }} className="btn-primary flex-1 text-[12px] bg-red-600 hover:bg-red-700 text-white font-bold gap-1.5">
+                    <Lock size={13} /> Freeze Cluster Node
+                  </button>
+                )}
               </div>
             </motion.div>
           </div>

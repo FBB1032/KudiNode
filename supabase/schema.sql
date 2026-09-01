@@ -40,6 +40,13 @@ do $$ begin
   create type user_role as enum ('merchant', 'admin', 'super_admin');
 exception when duplicate_object then null; end $$;
 
+do $$ begin
+  create type admin_role as enum (
+    'super_admin', 'operations_manager', 'risk_officer',
+    'credit_analyst', 'compliance_officer'
+  );
+exception when duplicate_object then null; end $$;
+
 -- ---------------------------------------------------------------------------
 -- 2. profiles  (1:1 with auth.users)
 -- ---------------------------------------------------------------------------
@@ -111,6 +118,149 @@ create table if not exists public.admin_actions (
 create index if not exists admin_actions_target_idx on public.admin_actions(target_user);
 
 -- ---------------------------------------------------------------------------
+-- 4b. admin_users  (RBAC — admin staff, separate from merchant profiles)
+--      This table is the source of truth for admin roles & permissions.
+-- ---------------------------------------------------------------------------
+create table if not exists public.admin_users (
+  id              uuid primary key references auth.users(id) on delete cascade,
+  role            admin_role not null,
+  full_name       text not null,
+  email           text not null,
+  phone           text,
+  avatar_url      text,
+  is_active       boolean not null default true,
+  last_login_at   timestamptz,
+  created_by      uuid references auth.users(id),
+  created_at      timestamptz not null default now(),
+  updated_at      timestamptz not null default now()
+);
+
+create index if not exists admin_users_role_idx  on public.admin_users(role);
+create index if not exists admin_users_active_idx on public.admin_users(is_active);
+
+-- ---------------------------------------------------------------------------
+-- 4c. admin_audit_log  (RBAC — audit trail for every admin action)
+-- ---------------------------------------------------------------------------
+create table if not exists public.admin_audit_log (
+  id              uuid primary key default uuid_generate_v4(),
+  admin_id        uuid not null references auth.users(id),
+  action          text not null,
+  resource_type   text not null,
+  resource_id     text,
+  details         jsonb default '{}'::jsonb,
+  ip_address      inet,
+  created_at      timestamptz not null default now()
+);
+
+create index if not exists admin_audit_log_admin_idx   on public.admin_audit_log(admin_id);
+create index if not exists admin_audit_log_created_idx on public.admin_audit_log(created_at);
+
+-- ---------------------------------------------------------------------------
+-- 4e. system_config  (key/value platform configuration, RBAC-gated)
+-- ---------------------------------------------------------------------------
+create table if not exists public.system_config (
+  key         text primary key,
+  value       jsonb not null default '{}'::jsonb,
+  updated_by  uuid references auth.users(id),
+  updated_at  timestamptz not null default now()
+);
+
+alter table public.system_config enable row level security;
+drop policy if exists "system config read by admin" on public.system_config;
+create policy "system config read by admin" on public.system_config
+  for select using (public.is_admin());
+drop policy if exists "system config write by admin" on public.system_config;
+create policy "system config write by admin" on public.system_config
+  for insert with check (public.is_admin());
+drop policy if exists "system config update by admin" on public.system_config;
+create policy "system config update by admin" on public.system_config
+  for update using (public.is_admin());
+
+-- ---------------------------------------------------------------------------
+-- 4f. loans / coop_groups / risk_flags  (domain tables for RBAC-scoped admin)
+-- ---------------------------------------------------------------------------
+create table if not exists public.loans (
+  id          uuid primary key default uuid_generate_v4(),
+  merchant_id uuid not null references public.profiles(id) on delete cascade,
+  purpose     text,
+  amount      numeric(14,2) not null default 0,
+  status      text not null default 'new',     -- new | review | approved | declined | more_info
+  created_by  uuid references auth.users(id),
+  created_at  timestamptz not null default now(),
+  updated_at  timestamptz not null default now()
+);
+
+create index if not exists loans_merchant_idx on public.loans(merchant_id);
+
+create table if not exists public.coop_groups (
+  id          uuid primary key default uuid_generate_v4(),
+  name        text not null,
+  members     int not null default 0,
+  contribution numeric(14,2) not null default 0,
+  health      text not null default 'healthy', -- healthy | at_risk | critical
+  status      text not null default 'active',  -- active | pending | inactive
+  account_number text,
+  created_by  uuid references auth.users(id),
+  created_at  timestamptz not null default now(),
+  updated_at  timestamptz not null default now()
+);
+
+create table if not exists public.risk_flags (
+  id          uuid primary key default uuid_generate_v4(),
+  merchant_id uuid references public.profiles(id) on delete set null,
+  level       text not null default 'medium',  -- high | medium | low
+  reason      text,
+  status      text not null default 'open',    -- open | reviewed | resolved
+  created_by  uuid references auth.users(id),
+  created_at  timestamptz not null default now(),
+  updated_at  timestamptz not null default now()
+);
+
+create index if not exists risk_flags_merchant_idx on public.risk_flags(merchant_id);
+
+alter table public.loans       enable row level security;
+alter table public.coop_groups enable row level security;
+alter table public.risk_flags  enable row level security;
+
+drop policy if exists "loans read by admin" on public.loans;
+create policy "loans read by admin" on public.loans for select using (public.is_admin());
+drop policy if exists "loans write by admin" on public.loans;
+create policy "loans write by admin" on public.loans for insert with check (public.is_admin());
+drop policy if exists "loans update by admin" on public.loans;
+create policy "loans update by admin" on public.loans for update using (public.is_admin());
+
+drop policy if exists "coop read by admin" on public.coop_groups;
+create policy "coop read by admin" on public.coop_groups for select using (public.is_admin());
+drop policy if exists "coop write by admin" on public.coop_groups;
+create policy "coop write by admin" on public.coop_groups for insert with check (public.is_admin());
+drop policy if exists "coop update by admin" on public.coop_groups;
+create policy "coop update by admin" on public.coop_groups for update using (public.is_admin());
+
+drop policy if exists "risk read by admin" on public.risk_flags;
+create policy "risk read by admin" on public.risk_flags for select using (public.is_admin());
+drop policy if exists "risk write by admin" on public.risk_flags;
+create policy "risk write by admin" on public.risk_flags for insert with check (public.is_admin());
+drop policy if exists "risk update by admin" on public.risk_flags;
+create policy "risk update by admin" on public.risk_flags for update using (public.is_admin());
+
+-- ---------------------------------------------------------------------------
+-- 4d. One-time backfill: copy existing admin profiles into admin_users.
+--     Runs every time the schema is applied, but is idempotent (on conflict).
+--     Legacy 'admin' profiles are mapped to operations_manager.
+-- ---------------------------------------------------------------------------
+insert into public.admin_users (id, role, full_name, email)
+select
+  p.id,
+  case p.role when 'super_admin' then 'super_admin'::admin_role
+              else 'operations_manager'::admin_role end,
+  coalesce(p.full_name, ''),
+  coalesce(p.email, '')
+from public.profiles p
+where p.role in ('admin', 'super_admin')
+  and not exists (select 1 from public.admin_users au where au.id = p.id)
+on conflict (id) do nothing;
+
+-- ---------------------------------------------------------------------------
 -- 5. updated_at trigger
 -- ---------------------------------------------------------------------------
 create or replace function public.set_updated_at()
@@ -163,9 +313,11 @@ $$;
 -- ---------------------------------------------------------------------------
 -- 8. Row Level Security
 -- ---------------------------------------------------------------------------
-alter table public.profiles      enable row level security;
-alter table public.kyc_documents enable row level security;
-alter table public.admin_actions enable row level security;
+alter table public.profiles         enable row level security;
+alter table public.kyc_documents    enable row level security;
+alter table public.admin_actions    enable row level security;
+alter table public.admin_users      enable row level security;
+alter table public.admin_audit_log  enable row level security;
 
 -- profiles ------------------------------------------------------------------
 drop policy if exists "own profile read"   on public.profiles;
@@ -197,6 +349,24 @@ create policy "admin actions read" on public.admin_actions
 
 drop policy if exists "admin actions insert" on public.admin_actions;
 create policy "admin actions insert" on public.admin_actions
+  for insert with check (public.is_admin());
+
+-- admin_users (RBAC) --------------------------------------------------------
+drop policy if exists "admin users read own" on public.admin_users;
+create policy "admin users read own" on public.admin_users
+  for select using (auth.uid() = id or public.is_admin());
+
+drop policy if exists "admin users update own" on public.admin_users;
+create policy "admin users update own" on public.admin_users
+  for update using (auth.uid() = id);
+
+-- admin_audit_log -----------------------------------------------------------
+drop policy if exists "audit log read by admin" on public.admin_audit_log;
+create policy "audit log read by admin" on public.admin_audit_log
+  for select using (public.is_admin());
+
+drop policy if exists "audit log insert by admin" on public.admin_audit_log;
+create policy "audit log insert by admin" on public.admin_audit_log
   for insert with check (public.is_admin());
 
 -- NOTE: the Node backend uses the SERVICE ROLE key which bypasses RLS.

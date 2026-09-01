@@ -6,7 +6,7 @@ import {
   Store, CreditCard, Users, Check, ArrowRight
 } from 'lucide-react'
 import { useTheme } from '../context/ThemeContext'
-import type { NavView } from './Sidebar'
+import { useAdmin, NavView } from '../context/AdminContext'
 
 const viewLabels: Record<NavView, string> = {
   dashboard:   'Dashboard Overview',
@@ -16,6 +16,8 @@ const viewLabels: Record<NavView, string> = {
   risk:        'Risk & Monitoring',
   reports:     'Reports & Analytics',
   settings:    'Settings & System Configuration',
+  admin_users: 'Admin Management',
+  audit_log:   'Audit Log',
 }
 
 function getGreeting() {
@@ -59,6 +61,7 @@ interface Props { activeView: NavView }
 
 export default function TopHeader({ activeView }: Props) {
   const { toggleTheme, isDark } = useTheme()
+  const { can } = useAdmin()
   const [showNotif, setShowNotif] = useState(false)
   const [search, setSearch] = useState('')
   const [toastMessage, setToastMessage] = useState<string|null>(null)
@@ -173,13 +176,15 @@ M-1048,Tayo Abiodun,"GRA, Port Harcourt",Port Harcourt,Tier 1,82,0133221100,Tayo
       </div>
 
       {/* Export CSV Button */}
-      <button
-        onClick={handleRealExportCSV}
-        className="btn-success h-9 px-3.5 inline-flex items-center gap-1.5 text-xs font-bold shadow-md shadow-emerald-600/15"
-      >
-        <Download size={13} />
-        <span>Export CSV</span>
-      </button>
+      {can('reports', 'export') && (
+        <button
+          onClick={handleRealExportCSV}
+          className="btn-success h-9 px-3.5 inline-flex items-center gap-1.5 text-xs font-bold shadow-md shadow-emerald-600/15"
+        >
+          <Download size={13} />
+          <span>Export CSV</span>
+        </button>
+      )}
 
       {/* Notifications */}
       <div className="relative">

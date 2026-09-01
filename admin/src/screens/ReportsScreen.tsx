@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Calendar, RefreshCw, FileText, FileSpreadsheet, Download, TrendingUp, ArrowUpRight, CheckCircle2, X } from 'lucide-react'
 import { ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import { useTheme } from '../context/ThemeContext'
+import { useAdmin } from '../context/AdminContext'
 
 const TABS = ['Portfolio Analytics','Performance Reports','Grants','Activity Logs']
 const GRAN = ['Daily','Weekly','Monthly']
@@ -54,6 +55,7 @@ const c = { hidden: {}, show: { transition: { staggerChildren: 0.05 } } }
 const it = { hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0, transition: { duration: 0.2 } } }
 
 export default function ReportsScreen() {
+  const { can } = useAdmin()
   const [tab, setTab] = useState(0)
   const [gran, setGran] = useState('Daily')
   const [from, setFrom] = useState('2026-05-01')
@@ -75,7 +77,9 @@ export default function ReportsScreen() {
           <h2 className="text-xl font-extrabold text-slate-900 dark:text-white">Reports & Analytics</h2>
           <p className="text-[12px] text-slate-400 mt-0.5">Portfolio performance, disbursement trends, and export tools</p>
         </div>
-        <button onClick={() => handleDownload('PDF Financial Audit Report')} className="btn-primary h-9 gap-1.5"><RefreshCw size={13} />Generate Report</button>
+        {can('reports', 'export') && (
+          <button onClick={() => handleDownload('PDF Financial Audit Report')} className="btn-primary h-9 gap-1.5"><RefreshCw size={13} />Generate Report</button>
+        )}
       </motion.div>
 
       {/* Tabs */}
@@ -158,22 +162,24 @@ export default function ReportsScreen() {
             </table>
           </motion.div>
 
-          <motion.div variants={it} className="card p-5">
-            <p className="text-sm font-bold text-slate-900 dark:text-white mb-3">Export Report</p>
-            <div className="space-y-2">
-              {[
-                { label: 'Download PDF',   icon: <FileText size={15} />,        bg: 'bg-red-50 dark:bg-red-900/20 text-red-500' },
-                { label: 'Download Excel', icon: <FileSpreadsheet size={15} />, bg: 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600' },
-                { label: 'Download CSV',   icon: <Download size={15} />,        bg: 'bg-blue-50 dark:bg-blue-900/20 text-blue-500' },
-              ].map(e => (
-                <button key={e.label} onClick={() => handleDownload(e.label)} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors text-left">
-                  <span className={`p-2 rounded-lg flex-shrink-0 ${e.bg}`}>{e.icon}</span>
-                  <span className="text-[13px] font-semibold text-slate-700 dark:text-slate-300 flex-1">{e.label}</span>
-                  <Download size={13} className="text-slate-400 flex-shrink-0" />
-                </button>
-              ))}
-            </div>
-          </motion.div>
+          {can('reports', 'export') && (
+            <motion.div variants={it} className="card p-5">
+              <p className="text-sm font-bold text-slate-900 dark:text-white mb-3">Export Report</p>
+              <div className="space-y-2">
+                {[
+                  { label: 'Download PDF',   icon: <FileText size={15} />,        bg: 'bg-red-50 dark:bg-red-900/20 text-red-500' },
+                  { label: 'Download Excel', icon: <FileSpreadsheet size={15} />, bg: 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600' },
+                  { label: 'Download CSV',   icon: <Download size={15} />,        bg: 'bg-blue-50 dark:bg-blue-900/20 text-blue-500' },
+                ].map(e => (
+                  <button key={e.label} onClick={() => handleDownload(e.label)} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors text-left">
+                    <span className={`p-2 rounded-lg flex-shrink-0 ${e.bg}`}>{e.icon}</span>
+                    <span className="text-[13px] font-semibold text-slate-700 dark:text-slate-300 flex-1">{e.label}</span>
+                    <Download size={13} className="text-slate-400 flex-shrink-0" />
+                  </button>
+                ))}
+              </div>
+            </motion.div>
+          )}
         </div>
       </div>
 

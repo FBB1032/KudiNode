@@ -53,6 +53,22 @@ async function request<T>(
 // ── Types ───────────────────────────────────────────────
 export type ApprovalStatus = "pending" | "approved" | "rejected" | "suspended";
 
+export type AdminRole =
+  | "super_admin"
+  | "operations_manager"
+  | "risk_officer"
+  | "credit_analyst"
+  | "compliance_officer";
+
+export interface AdminUser {
+  id: string;
+  email: string;
+  full_name: string;
+  role: AdminRole;
+  permissions: Record<string, string[]>;
+  resources?: string[];
+}
+
 export interface AdminProfile {
   id: string;
   full_name: string | null;
@@ -83,13 +99,76 @@ export interface DossierDoc {
   url: string | null;
 }
 
+export interface AdminStaffUser {
+  id: string;
+  role: AdminRole;
+  full_name: string;
+  email: string;
+  phone: string | null;
+  avatar_url: string | null;
+  is_active: boolean;
+  last_login_at: string | null;
+  created_by: string | null;
+  created_at: string;
+}
+
+export interface AuditLogEntry {
+  id: string;
+  admin_id: string;
+  action: string;
+  resource_type: string;
+  resource_id: string | null;
+  details: Record<string, unknown>;
+  ip_address: string | null;
+  created_at: string;
+  admin?: { full_name: string | null; email: string | null; role: string } | null;
+}
+
+export interface Loan {
+  id: string;
+  merchant_id: string;
+  purpose: string | null;
+  amount: string;
+  status: string;
+  created_at: string;
+  merchant?: { full_name: string | null; phone: string | null; trade_name: string | null } | null;
+}
+
+export interface CoopGroup {
+  id: string;
+  name: string;
+  members: number;
+  contribution: string;
+  health: string;
+  status: string;
+  account_number: string | null;
+  created_at: string;
+}
+
+export interface RiskFlag {
+  id: string;
+  merchant_id: string | null;
+  level: string;
+  reason: string | null;
+  status: string;
+  created_at: string;
+  merchant?: { full_name: string | null; phone: string | null; trade_name: string | null } | null;
+}
+
+export interface Pagination {
+  page: number;
+  limit: number;
+  total: number;
+  pages: number;
+}
+
 // ── Auth ────────────────────────────────────────────────
 export async function adminLogin(email: string, password: string) {
   // Dedicated admin endpoint — validates the email/password AND the admin role
   // server-side, so merchants (phone+PIN accounts) can never sign in here.
   const res = await request<{
     session: { access_token: string };
-    user: { id: string; role: string; full_name: string | null };
+    user: AdminUser;
   }>("/auth/admin/login", {
     method: "POST",
     body: { email, password },
@@ -97,12 +176,16 @@ export async function adminLogin(email: string, password: string) {
   });
 
   adminToken.set(res.session.access_token);
+  // Persist role + permissions so the dashboard can gate views without an
+  // extra round-trip on every reload.
+  localStorage.setItem("kn_admin_user", JSON.stringify(res.user));
   return res.user;
 }
 
 export function adminLogout() {
   request("/auth/logout", { method: "POST" }).catch(() => {});
   adminToken.clear();
+  localStorage.removeItem("kn_admin_user");
 }
 
 // ── Data ────────────────────────────────────────────────
@@ -157,4 +240,171 @@ export function suspendUser(id: string, reason?: string) {
     method: "POST",
     body: { reason },
   });
+}
+
+// ── Admin User Management (super_admin) ──────────────────
+
+export function listAdminUsers(params: {
+  role?: string;
+  search?: string;
+  page?: number;
+  limit?: number;
+}) {
+  const q = new URLSearchParams();
+  Object.entries(params).forEach(([k, v]) => {
+    if (v !== undefined && v !== "") q.set(k, String(v));
+  });
+  return request<{ users: AdminStaffUser[]; pagination: Pagination }>(
+    `/admin/admins?${q.toString()}`,
+  );
+}
+
+export function createAdminUser(data: {
+  email: string;
+  password: string;
+  full_name: string;
+  role: AdminRole;
+  phone?: string;
+}) {
+  return request<{ user: AdminStaffUser; message: string }>("/admin/admins", {
+    method: "POST",
+    body: data,
+  });
+}
+
+export function updateAdminRole(id: string, role: AdminRole) {
+  return request<{ user: AdminStaffUser; message: string }>(
+    `/admin/admins/${id}/role`,
+    { method: "PUT", body: { role } },
+  );
+}
+
+export function deleteAdminUser(id: string) {
+  return request<{ message: string; id: string }>(`/admin/admins/${id}`, {
+    method: "DELETE",
+  });
+}
+
+// ── Audit Log ────────────────────────────────────────────
+
+export function getAuditLog(params: {
+  action?: string;
+  adminId?: string;
+  resourceType?: string;
+  page?: number;
+  limit?: number;
+}) {
+  const q = new URLSearchParams();
+  Object.entries(params).forEach(([k, v]) => {
+    if (v !== undefined && v !== "") q.set(k, String(v));
+  });
+  return request<{ entries: AuditLogEntry[]; pagination: Pagination }>(
+    `/admin/audit-log?${q.toString()}`,
+  );
+}
+
+// ── Settings ─────────────────────────────────────────────
+
+export function getSystemSettings() {
+  return request<{ config: Record<string, unknown> }>("/admin/settings");
+}
+
+export function updateSystemSettings(config: Record<string, unknown>) {
+  return request<{ config: Record<string, unknown>; message: string }>(
+    "/admin/settings",
+    { method: "PUT", body: { config } },
+  );
+}
+
+// ── Credit ───────────────────────────────────────────────
+
+export function listLoans(params: { status?: string; page?: number; limit?: number }) {
+  const q = new URLSearchParams();
+  Object.entries(params).forEach(([k, v]) => {
+    if (v !== undefined && v !== "") q.set(k, String(v));
+  });
+  return request<{ loans: Loan[]; pagination: Pagination }>(
+    `/admin/credit/loans?${q.toString()}`,
+  );
+}
+
+export function createLoan(data: { merchant_id: string; purpose?: string; amount: number }) {
+  return request<{ loan: Loan }>("/admin/credit/loans", {
+    method: "POST",
+    body: data,
+  });
+}
+
+export function updateLoan(id: string, status: string) {
+  return request<{ loan: Loan }>(`/admin/credit/loans/${id}`, {
+    method: "PUT",
+    body: { status },
+  });
+}
+
+// ── Co-op ────────────────────────────────────────────────
+
+export function listCoopGroups(params: { page?: number; limit?: number }) {
+  const q = new URLSearchParams();
+  Object.entries(params).forEach(([k, v]) => {
+    if (v !== undefined && !(typeof v === "string" && v === ""))
+      q.set(k, String(v));
+  });
+  return request<{ groups: CoopGroup[]; pagination: Pagination }>(
+    `/admin/coop/groups?${q.toString()}`,
+  );
+}
+
+export function createCoopGroup(data: {
+  name: string;
+  members?: number;
+  contribution?: number;
+  account_number?: string;
+}) {
+  return request<{ group: CoopGroup }>("/admin/coop/groups", {
+    method: "POST",
+    body: data,
+  });
+}
+
+export function updateCoopGroup(id: string, data: Partial<CoopGroup>) {
+  return request<{ group: CoopGroup }>(`/admin/coop/groups/${id}`, {
+    method: "PUT",
+    body: data,
+  });
+}
+
+// ── Risk ─────────────────────────────────────────────────
+
+export function getRiskData() {
+  return request<{
+    flags: RiskFlag[];
+    summary: { total_merchants: number; open_flags: number };
+  }>("/admin/risk");
+}
+
+export function createRiskFlag(data: {
+  merchant_id?: string;
+  level?: string;
+  reason?: string;
+}) {
+  return request<{ flag: RiskFlag }>("/admin/risk/flags", {
+    method: "POST",
+    body: data,
+  });
+}
+
+export function updateRiskFlag(id: string, data: { level?: string; status?: string }) {
+  return request<{ flag: RiskFlag }>(`/admin/risk/flags/${id}`, {
+    method: "PUT",
+    body: data,
+  });
+}
+
+// ── Reports Export ───────────────────────────────────────
+
+export function exportReport(format: "json" | "csv" = "json") {
+  return request<{ merchants: AdminProfile[]; count: number }>(
+    `/admin/reports/export?format=${format}`,
+  );
 }

@@ -6,6 +6,7 @@ import {
 } from 'lucide-react'
 import { RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Tooltip } from 'recharts'
 import { useTheme } from '../context/ThemeContext'
+import { useAdmin } from '../context/AdminContext'
 
 const TABS = ['Applications', 'Trust Score', 'Loan Approvals', 'Credit Limits', 'Disbursements']
 
@@ -50,6 +51,7 @@ const c = { hidden: {}, show: { transition: { staggerChildren: 0.05 } } }
 const it = { hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0, transition: { duration: 0.2 } } }
 
 export default function CreditScreen() {
+  const { can } = useAdmin()
   const [tab, setTab] = useState(0)
   const [apps, setApps] = useState<LoanApp[]>(INITIAL_APPS)
   const [search, setSearch] = useState('')
@@ -210,17 +212,23 @@ export default function CreditScreen() {
           </div>
 
           {/* Interactive Actions */}
-          <div className="space-y-2 pt-1">
-            <button onClick={() => setActiveModal('APPROVE')} className="w-full btn-primary py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold gap-2 text-[12px]">
-              <CheckCircle size={14} /> Approve Loan & Disburse
-            </button>
-            <button onClick={() => setActiveModal('MORE_INFO')} className="w-full py-2.5 border border-amber-400 dark:border-amber-600 text-amber-600 dark:text-amber-400 text-[12px] font-bold rounded-xl hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors flex items-center justify-center gap-1.5">
-              <AlertCircle size={14} /> Request Additional Proof
-            </button>
-            <button onClick={() => setActiveModal('DECLINE')} className="w-full py-2.5 border border-red-400 dark:border-red-600 text-red-600 dark:text-red-400 text-[12px] font-bold rounded-xl hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors flex items-center justify-center gap-1.5">
-              <XCircle size={14} /> Decline Application
-            </button>
-          </div>
+          {can('credit', 'edit') ? (
+            <div className="space-y-2 pt-1">
+              <button onClick={() => setActiveModal('APPROVE')} className="w-full btn-primary py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold gap-2 text-[12px]">
+                <CheckCircle size={14} /> Approve Loan & Disburse
+              </button>
+              <button onClick={() => setActiveModal('MORE_INFO')} className="w-full py-2.5 border border-amber-400 dark:border-amber-600 text-amber-600 dark:text-amber-400 text-[12px] font-bold rounded-xl hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors flex items-center justify-center gap-1.5">
+                <AlertCircle size={14} /> Request Additional Proof
+              </button>
+              <button onClick={() => setActiveModal('DECLINE')} className="w-full py-2.5 border border-red-400 dark:border-red-600 text-red-600 dark:text-red-400 text-[12px] font-bold rounded-xl hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors flex items-center justify-center gap-1.5">
+                <XCircle size={14} /> Decline Application
+              </button>
+            </div>
+          ) : (
+            <div className="pt-2 p-4 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 text-center">
+              <p className="text-[11px] text-slate-400 font-semibold">You have read-only access to loan data</p>
+            </div>
+          )}
         </motion.div>
       </div>
 

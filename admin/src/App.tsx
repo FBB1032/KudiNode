@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import React from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ThemeProvider } from "./context/ThemeContext";
-import Sidebar, { NavView } from "./components/Sidebar";
+import { AdminProvider, useAdmin, NavView } from "./context/AdminContext";
+import Sidebar from "./components/Sidebar";
 import TopHeader from "./components/TopHeader";
 import AdminLoginScreen from "./screens/AdminLoginScreen";
 import DashboardScreen from "./screens/DashboardScreen";
@@ -11,19 +12,31 @@ import CoopScreen from "./screens/CoopScreen";
 import RiskScreen from "./screens/RiskScreen";
 import ReportsScreen from "./screens/ReportsScreen";
 import SettingsScreen from "./screens/SettingsScreen";
+import AdminUsersScreen from "./screens/AdminUsersScreen";
+import AuditLogScreen from "./screens/AuditLogScreen";
+import ForbiddenState from "./components/ForbiddenState";
 import { adminToken, adminLogout } from "./services/api";
+import { useState, useCallback } from "react";
 
-function AppShell({ onLogout }: { onLogout: () => void }) {
+function AppShell() {
+  const { admin, can } = useAdmin();
   const [activeView, setActiveView] = useState<NavView>("dashboard");
+
+  const handleLogout = useCallback(() => {
+    adminLogout();
+    window.location.reload();
+  }, []);
 
   const views: Record<NavView, React.ReactNode> = {
     dashboard: <DashboardScreen />,
-    merchants: <MerchantsScreen />,
-    credit: <CreditScreen />,
-    coop: <CoopScreen />,
-    risk: <RiskScreen />,
-    reports: <ReportsScreen />,
-    settings: <SettingsScreen />,
+    merchants: can("merchants") ? <MerchantsScreen /> : <ForbiddenState resource="Merchants" />,
+    credit: can("credit") ? <CreditScreen /> : <ForbiddenState resource="Credit" />,
+    coop: can("coop") ? <CoopScreen /> : <ForbiddenState resource="Co-op" />,
+    risk: can("risk") ? <RiskScreen /> : <ForbiddenState resource="Risk" />,
+    reports: can("reports") ? <ReportsScreen /> : <ForbiddenState resource="Reports" />,
+    settings: can("settings") ? <SettingsScreen /> : <ForbiddenState resource="Settings" />,
+    admin_users: can("admin_users") ? <AdminUsersScreen /> : <ForbiddenState resource="Admin Management" />,
+    audit_log: can("audit_log") ? <AuditLogScreen /> : <ForbiddenState resource="Audit Log" />,
   };
 
   return (
@@ -31,7 +44,7 @@ function AppShell({ onLogout }: { onLogout: () => void }) {
       <Sidebar
         active={activeView}
         onChange={setActiveView}
-        onLogout={onLogout}
+        onLogout={handleLogout}
       />
       <div className="flex-1 flex flex-col min-w-0 ml-[260px]">
         <TopHeader activeView={activeView} />
@@ -55,24 +68,32 @@ function AppShell({ onLogout }: { onLogout: () => void }) {
   );
 }
 
-export default function App() {
-  // Restore session from a persisted admin token so refreshes keep you logged in.
+function AuthenticatedApp() {
   const [isAuthenticated, setIsAuthenticated] = useState(
     () => !!adminToken.get(),
   );
 
-  const handleLogout = () => {
-    adminLogout();
-    setIsAuthenticated(false);
-  };
+  if (!isAuthenticated) {
+    return (
+      <AdminLoginScreen
+        onLoginSuccess={() => {
+          setIsAuthenticated(true);
+        }}
+      />
+    );
+  }
 
   return (
+    <AdminProvider>
+      <AppShell />
+    </AdminProvider>
+  );
+}
+
+export default function App() {
+  return (
     <ThemeProvider>
-      {isAuthenticated ? (
-        <AppShell onLogout={handleLogout} />
-      ) : (
-        <AdminLoginScreen onLoginSuccess={() => setIsAuthenticated(true)} />
-      )}
+      <AuthenticatedApp />
     </ThemeProvider>
   );
 }

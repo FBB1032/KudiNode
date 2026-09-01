@@ -68,6 +68,76 @@ export const rejectSchema = z.object({
   reason: z.string().trim().min(3, "A rejection reason is required").max(500),
 });
 
+export const ADMIN_ROLE_VALUES = [
+  "super_admin",
+  "operations_manager",
+  "risk_officer",
+  "credit_analyst",
+  "compliance_officer",
+];
+
+/** POST /admin/admins — create a new admin user (super_admin only) */
+export const createAdminSchema = z.object({
+  email: z.string().trim().email(),
+  password: z.string().min(8, "Password must be at least 8 characters"),
+  full_name: z.string().trim().min(2).max(120),
+  role: z.enum(ADMIN_ROLE_VALUES),
+  phone: z.string().trim().optional(),
+});
+
+/** PUT /admin/admins/:id/role — change an admin's role */
+export const updateAdminRoleSchema = z.object({
+  role: z.enum(ADMIN_ROLE_VALUES),
+});
+
+/** POST /admin/credit/loans */
+export const createLoanSchema = z.object({
+  merchant_id: z.string().uuid(),
+  purpose: z.string().trim().max(200).optional(),
+  amount: z.coerce.number().positive("Amount must be positive"),
+});
+
+/** PUT /admin/credit/loans/:id */
+export const updateLoanSchema = z.object({
+  status: z.enum(["new", "review", "approved", "declined", "more_info"]),
+});
+
+/** POST /admin/coop/groups */
+export const createCoopGroupSchema = z.object({
+  name: z.string().trim().min(2).max(160),
+  members: z.coerce.number().int().min(0).default(0),
+  contribution: z.coerce.number().min(0).default(0),
+  account_number: z.string().trim().max(20).optional(),
+});
+
+/** PUT /admin/coop/groups/:id */
+export const updateCoopGroupSchema = z.object({
+  name: z.string().trim().min(2).max(160).optional(),
+  members: z.coerce.number().int().min(0).optional(),
+  contribution: z.coerce.number().min(0).optional(),
+  health: z.enum(["healthy", "at_risk", "critical"]).optional(),
+  status: z.enum(["active", "pending", "inactive"]).optional(),
+  account_number: z.string().trim().max(20).optional(),
+});
+
+/** POST /admin/risk/flags */
+export const createRiskFlagSchema = z.object({
+  merchant_id: z.string().uuid().nullable().optional(),
+  level: z.enum(["high", "medium", "low"]).default("medium"),
+  reason: z.string().trim().max(500).optional(),
+});
+
+/** PUT /admin/risk/flags/:id */
+export const updateRiskFlagSchema = z.object({
+  level: z.enum(["high", "medium", "low"]).optional(),
+  status: z.enum(["open", "reviewed", "resolved"]).optional(),
+});
+
+/** PUT /admin/settings */
+export const settingsSchema = z.object({
+  config: z.record(z.string(), z.any()),
+});
+
 export const DOC_TYPES = [
   "id_nin",
   "id_driver_license",

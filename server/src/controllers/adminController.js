@@ -1,6 +1,7 @@
 import { supabaseAdmin } from "../config/supabase.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { badRequest, notFound } from "../utils/AppError.js";
+import { auditLog } from "../utils/audit.js";
 
 /**
  * GET /admin/users?status=pending&search=&page=1&limit=20
@@ -111,6 +112,14 @@ async function setStatus(adminId, userId, status, reason = null) {
     action: status,
     reason,
   });
+
+  await auditLog(
+    adminId,
+    `${status}_merchant`,
+    "merchant",
+    userId,
+    { rejection_reason: reason || null },
+  );
 
   return data;
 }

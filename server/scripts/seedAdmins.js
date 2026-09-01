@@ -76,6 +76,16 @@ async function upsertAdmin({ email, password, full_name }) {
     })
     .eq("id", user.id);
   if (upErr) throw upErr;
+
+  // RBAC source of truth lives in admin_users (super_admin by default so the
+  // two seed accounts retain full access).
+  const { error: adminErr } = await supabaseAdmin
+    .from("admin_users")
+    .upsert(
+      { id: user.id, role: "super_admin", full_name, email },
+      { onConflict: "id" },
+    );
+  if (adminErr) throw adminErr;
 }
 
 async function main() {

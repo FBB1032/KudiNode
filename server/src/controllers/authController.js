@@ -4,6 +4,8 @@ import { createClient } from "@supabase/supabase-js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { badRequest, forbidden, unauthorized } from "../utils/AppError.js";
 import { normalizePhone } from "../utils/credentials.js";
+import { getPermissionsForRole, getResourcesForRole } from "../config/permissions.js";
+import { auditLog } from "../utils/audit.js";
 
 // A fresh anon client used only to exchange credentials/OTP for a session.
 function anonClient() {
@@ -214,20 +216,33 @@ export const adminLogin = asyncHandler(async (req, res) => {
 
   const userId = data.user.id;
 
-  const { data: profile, error: pErr } = await supabaseAdmin
-    .from("profiles")
-    .select("role, full_name")
+  const { data: admin, error: pErr } = await supabaseAdmin
+    .from("admin_users")
+    .select("role, full_name, is_active")
     .eq("id", userId)
     .single();
 
-  const isAdmin = profile && ["admin", "super_admin"].includes(profile.role);
-
-  if (pErr || !isAdmin) {
+  if (pErr || !admin) {
     await supabaseAdmin.auth.admin
       .signOut(data.session.access_token)
       .catch(() => {});
     throw forbidden("This account does not have admin access.");
   }
+
+  if (!admin.is_active) {
+    await supabaseAdmin.auth.admin
+      .signOut(data.session.access_token)
+      .catch(() => {});
+    throw forbidden("This admin account has been deactivated.");
+  }
+
+  await supabaseAdmin
+    .from("admin_users")
+    .update({ last_login_at: new Date().toISOString() })
+    .eq("id", userId)
+    .catch(() => {});
+
+  await auditLog(userId, "admin_login", "auth", userId, { email }, req.ip);
 
   res.json({
     session: {
@@ -238,8 +253,10 @@ export const adminLogin = asyncHandler(async (req, res) => {
     user: {
       id: userId,
       email: data.user.email,
-      full_name: profile.full_name,
-      role: profile.role,
+      full_name: admin.full_name,
+      role: admin.role,
+      permissions: getPermissionsForRole(admin.role),
+      resources: getResourcesForRole(admin.role),
     },
   });
 });

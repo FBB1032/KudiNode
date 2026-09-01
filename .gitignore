@@ -55,3 +55,5 @@ docs/VOICE_SALES_LOG_FEATURE.md
 docs/AI_VOICE_RECEIPT_SETUP.md
 server/GROQ_SETUP.md
 docs/AI_VOICE_RECEIPT_SETUP.md
+.kilo/plans/1788269370759-rbac-system-plan.md
+supabase/schema.sql

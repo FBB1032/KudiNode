@@ -1,12 +1,13 @@
 import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, MoreHorizontal, Shield, Server, Link2, Database, Activity, Clock, CheckCircle, Circle, Users, Settings, Key, Puzzle, X, Check, Save } from 'lucide-react'
+import { Plus, MoreHorizontal, Shield, Server, Link2, Database, Activity, Clock, CheckCircle, Circle, Users, Settings, Key, Puzzle, X, Check, Save, Ban } from 'lucide-react'
+import { useAdmin } from '../context/AdminContext'
 
-const TABS = [
-  { label: 'Users & Roles',   icon: <Users size={14} /> },
-  { label: 'Permissions',     icon: <Shield size={14} /> },
-  { label: 'System Config',   icon: <Settings size={14} /> },
-  { label: 'Integrations',    icon: <Puzzle size={14} /> },
+const ALL_TABS = [
+  { label: 'Users & Roles',   icon: <Users size={14} />,  resource: 'admin_users', action: 'view' },
+  { label: 'Permissions',     icon: <Shield size={14} />, resource: 'admin_users', action: 'view' },
+  { label: 'System Config',   icon: <Settings size={14} />, resource: 'settings', action: 'edit' },
+  { label: 'Integrations',    icon: <Puzzle size={14} />,  resource: 'settings', action: 'edit' },
 ]
 
 export interface AdminUser {
@@ -84,7 +85,13 @@ function PermBar({ val, max = 18 }: { val: number; max?: number }) {
 }
 
 export default function SettingsScreen() {
+  const { can } = useAdmin()
   const [tab, setTab] = useState(0)
+
+  const TABS = ALL_TABS.filter((t) => can(t.resource, t.action))
+  // Reset tab if no longer visible
+  const validTab = TABS.length > 0 ? Math.min(tab, TABS.length - 1) : -1
+  if (validTab !== tab) setTab(validTab < 0 ? 0 : validTab)
   const [usersList, setUsersList] = useState<AdminUser[]>(INITIAL_USERS)
   const [roleFilter, setRoleFilter] = useState('All Roles')
   const [showAddUserModal, setShowAddUserModal] = useState(false)
@@ -127,7 +134,9 @@ export default function SettingsScreen() {
           <h2 className="text-xl font-extrabold text-slate-900 dark:text-white">Settings & System Configuration</h2>
           <p className="text-[12px] text-slate-400 mt-0.5">Manage users, roles, permissions, integrations, and platform config</p>
         </div>
-        <button onClick={handleSaveConfig} className="btn-primary h-9 gap-1.5"><Save size={14} />Save Configurations</button>
+        {can('settings', 'edit') && (
+          <button onClick={handleSaveConfig} className="btn-primary h-9 gap-1.5"><Save size={14} />Save Configurations</button>
+        )}
       </motion.div>
 
       {/* Notification toast when saved */}
@@ -142,7 +151,9 @@ export default function SettingsScreen() {
 
       {/* Tabs */}
       <motion.div variants={it} className="flex border-b border-slate-200 dark:border-slate-800 overflow-x-auto">
-        {TABS.map((t,i) => (
+        {TABS.length === 0 ? (
+          <div className="px-4 py-3 text-[12px] text-slate-400 font-medium">No settings tabs available for your role.</div>
+        ) : TABS.map((t, i) => (
           <button key={t.label} onClick={() => setTab(i)} className={`flex items-center gap-2 px-4 py-3 text-[13px] font-semibold whitespace-nowrap border-b-2 transition-colors ${tab===i?'border-violet-600 text-violet-600 dark:text-violet-400 dark:border-violet-400':'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}>
             <span className={tab===i?'text-violet-500':'text-slate-400'}>{t.icon}</span>{t.label}
           </button>
@@ -160,7 +171,9 @@ export default function SettingsScreen() {
                   <option>All Roles</option>
                   {['Risk Officer','Credit Analyst','Compliance Officer','Operations Manager','Admin'].map(r=><option key={r}>{r}</option>)}
                 </select>
-                <button onClick={() => setShowAddUserModal(true)} className="btn-primary h-8 px-3 text-[12px]"><Plus size={12} />Add User</button>
+                {can('admin_users', 'create') && (
+                  <button onClick={() => setShowAddUserModal(true)} className="btn-primary h-8 px-3 text-[12px]"><Plus size={12} />Add User</button>
+                )}
               </div>
             </div>
             <div className="overflow-x-auto">

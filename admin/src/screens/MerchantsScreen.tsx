@@ -40,6 +40,7 @@ import {
   DossierDoc,
   ApprovalStatus,
 } from "../services/api";
+import { useAdmin } from "../context/AdminContext";
 
 export interface Merchant {
   id: string;
@@ -225,6 +226,7 @@ const itemVariants = {
 };
 
 export default function MerchantsScreen() {
+  const { can } = useAdmin();
   const [merchants, setMerchants] = useState<Merchant[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -503,24 +505,30 @@ export default function MerchantsScreen() {
           >
             <SlidersHorizontal size={14} /> Filter Table
           </button>
-          <button
-            onClick={handleRealExportCSV}
-            className="btn-outline h-9 gap-1.5 text-emerald-600 border-emerald-300 dark:border-emerald-800"
-          >
-            <Download size={14} /> Export CSV
-          </button>
-          <button
-            onClick={() => setShowGrantLoanModal(true)}
-            className="btn-primary h-9 bg-blue-600 hover:bg-blue-700 text-white gap-1.5"
-          >
-            <Sparkles size={14} /> Grant Micro-Credit Loan
-          </button>
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="btn-primary h-9 gap-1.5"
-          >
-            <Plus size={14} /> Add Merchant
-          </button>
+          {can('merchants', 'export') && (
+            <button
+              onClick={handleRealExportCSV}
+              className="btn-outline h-9 gap-1.5 text-emerald-600 border-emerald-300 dark:border-emerald-800"
+            >
+              <Download size={14} /> Export CSV
+            </button>
+          )}
+          {can('credit', 'create') && (
+            <button
+              onClick={() => setShowGrantLoanModal(true)}
+              className="btn-primary h-9 bg-blue-600 hover:bg-blue-700 text-white gap-1.5"
+            >
+              <Sparkles size={14} /> Grant Micro-Credit Loan
+            </button>
+          )}
+          {can('merchants', 'create') && (
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="btn-primary h-9 gap-1.5"
+            >
+              <Plus size={14} /> Add Merchant
+            </button>
+          )}
         </div>
       </motion.div>
 
@@ -1067,19 +1075,29 @@ export default function MerchantsScreen() {
                 </div>
               ) : (
                 <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex gap-3">
-                  <button
-                    onClick={() => handleApproveKYC(selectedMerchant.id)}
-                    className="flex-1 btn-primary h-11 bg-emerald-600 hover:bg-emerald-700 text-white font-bold gap-2 text-[13px]"
-                  >
-                    <CheckCircle2 size={16} /> Accept & Verify Tier-1 KYC
-                  </button>
+                  {can('merchants', 'approve') ? (
+                    <button
+                      onClick={() => handleApproveKYC(selectedMerchant.id)}
+                      className="flex-1 btn-primary h-11 bg-emerald-600 hover:bg-emerald-700 text-white font-bold gap-2 text-[13px]"
+                    >
+                      <CheckCircle2 size={16} /> Accept & Verify Tier-1 KYC
+                    </button>
+                  ) : (
+                    <div className="flex-1 flex items-center justify-center p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 text-[11px] text-slate-400 font-semibold">
+                      You don't have permission to approve KYC
+                    </div>
+                  )}
 
-                  <button
-                    onClick={() => setShowRejectForm(true)}
-                    className="flex-1 btn-outline h-11 border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 font-bold gap-2 text-[13px]"
-                  >
-                    <XCircle size={16} /> Reject & Specify Reason
-                  </button>
+                  {can('merchants', 'reject') ? (
+                    <button
+                      onClick={() => setShowRejectForm(true)}
+                      className="flex-1 btn-outline h-11 border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 font-bold gap-2 text-[13px]"
+                    >
+                      <XCircle size={16} /> Reject & Specify Reason
+                    </button>
+                  ) : can('merchants', 'approve') && (
+                    <div className="flex-1" />
+                  )}
                 </div>
               )}
             </motion.div>
