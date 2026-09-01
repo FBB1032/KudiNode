@@ -8,8 +8,6 @@ import {
   EyeOff,
   ArrowRight,
   AlertCircle,
-  Activity,
-  Server,
 } from "lucide-react";
 import { KudiNodeLogo } from "../components/KudiNodeLogo";
 import { adminLogin } from "../services/api";
@@ -28,7 +26,10 @@ export default function AdminLoginScreen({ onLoginSuccess }: Props) {
 
   const handleCredentialsSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password) {
+    const submitEmail = email.trim();
+    const submitPass = password;
+
+    if (!submitEmail || !submitPass) {
       setError("Please enter your work email and password.");
       return;
     }
@@ -36,7 +37,7 @@ export default function AdminLoginScreen({ onLoginSuccess }: Props) {
     setError("");
     setLoading(true);
     try {
-      await adminLogin(email.trim(), password);
+      await adminLogin(submitEmail, submitPass);
       onLoginSuccess();
     } catch (err: any) {
       setError(err?.message || "Sign in failed. Please check your credentials.");
@@ -59,25 +60,8 @@ export default function AdminLoginScreen({ onLoginSuccess }: Props) {
         transition={{ duration: 0.35, ease: "easeOut" }}
         className="w-full max-w-md bg-[#0D1321]/95 backdrop-blur-2xl border border-slate-800/90 rounded-3xl p-8 shadow-2xl shadow-black/80 relative z-10 space-y-6"
       >
-        {/* Top Status Strip */}
-        <div className="flex items-center justify-between pb-4 border-b border-slate-800/60">
-          <div className="flex items-center gap-2">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-            </span>
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-              System Online
-            </span>
-          </div>
-          <div className="flex items-center gap-1 text-[10px] text-slate-400 font-semibold">
-            <Server size={11} className="text-violet-400" />
-            <span>HQ Console v2.4</span>
-          </div>
-        </div>
-
         {/* Official Brand Logo */}
-        <div className="flex flex-col items-center justify-center text-center pt-1">
+        <div className="flex flex-col items-center justify-center text-center pt-2">
           <KudiNodeLogo size="large" variant="light" />
         </div>
 
@@ -107,7 +91,7 @@ export default function AdminLoginScreen({ onLoginSuccess }: Props) {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="fahdbadamasi320@gmail.com"
+                placeholder="Enter your admin email"
                 className="w-full bg-[#06090E]/90 border border-slate-800 text-white placeholder:text-slate-600 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 text-xs rounded-xl pl-10 pr-3.5 py-3 outline-none transition-all"
               />
             </div>
@@ -152,7 +136,7 @@ export default function AdminLoginScreen({ onLoginSuccess }: Props) {
               </span>
             </label>
             <span className="text-[11px] text-violet-400/90 font-medium">
-              Wema Sandbox 2026
+              Role-Gated Session
             </span>
           </div>
 
@@ -177,7 +161,7 @@ export default function AdminLoginScreen({ onLoginSuccess }: Props) {
         <div className="pt-4 border-t border-slate-800/80 text-center">
           <p className="text-[10px] text-slate-500 flex items-center justify-center gap-1.5 font-medium">
             <ShieldCheck size={13} className="text-emerald-400" />
-            256-Bit SSL Encrypted Admin Session · Connected to Backend
+            256-Bit SSL Encrypted Admin Session · Role-Based Access Control
           </p>
         </div>
       </motion.div>

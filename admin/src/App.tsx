@@ -69,9 +69,9 @@ function AppShell() {
 }
 
 function AuthenticatedApp() {
-  const [isAuthenticated, setIsAuthenticated] = useState(
-    () => !!adminToken.get(),
-  );
+  // Always start unauthenticated — clear any persisted session on load
+  adminToken.clear();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   if (!isAuthenticated) {
     return (

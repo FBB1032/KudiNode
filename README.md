@@ -16,10 +16,23 @@
 
 ##  Live Demo
 - **Admin Dashboard:** https://kudinode-admin.vercel.app/
-- **Admin login details** : email=fahdbadamasi320@gmail.com  password=*FahdBad2026#
 - **Backend API:** https://kudinode.onrender.com
-- **Recorded Demo:**: MOBILE DEMO =https://www.loom.com/share/3f71d6329cd0439d93a882309708cf81
+- **Recorded Demo:** MOBILE DEMO = https://www.loom.com/share/3f71d6329cd0439d93a882309708cf81
                       Admin panel demo: https://www.loom.com/share/58414d7194d6490f9c4b98680d899192
+
+### 🔐 Admin Demo Accounts (Role-Based Access Control)
+
+All accounts use the same password: `KudiNode@2026!`
+
+| Role | Full Name | Email | Password | Access Level |
+|:---|:---|:---|:---|:---|
+| **Super Admin** | Super Admin | `demo.superadmin@kudinode.ng` | `KudiNode@2026!` | Full access to all 9 modules + Audit Trail in every module |
+| **Operations Manager** | Peace Okon | `demo.ops@kudinode.ng` | `KudiNode@2026!` | Dashboard, Merchants, Credit (view), Co-Op, Reports, Settings |
+| **Risk Officer** | Ahmad Lawal | `demo.risk@kudinode.ng` | `KudiNode@2026!` | Dashboard, Merchants, Risk & Monitoring, Reports |
+| **Credit Analyst** | Funke Abikin | `demo.credit@kudinode.ng` | `KudiNode@2026!` | Dashboard, Merchants, Credit & Loan Management, Reports |
+| **Compliance Officer** | Taiwo Balogun | `demo.compliance@kudinode.ng` | `KudiNode@2026!` | Dashboard, Merchants, Reports, Audit Log |
+
+> Each role sees only the modules permitted for their access level. The **Super Admin** has an additional **Audit Trail** tab in every module showing immutable logs of all system operations.
 
 ---
 

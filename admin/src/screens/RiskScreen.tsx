@@ -1,10 +1,17 @@
 import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ShieldAlert, AlertCircle, AlertTriangle, TrendingDown, MapPin, Eye, X, Check, Lock } from 'lucide-react'
+import { ShieldAlert, AlertCircle, AlertTriangle, TrendingDown, MapPin, Eye, X, Check, Lock, ScrollText, History, Clock, ShieldCheck } from 'lucide-react'
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import { useAdmin } from '../context/AdminContext'
 
-const TABS = ['Risk Heatmap','Risk Scores','High-Risk Clusters','Fraud Alerts','Portfolio Monitor']
+const BASE_TABS = ['Risk Heatmap','Risk Scores','High-Risk Clusters','Fraud Alerts','Portfolio Monitor']
+
+const RISK_AUDIT_LOGS = [
+  { id: 'RSK-AUD-501', cluster: 'Ikeja Cluster (Node #LA-482)', action: 'High Risk Escalation & Merchant Flagging', officer: 'Ahmad Lawal (Risk Officer)', time: '24 May 2026, 09:30', details: 'Triggered automated 48-merchant watchlist due to sudden repayment delay across Alaba axis.', badge: 'badge-danger' },
+  { id: 'RSK-AUD-502', cluster: 'Mushin Market', action: 'Cluster Surveillance Threshold Adjusted', officer: 'Super Admin', time: '23 May 2026, 17:15', details: 'Default rate threshold relaxed from 4.0% to 5.5% during commodity restocking window.', badge: 'badge-warning' },
+  { id: 'RSK-AUD-503', cluster: 'Merchant #M-2841', action: 'Fraud Alert Investigated & Account Frozen', officer: 'Ahmad Lawal (Risk Officer)', time: '22 May 2026, 13:40', details: 'Multiple simultaneous BVN lookup failures on separate devices within 10 minutes.', badge: 'badge-danger' },
+  { id: 'RSK-AUD-504', cluster: 'Lekki Node #LK-108', action: 'Cluster Risk Down-graded to Low', officer: 'Super Admin', time: '21 May 2026, 11:00', details: 'Repayment score reached 98.8% for 90 consecutive calendar days.', badge: 'badge-success' },
+]
 
 interface Loc { name: string; risk: 'High'|'Medium'|'Low'; merchants: number; defaultRate: string; x: number; y: number }
 
@@ -43,7 +50,8 @@ const c = { hidden: {}, show: { transition: { staggerChildren: 0.05 } } }
 const it = { hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0, transition: { duration: 0.2 } } }
 
 export default function RiskScreen() {
-  const { can } = useAdmin()
+  const { can, isSuperAdmin } = useAdmin()
+  const TABS = isSuperAdmin ? [...BASE_TABS, 'Audit Trail'] : BASE_TABS
   const [tab, setTab] = useState(0)
   const [hover, setHover] = useState<string|null>(null)
   const [selectedLoc, setSelectedLoc] = useState<Loc|null>(null)
@@ -73,9 +81,73 @@ export default function RiskScreen() {
       {/* Tabs */}
       <motion.div variants={it} className="flex border-b border-slate-200 dark:border-slate-800 overflow-x-auto">
         {TABS.map((t,i) => (
-          <button key={t} onClick={() => setTab(i)} className={`px-4 py-3 text-[13px] font-semibold whitespace-nowrap border-b-2 transition-colors ${tab===i?'border-violet-600 text-violet-600 dark:text-violet-400 dark:border-violet-400':'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}>{t}</button>
+          <button
+            key={t}
+            onClick={() => setTab(i)}
+            className={`px-4 py-3 text-[13px] font-semibold whitespace-nowrap border-b-2 transition-colors flex items-center gap-1.5 ${tab===i?'border-violet-600 text-violet-600 dark:text-violet-400 dark:border-violet-400':'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+          >
+            {t === 'Audit Trail' && <ScrollText size={13} />}
+            {t}
+            {t === 'Audit Trail' && (
+              <span className="px-1.5 py-0.2 rounded-full bg-violet-500/20 text-violet-400 text-[10px] font-bold">
+                Super Admin
+              </span>
+            )}
+          </button>
         ))}
       </motion.div>
+
+      {TABS[tab] === 'Audit Trail' && isSuperAdmin ? (
+        <motion.div variants={it} className="card p-5 space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+            <div>
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <History size={16} className="text-violet-500" />
+                Risk Operations & Fraud Investigation Audit Trail
+              </h3>
+              <p className="text-[11px] text-slate-400 mt-0.5">
+                Record of fraud alerts, automated biometric rejections, cluster freezes, and manual risk score overrides
+              </p>
+            </div>
+            <span className="badge-purple">Immutable Ledger</span>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-slate-50 dark:bg-slate-800/40 border-b border-slate-100 dark:border-slate-800">
+                <tr>
+                  {['Audit ID', 'Entity / Cluster', 'Risk Action', 'Audit Details', 'Risk Officer', 'Timestamp'].map(h => (
+                    <th key={h} className="table-head-cell">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-50 dark:divide-slate-800/50">
+                {RISK_AUDIT_LOGS.map(log => (
+                  <tr key={log.id} className="table-row">
+                    <td className="table-cell font-mono text-[11px] font-bold text-slate-500">{log.id}</td>
+                    <td className="table-cell font-bold text-slate-900 dark:text-white text-xs whitespace-nowrap">{log.cluster}</td>
+                    <td className="table-cell whitespace-nowrap">
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${log.badge}`}>
+                        {log.action}
+                      </span>
+                    </td>
+                    <td className="table-cell text-[11px] text-slate-600 dark:text-slate-300 max-w-sm">
+                      {log.details}
+                    </td>
+                    <td className="table-cell text-xs text-slate-700 dark:text-slate-300 font-medium whitespace-nowrap">
+                      {log.officer}
+                    </td>
+                    <td className="table-cell text-[11px] text-slate-400 whitespace-nowrap font-mono">
+                      {log.time}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </motion.div>
+      ) : (
+        <>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
         {/* Map */}
@@ -207,6 +279,8 @@ export default function RiskScreen() {
           </motion.div>
         </div>
       </div>
+      </>
+      )}
 
       {/* Inspect Cluster Modal */}
       <AnimatePresence>

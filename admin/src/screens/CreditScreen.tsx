@@ -2,13 +2,13 @@ import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   CheckCircle, XCircle, AlertCircle, Info, Search, SlidersHorizontal, ChevronRight,
-  Building2, Calendar, Banknote, TrendingUp, X, Send, ShieldCheck
+  Building2, Calendar, Banknote, TrendingUp, X, Send, ShieldCheck, ScrollText, Clock, History
 } from 'lucide-react'
 import { RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Tooltip } from 'recharts'
 import { useTheme } from '../context/ThemeContext'
 import { useAdmin } from '../context/AdminContext'
 
-const TABS = ['Applications', 'Trust Score', 'Loan Approvals', 'Credit Limits', 'Disbursements']
+const BASE_TABS = ['Applications', 'Trust Score', 'Loan Approvals', 'Credit Limits', 'Disbursements']
 
 export interface LoanApp {
   id: string
@@ -31,6 +31,14 @@ const INITIAL_APPS: LoanApp[] = [
   { id: 'APP-3847', name: 'Tayo Abiodun',     mid: 'M-1048', purpose: 'Logistics Vehicle',   amount: '₦900,000',   status: 'Under Review', date: '21 May 2026', trust: 82 },
 ]
 
+const CREDIT_AUDIT_LOGS = [
+  { id: 'CAD-901', loanId: 'APP-3843', merchant: 'Fatima Yusuf (M-1044)', amount: '₦1,200,000', action: 'Approved & Disbursed', officer: 'Funke Abikin (Credit Analyst)', time: '23 May 2026, 14:10', details: 'Passed underwriting scoring with 91 trust rating. Wema disbursement batch #DISB-2940 executed.', badge: 'badge-success' },
+  { id: 'CAD-902', loanId: 'APP-3845', merchant: 'Grace Adeyemi (M-1046)', amount: '₦320,000', action: 'Approved by Committee', officer: 'Peace Okon (Operations Manager)', time: '22 May 2026, 16:45', details: 'Working capital micro-loan approved under Ikeja market cluster guarantee.', badge: 'badge-success' },
+  { id: 'CAD-903', loanId: 'APP-3846', merchant: 'Ibrahim Musa (M-1050)', amount: '₦180,000', action: 'Declined - High Default Probability', officer: 'Ahmad Lawal (Risk Officer)', time: '22 May 2026, 11:20', details: 'Credit score 29 below risk threshold of 60. Overdue loans detected in outside bureau.', badge: 'badge-danger' },
+  { id: 'CAD-904', loanId: 'APP-3844', merchant: 'Chinedu Okafor (M-1045)', amount: '₦450,000', action: 'Additional Info Requested', officer: 'Funke Abikin (Credit Analyst)', time: '23 May 2026, 09:15', details: 'Requested 3 months recent POS turnover statement from Surulere store.', badge: 'badge-warning' },
+  { id: 'CAD-905', loanId: 'LIMIT-402', merchant: 'Amina Bello (M-1042)', amount: '₦1,500,000', action: 'Credit Limit Increased', officer: 'Super Admin', time: '21 May 2026, 18:30', details: 'Tier-1 KYC verified + flawless 6-cycle Esusu repayment history.', badge: 'badge-purple' },
+]
+
 const radarData = [
   { metric: 'Repayment History', score: 88 },
   { metric: 'Business Size',     score: 72 },
@@ -51,7 +59,8 @@ const c = { hidden: {}, show: { transition: { staggerChildren: 0.05 } } }
 const it = { hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0, transition: { duration: 0.2 } } }
 
 export default function CreditScreen() {
-  const { can } = useAdmin()
+  const { can, isSuperAdmin } = useAdmin()
+  const TABS = isSuperAdmin ? [...BASE_TABS, 'Audit Trail'] : BASE_TABS
   const [tab, setTab] = useState(0)
   const [apps, setApps] = useState<LoanApp[]>(INITIAL_APPS)
   const [search, setSearch] = useState('')
@@ -98,12 +107,77 @@ export default function CreditScreen() {
           <button
             key={t}
             onClick={() => setTab(i)}
-            className={`px-4 py-3 text-[13px] font-semibold whitespace-nowrap border-b-2 transition-colors ${tab===i ? 'border-violet-600 text-violet-600 dark:text-violet-400 dark:border-violet-400' : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+            className={`px-4 py-3 text-[13px] font-semibold whitespace-nowrap border-b-2 transition-colors flex items-center gap-1.5 ${tab===i ? 'border-violet-600 text-violet-600 dark:text-violet-400 dark:border-violet-400' : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
           >
+            {t === 'Audit Trail' && <ScrollText size={13} />}
             {t}
+            {t === 'Audit Trail' && (
+              <span className="px-1.5 py-0.2 rounded-full bg-violet-500/20 text-violet-400 text-[10px] font-bold">
+                Super Admin
+              </span>
+            )}
           </button>
         ))}
       </motion.div>
+
+      {/* When Audit Trail tab is active */}
+      {TABS[tab] === 'Audit Trail' && isSuperAdmin ? (
+        <motion.div variants={it} className="card p-5 space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+            <div>
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <History size={16} className="text-violet-500" />
+                Credit Underwriting & Loan Disbursement Audit Trail
+              </h3>
+              <p className="text-[11px] text-slate-400 mt-0.5">
+                Every credit score recalculation, loan approval, rejection, and manual threshold override
+              </p>
+            </div>
+            <span className="badge-purple">Immutable Ledger</span>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-slate-50 dark:bg-slate-800/40 border-b border-slate-100 dark:border-slate-800">
+                <tr>
+                  {['Audit ID', 'Loan / Merchant', 'Action & Status', 'Amount', 'Audit Details', 'Authorized Officer', 'Timestamp'].map(h => (
+                    <th key={h} className="table-head-cell">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-50 dark:divide-slate-800/50">
+                {CREDIT_AUDIT_LOGS.map(log => (
+                  <tr key={log.id} className="table-row">
+                    <td className="table-cell font-mono text-[11px] font-bold text-slate-500">{log.id}</td>
+                    <td className="table-cell whitespace-nowrap">
+                      <p className="font-bold text-slate-900 dark:text-white text-xs">{log.merchant}</p>
+                      <p className="text-[10px] text-slate-400">{log.loanId}</p>
+                    </td>
+                    <td className="table-cell whitespace-nowrap">
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${log.badge}`}>
+                        {log.action}
+                      </span>
+                    </td>
+                    <td className="table-cell font-mono font-bold text-xs text-slate-900 dark:text-white whitespace-nowrap">
+                      {log.amount}
+                    </td>
+                    <td className="table-cell text-[11px] text-slate-600 dark:text-slate-300 max-w-xs">
+                      {log.details}
+                    </td>
+                    <td className="table-cell text-xs text-slate-700 dark:text-slate-300 font-medium whitespace-nowrap">
+                      {log.officer}
+                    </td>
+                    <td className="table-cell text-[11px] text-slate-400 whitespace-nowrap font-mono">
+                      {log.time}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </motion.div>
+      ) : (
+        <>
 
       {/* Stage counters */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -231,6 +305,8 @@ export default function CreditScreen() {
           )}
         </motion.div>
       </div>
+      </>
+      )}
 
       {/* Action Dialog Modal */}
       <AnimatePresence>

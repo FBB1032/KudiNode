@@ -6,7 +6,7 @@ import {
   Store, CreditCard, Users, Check, ArrowRight
 } from 'lucide-react'
 import { useTheme } from '../context/ThemeContext'
-import { useAdmin, NavView } from '../context/AdminContext'
+import { useAdmin, NavView, ROLE_LABELS, ROLE_BADGES } from '../context/AdminContext'
 
 const viewLabels: Record<NavView, string> = {
   dashboard:   'Dashboard Overview',
@@ -61,7 +61,7 @@ interface Props { activeView: NavView }
 
 export default function TopHeader({ activeView }: Props) {
   const { toggleTheme, isDark } = useTheme()
-  const { can } = useAdmin()
+  const { admin, can, isSuperAdmin } = useAdmin()
   const [showNotif, setShowNotif] = useState(false)
   const [search, setSearch] = useState('')
   const [toastMessage, setToastMessage] = useState<string|null>(null)
@@ -104,12 +104,19 @@ M-1048,Tayo Abiodun,"GRA, Port Harcourt",Port Harcourt,Tier 1,82,0133221100,Tayo
     <header className="fixed top-0 right-0 left-[260px] z-30 h-16 flex items-center gap-3.5 px-6 bg-white/90 dark:bg-[#06090E]/90 backdrop-blur-xl border-b border-slate-200/90 dark:border-slate-800/80">
       {/* Title & Greeting */}
       <div className="flex-1 min-w-0">
-        <h1 className="text-sm font-extrabold text-slate-900 dark:text-white truncate leading-tight tracking-tight">
-          {viewLabels[activeView]}
-        </h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-sm font-extrabold text-slate-900 dark:text-white truncate leading-tight tracking-tight">
+            {viewLabels[activeView]}
+          </h1>
+          {admin?.role && (
+            <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${ROLE_BADGES[admin.role]}`}>
+              {ROLE_LABELS[admin.role]}
+            </span>
+          )}
+        </div>
         {activeView === 'dashboard' && (
           <p className="text-[11px] text-slate-400 dark:text-slate-500 font-medium leading-tight mt-0.5">
-            {getGreeting()}, Ahmad — network monitoring active.
+            {getGreeting()}, {admin?.full_name || 'Admin'} — {isSuperAdmin ? 'Full audit trail & control center active.' : 'Role-gated workspace active.'}
           </p>
         )}
       </div>

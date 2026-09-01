@@ -6,7 +6,7 @@ import {
   ChevronRight, LogOut, UserCog, ScrollText
 } from 'lucide-react'
 import { KudiNodeLogo } from './KudiNodeLogo'
-import { NavView, useAdmin, ROLE_LABELS } from '../context/AdminContext'
+import { NavView, useAdmin, ROLE_LABELS, ROLE_BADGES } from '../context/AdminContext'
 
 interface NavItem {
   id: NavView

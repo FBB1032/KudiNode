@@ -1,12 +1,19 @@
 import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Calendar, RefreshCw, FileText, FileSpreadsheet, Download, TrendingUp, ArrowUpRight, CheckCircle2, X } from 'lucide-react'
+import { Calendar, RefreshCw, FileText, FileSpreadsheet, Download, TrendingUp, ArrowUpRight, CheckCircle2, X, ScrollText, History, Clock } from 'lucide-react'
 import { ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import { useTheme } from '../context/ThemeContext'
 import { useAdmin } from '../context/AdminContext'
 
-const TABS = ['Portfolio Analytics','Performance Reports','Grants','Activity Logs']
+const BASE_TABS = ['Portfolio Analytics','Performance Reports','Grants','Activity Logs']
 const GRAN = ['Daily','Weekly','Monthly']
+
+const REPORTS_AUDIT_LOGS = [
+  { id: 'RPT-AUD-801', title: 'CBN Regulatory Monthly Loan Portfolio Disclosure', format: 'PDF Export', requestedBy: 'Taiwo Balogun (Compliance Officer)', time: '24 May 2026, 08:30', status: 'Generated & Logged', badge: 'badge-success' },
+  { id: 'RPT-AUD-802', title: 'Wema Bank Reconciliation & Settlement Ledger', format: 'CSV Data Feed', requestedBy: 'Peace Okon (Operations Manager)', time: '23 May 2026, 18:00', status: 'Dispatched to SFTP', badge: 'badge-info' },
+  { id: 'RPT-AUD-803', title: 'NIBSS BVN Identity Compliance Full Audit', format: 'Excel Report', requestedBy: 'Super Admin', time: '22 May 2026, 14:15', status: 'Archived to Cold Storage', badge: 'badge-purple' },
+  { id: 'RPT-AUD-804', title: 'High-Risk Default Probability Analysis', format: 'PDF Audit', requestedBy: 'Ahmad Lawal (Risk Officer)', time: '21 May 2026, 10:45', status: 'Generated', badge: 'badge-warning' },
+]
 
 const chartData = [
   { date: 'May 1',  Disbursed: 18.4, Repaid: 14.2, RepaymentRate: 77 },
@@ -55,7 +62,8 @@ const c = { hidden: {}, show: { transition: { staggerChildren: 0.05 } } }
 const it = { hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0, transition: { duration: 0.2 } } }
 
 export default function ReportsScreen() {
-  const { can } = useAdmin()
+  const { can, isSuperAdmin } = useAdmin()
+  const TABS = isSuperAdmin ? [...BASE_TABS, 'Audit Trail'] : BASE_TABS
   const [tab, setTab] = useState(0)
   const [gran, setGran] = useState('Daily')
   const [from, setFrom] = useState('2026-05-01')
@@ -85,9 +93,73 @@ export default function ReportsScreen() {
       {/* Tabs */}
       <motion.div variants={it} className="flex border-b border-slate-200 dark:border-slate-800 overflow-x-auto">
         {TABS.map((t,i) => (
-          <button key={t} onClick={() => setTab(i)} className={`px-4 py-3 text-[13px] font-semibold whitespace-nowrap border-b-2 transition-colors ${tab===i?'border-violet-600 text-violet-600 dark:text-violet-400 dark:border-violet-400':'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}>{t}</button>
+          <button
+            key={t}
+            onClick={() => setTab(i)}
+            className={`px-4 py-3 text-[13px] font-semibold whitespace-nowrap border-b-2 transition-colors flex items-center gap-1.5 ${tab===i?'border-violet-600 text-violet-600 dark:text-violet-400 dark:border-violet-400':'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+          >
+            {t === 'Audit Trail' && <ScrollText size={13} />}
+            {t}
+            {t === 'Audit Trail' && (
+              <span className="px-1.5 py-0.2 rounded-full bg-violet-500/20 text-violet-400 text-[10px] font-bold">
+                Super Admin
+              </span>
+            )}
+          </button>
         ))}
       </motion.div>
+
+      {TABS[tab] === 'Audit Trail' && isSuperAdmin ? (
+        <motion.div variants={it} className="card p-5 space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+            <div>
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <History size={16} className="text-violet-500" />
+                Reports Generation & Data Extraction Audit Trail
+              </h3>
+              <p className="text-[11px] text-slate-400 mt-0.5">
+                Audit trail of regulatory disclosures, credit bureau batches, and executive financial exports
+              </p>
+            </div>
+            <span className="badge-purple">Immutable Ledger</span>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-slate-50 dark:bg-slate-800/40 border-b border-slate-100 dark:border-slate-800">
+                <tr>
+                  {['Audit ID', 'Report Document Title', 'Format', 'Requesting Officer', 'Export Status', 'Timestamp'].map(h => (
+                    <th key={h} className="table-head-cell">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-50 dark:divide-slate-800/50">
+                {REPORTS_AUDIT_LOGS.map(log => (
+                  <tr key={log.id} className="table-row">
+                    <td className="table-cell font-mono text-[11px] font-bold text-slate-500">{log.id}</td>
+                    <td className="table-cell font-bold text-slate-900 dark:text-white text-xs">{log.title}</td>
+                    <td className="table-cell whitespace-nowrap">
+                      <span className="badge-slate font-mono text-[10px]">{log.format}</span>
+                    </td>
+                    <td className="table-cell text-xs text-slate-700 dark:text-slate-300 font-medium whitespace-nowrap">
+                      {log.requestedBy}
+                    </td>
+                    <td className="table-cell whitespace-nowrap">
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${log.badge}`}>
+                        {log.status}
+                      </span>
+                    </td>
+                    <td className="table-cell text-[11px] text-slate-400 whitespace-nowrap font-mono">
+                      {log.time}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </motion.div>
+      ) : (
+        <>
 
       {/* Date + Granularity */}
       <motion.div variants={it} className="card p-4 flex flex-wrap items-center gap-3">
@@ -182,6 +254,8 @@ export default function ReportsScreen() {
           )}
         </div>
       </div>
+      </>
+      )}
 
       {/* Download Confirmation Modal */}
       <AnimatePresence>

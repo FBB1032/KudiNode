@@ -162,24 +162,92 @@ export interface Pagination {
   pages: number;
 }
 
+// ── Demo Accounts Preset ────────────────────────────────
+export interface DemoAccount {
+  email: string;
+  password: string;
+  full_name: string;
+  role: AdminRole;
+  description: string;
+}
+
+export const DEMO_ACCOUNTS: DemoAccount[] = [
+  {
+    email: "demo.superadmin@kudinode.ng",
+    password: "KudiNode@2026!",
+    full_name: "Super Admin",
+    role: "super_admin",
+    description: "Full platform access + Audit tabs across all modules",
+  },
+  {
+    email: "demo.ops@kudinode.ng",
+    password: "KudiNode@2026!",
+    full_name: "Peace Okon",
+    role: "operations_manager",
+    description: "Merchants, Co-Op & operations management",
+  },
+  {
+    email: "demo.risk@kudinode.ng",
+    password: "KudiNode@2026!",
+    full_name: "Ahmad Lawal",
+    role: "risk_officer",
+    description: "Risk heatmap, fraud alerts & cluster monitoring",
+  },
+  {
+    email: "demo.credit@kudinode.ng",
+    password: "KudiNode@2026!",
+    full_name: "Funke Abikin",
+    role: "credit_analyst",
+    description: "Loan underwriting, credit scores & limits",
+  },
+  {
+    email: "demo.compliance@kudinode.ng",
+    password: "KudiNode@2026!",
+    full_name: "Taiwo Balogun",
+    role: "compliance_officer",
+    description: "KYC verification, BVN/NIN inspection & compliance audit",
+  },
+];
+
 // ── Auth ────────────────────────────────────────────────
 export async function adminLogin(email: string, password: string) {
-  // Dedicated admin endpoint — validates the email/password AND the admin role
-  // server-side, so merchants (phone+PIN accounts) can never sign in here.
-  const res = await request<{
-    session: { access_token: string };
-    user: AdminUser;
-  }>("/auth/admin/login", {
-    method: "POST",
-    body: { email, password },
-    auth: false,
-  });
+  const normalizedEmail = email.trim().toLowerCase();
 
-  adminToken.set(res.session.access_token);
-  // Persist role + permissions so the dashboard can gate views without an
-  // extra round-trip on every reload.
-  localStorage.setItem("kn_admin_user", JSON.stringify(res.user));
-  return res.user;
+  try {
+    // Dedicated admin endpoint — validates the email/password AND the admin role
+    const res = await request<{
+      session: { access_token: string };
+      user: AdminUser;
+    }>("/auth/admin/login", {
+      method: "POST",
+      body: { email: normalizedEmail, password },
+      auth: false,
+    });
+
+    adminToken.set(res.session.access_token);
+    localStorage.setItem("kn_admin_user", JSON.stringify(res.user));
+    return res.user;
+  } catch (err) {
+    // Fallback: Check if matching any demo accounts for instantaneous offline testing
+    const demo = DEMO_ACCOUNTS.find(
+      (d) => d.email.toLowerCase() === normalizedEmail && d.password === password,
+    );
+
+    if (demo) {
+      const mockUser: AdminUser = {
+        id: `usr_${demo.role}_demo`,
+        email: demo.email,
+        full_name: demo.full_name,
+        role: demo.role,
+        permissions: {},
+      };
+      adminToken.set(`demo_token_${demo.role}_2026`);
+      localStorage.setItem("kn_admin_user", JSON.stringify(mockUser));
+      return mockUser;
+    }
+
+    throw err;
+  }
 }
 
 export function adminLogout() {
