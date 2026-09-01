@@ -34,7 +34,6 @@ export default function AuditLogScreen() {
   const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [actionFilter, setActionFilter] = useState('All Actions')
-  const [page, setPage] = useState(1)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -42,8 +41,8 @@ export default function AuditLogScreen() {
     try {
       const res = await getAuditLog({
         action: actionFilter === 'All Actions' ? undefined : actionFilter,
-        page,
-        limit: 50,
+        page: 1,
+        limit: 20,
       })
       setEntries(res.entries)
     } catch (e: any) {
@@ -51,7 +50,7 @@ export default function AuditLogScreen() {
     } finally {
       setLoading(false)
     }
-  }, [actionFilter, page])
+  }, [actionFilter])
 
   useEffect(() => { load() }, [load])
 
@@ -59,8 +58,7 @@ export default function AuditLogScreen() {
     ? entries.filter((e) =>
         (e.admin?.full_name || '').toLowerCase().includes(search.toLowerCase()) ||
         (e.admin?.email || '').toLowerCase().includes(search.toLowerCase()) ||
-        e.action.toLowerCase().includes(search.toLowerCase()) ||
-        (e.resource_id || '').toLowerCase().includes(search.toLowerCase()))
+        e.action.toLowerCase().includes(search.toLowerCase()))
     : entries
 
   return (
@@ -72,7 +70,7 @@ export default function AuditLogScreen() {
             Immutable trail of administrative actions for accountability and compliance.
           </p>
         </div>
-        <button onClick={() => { setPage(1); load() }} className="btn-outline h-9 gap-1.5"><RefreshCw size={14} /> Refresh</button>
+        <button onClick={load} className="btn-outline h-9 gap-1.5"><RefreshCw size={14} /> Refresh</button>
       </motion.div>
 
       <motion.div variants={it} className="card overflow-hidden">
@@ -80,12 +78,12 @@ export default function AuditLogScreen() {
           <div className="flex items-center gap-2 flex-1 min-w-[220px] input py-2">
             <Search size={13} className="text-slate-400 flex-shrink-0" />
             <input value={search} onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by admin, email, action, or resource ID..."
+              placeholder="Search by admin, email, or action..."
               className="bg-transparent text-[13px] text-slate-700 dark:text-slate-300 placeholder:text-slate-400 outline-none flex-1" />
           </div>
           <div className="flex items-center gap-2">
             <Filter size={13} className="text-slate-400" />
-            <select value={actionFilter} onChange={(e) => { setActionFilter(e.target.value); setPage(1) }} className="input py-2 w-44 text-[12px]">
+            <select value={actionFilter} onChange={(e) => setActionFilter(e.target.value)} className="input py-2 w-44 text-[12px]">
               <option>All Actions</option>
               {Object.keys(ACTION_COLORS).map((a) => <option key={a} value={a}>{actionLabel(a)}</option>)}
             </select>
@@ -108,7 +106,7 @@ export default function AuditLogScreen() {
             <table className="w-full">
               <thead className="bg-slate-50 dark:bg-slate-800/40 border-b border-slate-100 dark:border-slate-800">
                 <tr>
-                  {['Admin', 'Action', 'Resource', 'Details', 'IP', 'Timestamp'].map((h) => (
+                  {['Admin', 'Action', 'Details', 'Timestamp'].map((h) => (
                     <th key={h} className="table-head-cell">{h}</th>
                   ))}
                 </tr>
@@ -123,16 +121,13 @@ export default function AuditLogScreen() {
                     <td className="table-cell whitespace-nowrap">
                       <span className={`badge ${ACTION_COLORS[e.action] ?? 'badge-slate'}`}>{actionLabel(e.action)}</span>
                     </td>
-                    <td className="table-cell whitespace-nowrap">
-                      <p className="text-[12px] font-semibold text-slate-700 dark:text-slate-300">{e.resource_type}</p>
-                      <p className="text-[10px] text-slate-400 font-mono">{e.resource_id ? e.resource_id.slice(0, 8) : '—'}</p>
-                    </td>
                     <td className="table-cell">
                       <p className="text-[11px] text-slate-500 dark:text-slate-400 max-w-[220px] truncate">
-                        {Object.keys(e.details || {}).length ? JSON.stringify(e.details) : '—'}
+                        {e.action === 'admin_login' || !Object.keys(e.details || {}).length
+                          ? '—'
+                          : JSON.stringify(e.details)}
                       </p>
                     </td>
-                    <td className="table-cell text-[11px] text-slate-400 font-mono whitespace-nowrap">{e.ip_address || '—'}</td>
                     <td className="table-cell text-[11px] text-slate-400 whitespace-nowrap">
                       {new Date(e.created_at).toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                     </td>
