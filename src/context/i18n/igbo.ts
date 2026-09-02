@@ -29,7 +29,7 @@ export const Igbo: Record<string, string> = {
   "nav.logSales": "Dekọ Ahịa",
   "nav.credit": "Kredit",
   "nav.profile": "Profaịlụ",
-  "nav.kudibot": "KudiBot AI",
+  "nav.kudibot": "KudiBot",
 
   "components.goodMorning": "Ụtụtụ ọma,",
   "components.merchant": "Onye ahịa",
@@ -64,16 +64,20 @@ export const Igbo: Record<string, string> = {
     "Netwọk na-egbu oge. Pịa ka ịnyefe ego site na USSD (*945#)",
   "components.ussdTriggered":
     "Na-emeghe Wema Bank USSD Dialer (*945*Amount*Acc%23)...",
-  "components.kudibotAnalyzing": "KudiBot na-enyocha...",
+  "components.kudibotAnalyzing": "KudiBot na-eche echiche...",
   "components.voiceComingSoon": "Olu Na-abịa N oge Na-adịghị Anya",
   "components.voiceComingSoonMsg":
     "Ezigbo mkparịta ụka olu-na-ederede na-arụ ọrụ site na AI azụ — kwuo okwu ma ọ bụ dee ajụjụ gị n okpuru. Nghọta olu zuru oke n ime app ga-abata na mmelite na-abịa!",
   "components.gotIt": "Aghọtala m",
   "components.kudibotTyping": "KudiBot na-ede...",
   "components.listening": "Na-ege ntị... Kwuo ajụjụ ego gị",
-  "components.askKudibot": "Jụọ KudiBot ndụmọdụ ego...",
-  "components.botTitle": "Onye Ndụmọdụ KudiBot AI",
-  "components.botSub": "Ọgụgụ isi Ego & Ahịa Ahịa ({language})",
+  "components.askKudibot": "Jụọ KudiBot...",
+  "components.botTitle": "KudiBot",
+  "components.botSub": "Onye enyemaka azụmahịa AI gị ({language})",
+  "components.prompt1": "Olee otu m ga-esi bulie ahịrị kredit m?",
+  "components.prompt2": "Nyochaa ụzọ uru m kwa ụbọchị",
+  "components.prompt3": "Ole mgbe ịkwụ ụgwọ Esusu m na-abịa?",
+  "components.prompt4": "Ego ole ka m kwesịrị i tinyeghachi na ngwaahịa?",
 
   "home.cashInHand": "Ego Dị N Aka",
   "home.settlementAccount": "Akaụntụ Mmezi",
@@ -94,8 +98,8 @@ export const Igbo: Record<string, string> = {
 
   "profile.merchantProfile": "Profaịlụ Onye Ahịa",
   "profile.aiAdvisory": "Ndụmọdụ AI & Ọgụgụ Isi Ego",
-  "profile.kudibot": "Onye Ndụmọdụ Ego AI (KudiBot)",
-  "profile.kudibotSub": "Kredit ozugbo, uru & ndụmọdụ itinyeghachi ego",
+  "profile.kudibot": "KudiBot AI Assistant",
+  "profile.kudibotSub": "Kredit, uru & ndụmọdụ nchekwa",
   "profile.creditScore": "Akara Kredit",
   "profile.creditScoreSub": "Nkewa akara ntụkwasị obi KudiNode AI",
   "profile.finances": "Ego & Akwụkwọ",
@@ -152,7 +156,7 @@ export const Igbo: Record<string, string> = {
   "voice.speakHint":
     "Kwuo okwu n asụsụ Hausa, Yoruba, Igbo, Pidgin, ma ọ bụ Bekee",
   "voice.tapWhenDone": "Pịa ọzọ mgbe ikwuchara okwu",
-  "voice.parsingCommand": "KudiBot AI na-ahazi iwu gị…",
+  "voice.parsingCommand": "KudiBot na-arụ ọrụ na iwu gị…",
   "voice.redirecting": "Na-edugharị gị iji kwenye nkọwa…",
   "voice.micRequired": "Igwe Okwu Chọrọ",
   "voice.micRequiredMsg": "Biko nye ikike igwe okwu iji nnyefe olu.",
@@ -544,9 +548,9 @@ export const Igbo: Record<string, string> = {
   "onboarding.slide1Title": "Kwuo Ahịa Kwa ụbọchị Ozugbo",
   "onboarding.slide1Sub":
     "Nnabata olu n asụsụ Hausa, Yoruba, Igbo, Pidgin & Bekee. AI na-ahazi ihe & ọnụahịa na-akpaghị aka.",
-  "onboarding.slide2Title": "Onye Ndụmọdụ Ahịa AI 24/7",
+  "onboarding.slide2Title": "Onye Enyemaka Azụmahịa AI 24/7",
   "onboarding.slide2Sub":
-    "Jụọ KudiBot gbasara nyocha uru, itinyeghachi ego & ọsọ kredit n asụsụ gị.",
+    "Jụọ KudiBot gbasara uru, nchekwa, ngwaahịa, na kredit — n asụsụ gị.",
   "onboarding.slide3Title": "See & Megharịa Risiiti",
   "onboarding.slide3Sub":
     "See foto akwụkwọ & risiiti anụ ahụ iji tụgharịa ndetu akwụkwọ ka ọ bụrụ ego dijitalụ ozugbo.",
@@ -557,7 +561,7 @@ export const Igbo: Record<string, string> = {
   "onboarding.slide5Sub":
     "Nweta obere mbinye ego ruo ₦500,000 dabere na Akara Ntụkwasị Obi AI gị & ọsọ ahịa akwadoro.",
   "onboarding.voiceFirst": "NNABATA OLU NKE MBỤ",
-  "onboarding.kudibot": "KUDIBOT AI ONYE NDỤMỌDỤ",
+  "onboarding.kudibot": "KUDIBOT",
   "onboarding.smartScanner": "ỌLỌGHỌ NYOCHA RISIITI",
   "onboarding.esusu": "ESUSU OKIRIKIRI CO-OP",
   "onboarding.microCredit": "KREDIT OZUGBO",

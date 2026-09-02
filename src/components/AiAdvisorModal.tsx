@@ -27,21 +27,215 @@ interface Props {
   onClose: () => void;
 }
 
+function parseTable(rows: string[]): { type: 'table'; rows: string[][]; hasHeader: boolean } | null {
+  const isSeparator = (line: string) => /^\|[\s:\-|]+\|$/.test(line) && /-/.test(line);
+
+  let headerIdx = -1;
+  for (let r = 0; r < rows.length; r++) {
+    if (isSeparator(rows[r])) {
+      headerIdx = r;
+      break;
+    }
+  }
+
+  const body = rows.filter((_, r) => r !== headerIdx);
+  if (body.length === 0) return null;
+
+  const splitRow = (line: string) => {
+    const cells = line.replace(/^\|/, '').replace(/\|$/, '').split('|');
+    return cells.map((c) => c.trim());
+  };
+
+  const parsed: string[][] = body.map(splitRow);
+  const hasHeader = headerIdx === 1;
+
+  if (hasHeader && parsed.length > 0 && parsed[0].length > 0) {
+    return { type: 'table', rows: parsed, hasHeader: true };
+  }
+  return parsed.length > 0 ? { type: 'table', rows: parsed, hasHeader: false } : null;
+}
+
+function renderBotMessage(text: string): React.ReactNode[] {
+  if (!text) return [<Text key="empty"> </Text>];
+
+  const lines = text.split('\n');
+  const blocks: ({ type: 'paragraph' | 'list-item'; text: string; number?: number } | { type: 'table'; rows: string[][]; hasHeader: boolean })[] = [];
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const trimmed = line.trim();
+
+    if (!trimmed) {
+      if (blocks.length > 0 && blocks[blocks.length - 1].type !== 'paragraph') {
+        blocks.push({ type: 'paragraph', text: '' });
+      }
+      continue;
+    }
+
+    const numberedMatch = trimmed.match(/^(\d+)\.\s+(.*)/);
+    if (numberedMatch) {
+      blocks.push({ type: 'list-item', text: numberedMatch[2], number: parseInt(numberedMatch[1], 10) });
+      continue;
+    }
+
+    const numberedParenMatch = trimmed.match(/^(\d+)\)\s+(.*)/);
+    if (numberedParenMatch) {
+      blocks.push({ type: 'list-item', text: numberedParenMatch[2], number: parseInt(numberedParenMatch[1], 10) });
+      continue;
+    }
+
+    if (trimmed.startsWith('- ') || trimmed.startsWith('• ') || trimmed.startsWith('* ')) {
+      blocks.push({ type: 'list-item', text: trimmed.slice(2).trim(), number: undefined });
+      continue;
+    }
+
+    if (/^\|.*\|$/.test(trimmed) && trimmed.length > 2) {
+      const tableRows: string[] = [trimmed];
+      let j = i + 1;
+      while (j < lines.length && /^\|.*\|$/.test(lines[j].trim()) && lines[j].trim().length > 2) {
+        tableRows.push(lines[j].trim());
+        j++;
+      }
+      i = j - 1;
+      const parsed = parseTable(tableRows);
+      if (parsed) blocks.push(parsed);
+      continue;
+    }
+
+    const lastBlock = blocks.length > 0 ? blocks[blocks.length - 1] : undefined;
+    if (lastBlock && lastBlock.type === 'paragraph') {
+      lastBlock.text += (lastBlock.text ? '\n' : '') + line;
+    } else {
+      blocks.push({ type: 'paragraph', text: line });
+    }
+  }
+
+  const renderInline = (blockText: string, keyPrefix: string) => {
+    const parts: React.ReactNode[] = [];
+    const regex = /(\*\*(.+?)\*\*|_(.+?)_|\*(.+?)\*|`(.+?)`)/g;
+    let lastIndex = 0;
+    let match: RegExpExecArray | null;
+    let partIdx = 0;
+
+    while ((match = regex.exec(blockText)) !== null) {
+      if (match.index > lastIndex) {
+        parts.push(
+          <Text key={`${keyPrefix}-t${partIdx++}`}>{blockText.slice(lastIndex, match.index)}</Text>,
+        );
+      }
+      if (match[2] !== undefined) {
+        parts.push(
+          <Text key={`${keyPrefix}-b${partIdx++}`} style={styles.botBold}>{match[2]}</Text>,
+        );
+      } else if (match[3] !== undefined) {
+        parts.push(
+          <Text key={`${keyPrefix}-i${partIdx++}`} style={styles.botItalic}>{match[3]}</Text>,
+        );
+      } else if (match[4] !== undefined) {
+        if (match.index > 0) {
+          parts.push(
+            <Text key={`${keyPrefix}-i${partIdx++}`} style={styles.botItalic}>{match[4]}</Text>,
+          );
+        } else {
+          parts.push(
+            <Text key={`${keyPrefix}-i${partIdx++}`}>{`*${match[4]}*`}</Text>,
+          );
+        }
+      } else if (match[5] !== undefined) {
+        parts.push(
+          <Text key={`${keyPrefix}-c${partIdx++}`} style={styles.botCode}>{match[5]}</Text>,
+        );
+      }
+      lastIndex = regex.lastIndex;
+    }
+
+    if (lastIndex < blockText.length) {
+      parts.push(
+        <Text key={`${keyPrefix}-t${partIdx++}`}>{blockText.slice(lastIndex)}</Text>,
+      );
+    }
+
+    return parts.length > 0 ? parts : blockText;
+  };
+
+  const elements: React.ReactNode[] = [];
+  let blockIdx = 0;
+
+  for (const block of blocks) {
+    if (block.type === 'paragraph') {
+      if (block.text === '') {
+        elements.push(<View key={`b${blockIdx++}`} style={styles.botBlock} />);
+      } else {
+        elements.push(
+          <Text key={`b${blockIdx++}`} style={styles.botBlock}>
+            {renderInline(block.text, `p${blockIdx}`)}
+          </Text>,
+        );
+      }
+    } else if (block.type === 'table') {
+      const numCols = block.rows.reduce((max, r) => Math.max(max, r.length), 0);
+      elements.push(
+        <View key={`b${blockIdx++}`} style={styles.botTable}>
+          {block.rows.map((row, rIdx) => {
+            const isHeader = rIdx === 0 && block.hasHeader;
+            return (
+              <View
+                key={`tr${rIdx}`}
+                style={[styles.botTableRow, isHeader && styles.botTableRowHeader]}
+              >
+                {row.map((cell, cIdx) => (
+                  <Text
+                    key={`td${cIdx}`}
+                    style={[
+                      styles.botTableCell,
+                      isHeader && styles.botTableCellHeader,
+                      { flex: numCols > 0 ? 1 : undefined },
+                    ]}
+                  >
+                    {renderInline(cell, `t${blockIdx}-${rIdx}-${cIdx}`)}
+                  </Text>
+                ))}
+              </View>
+            );
+          })}
+        </View>,
+      );
+    } else {
+      elements.push(
+        <View key={`b${blockIdx++}`} style={styles.botListBlock}>
+          <View style={styles.botListItem}>
+            {block.number !== undefined ? (
+              <Text style={styles.botListNumber}>{block.number}.</Text>
+            ) : (
+              <Text style={styles.botListNumber}>•</Text>
+            )}
+            <Text style={styles.botListItemText}>
+              {renderInline(block.text, `l${blockIdx}`)}
+            </Text>
+          </View>
+        </View>,
+      );
+    }
+  }
+
+  return elements;
+}
+
 const INITIAL_MESSAGES: Message[] = [
   {
     id: 'm1',
     sender: 'bot',
     text:
-      "Sannu / E kaaro / Ututu Oma! I am KudiBot, your AI Financial Advisor. I analyze your daily market sales, Wema settlement account, and Trust Score velocity to give you instant business advice. Ask me anything — credit, profit, Esusu, stock, receipt scanning, or voice commands.",
+      "Sannu / E kaaro / Ututu Oma! I'm KudiBot, your AI business assistant. I watch your daily sales, Wema account, and Trust Score to help you grow your business. Ask me about credit, profit, savings, stock, receipts, or voice commands — I'm here to help!",
     time: 'Just now',
   },
 ];
 
 const QUICK_PROMPTS = [
-  { key: 'components.prompt1', query: 'How do I increase my Wema credit line?' },
-  { key: 'components.prompt2', query: 'Analyse my daily sales profit trend' },
-  { key: 'components.prompt3', query: 'When is my next Co-op Esusu payout?' },
-  { key: 'components.prompt4', query: 'How much should I reinvest in stock?' },
+  { key: 'components.prompt1', query: 'How do I increase my credit line?' },
+  { key: 'components.prompt2', query: 'Analyse my daily profit trend' },
+  { key: 'components.prompt3', query: 'When is my next Esusu payout?' },
+  { key: 'components.prompt4', query: 'How much should I reinvest in products?' },
 ];
 
 export function AiAdvisorModal({ visible, onClose }: Props) {
@@ -92,24 +286,24 @@ export function AiAdvisorModal({ visible, onClose }: Props) {
   const fallbackResponse = (query: string) => {
     const lower = query.toLowerCase();
     if (lower.includes('credit') || lower.includes('increase')) {
-      return "📈 To upgrade your Wema Credit Line:\n1. 🧾 Record voice or receipt sales for 14 consecutive days\n2. 👥 Complete monthly Co-op Esusu contribution on time\n3. ✅ Keep zero defaults on micro-credit repayments\n4. ⬆️ Maintain or grow daily sales volume\n\nAsk me to remind you each morning!";
+      return "To raise your Wema credit line:\n1. Log your sales every day (voice or receipt) for 2 weeks\n2. Pay your monthly Co-op/Esusu contributions on time\n3. Repay any small loan before the date it's due\n4. Keep your daily sales from dropping\n\nWant a daily reminder?";
     }
     if (lower.includes('profit') || lower.includes('trend')) {
-      return "💰 To analyze profit trend:\n1. Open 'Sales Intake' from the Home tab\n2. Choose SCAN RECEIPT (camera) or VOICE (speak items)\n3. Log all sales daily — KudiBot then compares day-over-day % change and suggests top-performing SKUs.";
+      return "To check your profit trend:\n1. Go to the Home tab and tap 'Record Sale'\n2. Pick SCAN RECEIPT (use your camera) or VOICE (speak your items)\n3. Log your sales every day — I'll compare your profits and show you which products are selling best.";
     }
     if (lower.includes('esusu') || lower.includes('co-op') || lower.includes('payout')) {
-      return "👥 For your Esusu / Co-op:\n- Payouts follow the rotation schedule your association set\n- Check the Co-op tab → 'Rotation' to see your position\n- Tip: keep recording daily sales — higher velocity = earlier eligibility for Wema credit top-up on payout month.";
+      return "For your Esusu / Co-op:\n- Payouts follow the order your group agreed on\n- Co-op tab → 'Rotation' shows when it's your turn\n- Tip: log your sales every day — the more you sell, the more you may qualify for a credit top-up when you get your payout.";
     }
     if (lower.includes('stock') || lower.includes('reinvest')) {
-      return "🛒 Reinvestment rule of thumb:\n- Reinvest 30-50% of weekly profit into fast-moving stock (grains, oil, tomatoes, beverages)\n- Use SCAN RECEIPT after each purchase to log stock — KudiBot will flag when items are due for restock.";
+      return "A simple rule for reinvesting:\n- Put 30 to 50 percent of your weekly profit back into products that sell fast (like grains, oil, tomatoes, drinks)\n- Scan your purchase receipts to log your stock — I'll tell you when it's time to buy more.";
     }
     if (lower.includes('scan') || lower.includes('receipt') || lower.includes('handwritten')) {
-      return "📄 Yes! Receipt scanner now handles:\n• Printed POS / supermarket receipts\n• ✏️ Handwritten receipts (exercise book, paper slips, tissue)\n• Mixed printed + handwritten (very common in Nigeria!)\n\nHow to use:\n1. Go to Home → Tap 'Record Sale'\n2. Select 'SCAN RECEIPT' tab\n3. Take a clear photo (good lighting, flat paper) → AI extracts all items, qty, price, total";
+      return "You can scan all kinds of receipts:\n• Printed receipts from POS machines and shops\n• Handwritten receipts (exercise book, paper slips, any paper)\n• Mixed printed and handwritten (common in Nigeria!)\n\nHow to use:\n1. Go to Home → Tap 'Record Sale'\n2. Choose the 'SCAN RECEIPT' tab\n3. Take a clear photo (good lighting, flat paper) — the AI will read all items, prices, and totals for you.";
     }
     if (lower.includes('voice') || lower.includes('speak') || lower.includes('record')) {
-      return "🗣️ Voice commands available:\n1. TRANSFER: Home → 'Send Money' → 'Voice' — say \"Send 5000 naira to Chidi at UBA 0123456789\"\n2. SALES LOG: Home → 'Record Sale' → 'VOICE' — say \"2 bags of rice 35000 each, 10 wraps akara 500 each\"\n\nBoth support English, Pidgin, Hausa, Yoruba and Igbo";
+      return "Use your voice to:\n1. Send money: Go to Home → 'Send Money' → 'Voice' — say \"Send 5000 naira to Chidi at UBA 0123456789\"\n2. Log sales: Go to Home → 'Record Sale' → 'VOICE' — say \"2 bags of rice 35000 each, 10 wraps akara 500 each\"\n\nWorks in English, Pidgin, Hausa, Yoruba, and Igbo.";
     }
-    return "💡 How can I help today? Try:\n• 'How do I increase my credit line?'\n• 'How does the receipt scanner work?'\n• 'Tell me tips for Esusu payouts'\n• 'How to reinvest profit wisely'";
+    return "How can I help? Try asking:\n• 'How do I increase my credit line?'\n• 'How does the receipt scanner work?'\n• 'Tips for Esusu payouts'\n• 'How to reinvest profit wisely'";
   };
 
   const handleSend = useCallback(
@@ -165,7 +359,7 @@ export function AiAdvisorModal({ visible, onClose }: Props) {
   const handleVoiceListenToggle = () => {
     if (isListening) {
       setIsListening(false);
-      handleSend("How do I increase my Wema credit limit?");
+      handleSend("How do I increase my credit line?");
     } else {
       Alert.alert(
         t("components.voiceComingSoon"),
@@ -248,9 +442,15 @@ export function AiAdvisorModal({ visible, onClose }: Props) {
                       isBot ? styles.bubbleBot : styles.bubbleUser,
                     ]}
                   >
-                    <Text style={[styles.bubbleText, isBot ? styles.bubbleTextBot : styles.bubbleTextUser]}>
+                  {isBot ? (
+                    <View style={styles.botMessageContent}>
+                      {renderBotMessage(m.text)}
+                    </View>
+                  ) : (
+                    <Text style={[styles.bubbleText, styles.bubbleTextUser]}>
                       {m.text}
                     </Text>
+                  )}
                     {m.providerLabel ? (
                       <Text style={[styles.providerBadge, isBot ? styles.providerBadgeBot : styles.providerBadgeUser]}>
                         {m.providerLabel}
@@ -421,4 +621,36 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primaryMid, alignItems: 'center', justifyContent: 'center',
   },
   sendBtnDisabled: { opacity: 0.5 },
+  botBlock: {
+    marginBottom: 8,
+    fontSize: typography.sizes.body,
+    lineHeight: 21,
+    color: colors.textDark,
+    fontWeight: '500',
+  },
+  botListBlock: { paddingLeft: 16, marginBottom: 4 },
+  botListItem: { flexDirection: 'row', marginBottom: 2 },
+  botListNumber: { width: 20, fontWeight: '700', color: colors.primaryMid },
+  botListItemText: {
+    flex: 1,
+    fontSize: typography.sizes.body,
+    lineHeight: 21,
+    color: colors.textDark,
+    fontWeight: '500',
+  },
+  botMessageContent: { flexShrink: 1 },
+  botBold: { fontWeight: '700' },
+  botItalic: { fontStyle: 'italic' },
+  botCode: { fontFamily: 'monospace', backgroundColor: '#F1F5F9', paddingHorizontal: 4, borderRadius: 4 },
+  botTable: {
+    borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 8,
+    overflow: 'hidden', marginBottom: 8, backgroundColor: colors.white,
+  },
+  botTableRow: { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: '#E2E8F0' },
+  botTableRowHeader: { backgroundColor: '#F3EBFB' },
+  botTableCell: {
+    flex: 1, paddingHorizontal: 8, paddingVertical: 6,
+    fontSize: 12, lineHeight: 16, color: colors.textDark, fontWeight: '400',
+  },
+  botTableCellHeader: { fontWeight: '700', color: colors.primaryDeep },
 });
