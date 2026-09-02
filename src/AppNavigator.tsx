@@ -10,7 +10,7 @@ import { StyleSheet, View, TouchableOpacity, Text } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 import { BottomTabBar } from "./components/BottomTabBar";
-import { LanguageProvider } from "./context/LanguageContext";
+import { LanguageProvider, useLanguage } from "./context/LanguageContext";
 import { Icon } from "./components/Icon";
 import { colors, radius, shadows } from "./theme/theme";
 import { AiAdvisorModal } from "./components/AiAdvisorModal";
@@ -144,6 +144,7 @@ function LogSalesPlaceholder() {
 
 function MainTabsNavigator() {
   const [showAdvisor, setShowAdvisor] = useState(false);
+  const { t } = useLanguage();
 
   return (
     <View style={{ flex: 1 }}>
@@ -177,7 +178,7 @@ function MainTabsNavigator() {
         <View style={styles.robotIconBadge}>
           <Icon name="robot" size={24} color={colors.white} />
         </View>
-        <Text style={styles.robotFabText}>KudiBot AI</Text>
+        <Text style={styles.robotFabText}>{t('nav.kudibot')}</Text>
       </TouchableOpacity>
 
       {/* AI Financial Advisor Modal */}

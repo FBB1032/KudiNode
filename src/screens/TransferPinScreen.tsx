@@ -43,7 +43,6 @@ export function TransferPinScreen() {
   const nav = useNavigation<Nav>();
   const route = useRoute<TransferRouteProp>();
   const params = route.params;
-
   // 2-Stage Voice Recording State
   const [hasCapturedVoice, setHasCapturedVoice] = useState(false);
   const [isVoiceRecording, setIsVoiceRecording]   = useState(false);
@@ -168,12 +167,12 @@ export function TransferPinScreen() {
 
     const payload = UssdFallbackModule.buildWemaPayload(cleanAmount, cleanAcc);
     Alert.alert(
-      'Wema Bank USSD Fallback (*945#)',
-      `Opening native dialer with payload:\n${payload}\n\nPress the call button and enter your Wema PIN on the telecom prompt.`,
+      t('transfer.ussdAlertTitle'),
+      t('transfer.ussdAlertMsg', { payload }),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Open Dialer (*945#)',
+          text: t('transfer.openDialer'),
           onPress: async () => {
             await UssdFallbackModule.triggerUssdFallback({
               amount: cleanAmount,
@@ -198,7 +197,7 @@ export function TransferPinScreen() {
   return (
     <View style={styles.wrapper}>
       <StatusBar barStyle="light-content" backgroundColor={colors.primaryDeep} translucent={false} />
-      <TopHeader showBack title="Authorize Transfer" subtitle="Wema Bank NIP / USSD Transfer" />
+      <TopHeader showBack title={t('transfer.authorize')} subtitle={t('transfer.subtitle')} />
 
       <ScrollView
         style={styles.scroll}
@@ -212,9 +211,9 @@ export function TransferPinScreen() {
             <Icon name="call" size={16} color={colors.white} />
           </View>
           <View style={styles.ussdAlertTextWrap}>
-            <Text style={styles.ussdAlertTitle}>Low Network Detected (USSD Fallback)</Text>
+            <Text style={styles.ussdAlertTitle}>{t('transfer.lowNetwork')}</Text>
             <Text style={styles.ussdAlertSub}>
-              Tap to transfer ₦{amount} to {recipientName} via Wema Bank *945# dialer.
+              {t('transfer.ussdAlertSub', { amount, recipient: recipientName })}
             </Text>
           </View>
           <Icon name="chevron-forward" size={16} color={colors.warningOrange} />
@@ -225,18 +224,18 @@ export function TransferPinScreen() {
           <View style={[styles.detailsCard, shadows.card]}>
             {/* Card header with Edit button */}
             <View style={styles.detailsCardHeader}>
-              <Text style={styles.detailsCardTitle}>Transfer Details</Text>
+              <Text style={styles.detailsCardTitle}>{t('transfer.details')}</Text>
               <TouchableOpacity
                 style={styles.editBtn}
                 onPress={() => setIsEditingDetails(true)}
                 activeOpacity={0.75}
               >
                 <Icon name="pencil" size={14} color={colors.primaryDeep} />
-                <Text style={styles.editBtnText}>Edit</Text>
+                <Text style={styles.editBtnText}>{t('common.edit')}</Text>
               </TouchableOpacity>
             </View>
             <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>From Account</Text>
+              <Text style={styles.detailLabel}>{t('transfer.fromAccount')}</Text>
               <View style={styles.wemaAccountBadge}>
                 <View style={styles.wemaDot} />
                 <Text style={styles.wemaAccountText}>{fromAccount}</Text>
@@ -244,7 +243,7 @@ export function TransferPinScreen() {
             </View>
 
             <View style={[styles.detailRow, styles.detailRowBordered]}>
-              <Text style={styles.detailLabel}>Recipient</Text>
+              <Text style={styles.detailLabel}>{t('transfer.recipient')}</Text>
               <View style={styles.recipientValue}>
                 <Avatar size={28} initials={recipientName.substring(0, 2).toUpperCase()} />
                 <Text style={styles.recipientText}>{recipientName}</Text>
@@ -252,17 +251,17 @@ export function TransferPinScreen() {
             </View>
 
             <View style={[styles.detailRow, styles.detailRowBordered]}>
-              <Text style={styles.detailLabel}>Destination Bank</Text>
+              <Text style={styles.detailLabel}>{t('transfer.destBank')}</Text>
               <Text style={styles.detailValueText}>{bankName}</Text>
             </View>
 
             <View style={[styles.detailRow, styles.detailRowBordered]}>
-              <Text style={styles.detailLabel}>Account No.</Text>
+              <Text style={styles.detailLabel}>{t('transfer.accountNo')}</Text>
               <Text style={styles.detailValueText}>{accountNum}</Text>
             </View>
 
             <View style={[styles.detailRow, styles.detailRowBordered]}>
-              <Text style={styles.detailLabel}>Transfer Amount</Text>
+              <Text style={styles.detailLabel}>{t('transfer.amount')}</Text>
               <Text style={styles.detailAmount}>₦{amount}</Text>
             </View>
           </View>
@@ -270,11 +269,11 @@ export function TransferPinScreen() {
           <View style={[styles.editFormCard, shadows.cardLg]}>
             <View style={styles.editFormHeader}>
               <Icon name="settings" size={18} color={colors.primaryDeep} />
-              <Text style={styles.editFormHeaderTitle}>Voice Fallback Details Editor</Text>
+              <Text style={styles.editFormHeaderTitle}>{t('transfer.detailsEditor')}</Text>
             </View>
 
             <View style={styles.formGroup}>
-              <Text style={styles.formLabel}>From Account</Text>
+              <Text style={styles.formLabel}>{t('transfer.fromAccountLabel')}</Text>
               <View style={styles.formInputWrap}>
                 <Icon name="bank" size={16} color={colors.primaryMid} />
                 <TextInput
@@ -286,20 +285,20 @@ export function TransferPinScreen() {
             </View>
 
             <View style={styles.formGroup}>
-              <Text style={styles.formLabel}>Recipient Name</Text>
+              <Text style={styles.formLabel}>{t('transfer.recipientNameLabel')}</Text>
               <View style={styles.formInputWrap}>
                 <Icon name="person" size={16} color={colors.textMuted} />
                 <TextInput
                   style={styles.formInput}
                   value={recipientName}
                   onChangeText={setRecipientName}
-                  placeholder="Enter recipient name"
+                  placeholder={t('transfer.recipientPlaceholder')}
                 />
               </View>
             </View>
 
             <View style={styles.formGroup}>
-              <Text style={styles.formLabel}>Destination Bank</Text>
+              <Text style={styles.formLabel}>{t('transfer.destBankLabel')}</Text>
               <TouchableOpacity
                 style={styles.bankPickerTrigger}
                 onPress={() => setShowBankPickerModal(true)}
@@ -314,7 +313,7 @@ export function TransferPinScreen() {
             </View>
 
             <View style={styles.formGroup}>
-              <Text style={styles.formLabel}>Account Number (10 digits)</Text>
+              <Text style={styles.formLabel}>{t('transfer.accountNumLabel')}</Text>
               <View style={styles.formInputWrap}>
                 <Icon name="card" size={16} color={colors.textMuted} />
                 <TextInput
@@ -329,7 +328,7 @@ export function TransferPinScreen() {
             </View>
 
             <View style={styles.formGroup}>
-              <Text style={styles.formLabel}>Transfer Amount (₦)</Text>
+              <Text style={styles.formLabel}>{t('transfer.amountLabel')}</Text>
               <View style={styles.formInputWrap}>
                 <Text style={styles.nairaPrefix}>₦</Text>
                 <TextInput
@@ -353,7 +352,7 @@ export function TransferPinScreen() {
                 style={styles.saveDetailsGrad}
               >
                 <Icon name="checkmark" size={16} color={colors.white} />
-                <Text style={styles.saveDetailsText}>Save & Apply Details</Text>
+                <Text style={styles.saveDetailsText}>{t('transfer.saveDetails')}</Text>
               </LinearGradient>
             </TouchableOpacity>
           </View>
@@ -361,7 +360,7 @@ export function TransferPinScreen() {
 
         {/* PIN Section */}
         <Animated.View style={[styles.pinSection, { transform: [{ translateX: shakeAnim }] }]}>
-          <Text style={styles.pinLabel}>Enter 4-Digit Security PIN</Text>
+          <Text style={styles.pinLabel}>{t('transfer.enterPin')}</Text>
           <View style={styles.pinDots}>
             {Array.from({ length: pinMax }, (_, i) => {
               const filled = i < pin.length;
@@ -383,7 +382,7 @@ export function TransferPinScreen() {
 
           <TouchableOpacity style={styles.fingerprintBtn} onPress={handleFingerprint} activeOpacity={0.7}>
             <Icon name="fingerprint" size={36} color={colors.primaryMid} />
-            <Text style={styles.fingerprintText}>Or use Biometric / Fingerprint</Text>
+            <Text style={styles.fingerprintText}>{t('transfer.orUseBiometric')}</Text>
           </TouchableOpacity>
         </Animated.View>
 
@@ -412,13 +411,13 @@ export function TransferPinScreen() {
         {/* Action Buttons */}
         <View style={styles.authorizeBtnWrap}>
           <PrimaryButton
-            title="Authorize Transfer"
+            title={t('transfer.authorizeButton')}
             icon={<Icon name="lock" size={20} color={colors.white} />}
             onPress={handleAuthorize}
           />
 
           <TouchableOpacity style={styles.failTestBtn} onPress={handleLaunchUSSD} activeOpacity={0.7}>
-            <Text style={styles.failTestText}>⚡ Launch Wema Bank USSD Fallback (*945#)</Text>
+            <Text style={styles.failTestText}>{t('transfer.launchUssd')}</Text>
           </TouchableOpacity>
         </View>
 
@@ -430,7 +429,7 @@ export function TransferPinScreen() {
         <View style={styles.bankPickerOverlay}>
           <View style={styles.bankPickerCard}>
             <View style={styles.bankPickerHeader}>
-              <Text style={styles.bankPickerTitle}>Select Destination Bank</Text>
+              <Text style={styles.bankPickerTitle}>{t('transfer.selectBank')}</Text>
               <TouchableOpacity onPress={() => setShowBankPickerModal(false)} activeOpacity={0.8}>
                 <Icon name="close" size={22} color={colors.textDark} />
               </TouchableOpacity>
@@ -440,7 +439,7 @@ export function TransferPinScreen() {
               <Icon name="search" size={16} color={colors.textMuted} />
               <TextInput
                 style={styles.searchInput}
-                placeholder="Search bank name..."
+                placeholder={t('transfer.searchBank')}
                 placeholderTextColor={colors.textMuted}
                 value={bankSearchQuery}
                 onChangeText={setBankSearchQuery}
@@ -488,24 +487,24 @@ export function TransferPinScreen() {
                 <View style={styles.successIconCircle}>
                   <Icon name="checkmark-circle" size={48} color={colors.successGreen} />
                 </View>
-                <Text style={styles.modalTitle}>Transfer Successful!</Text>
-                <Text style={styles.modalSub}>Disbursed instantly from your Wema Merchant Account via NIP.</Text>
+                <Text style={styles.modalTitle}>{t('transfer.successTitle')}</Text>
+                <Text style={styles.modalSub}>{t('transfer.successSub')}</Text>
 
                 <View style={styles.receiptBox}>
                   <View style={styles.receiptRow}>
-                    <Text style={styles.receiptLbl}>From</Text>
+                    <Text style={styles.receiptLbl}>{t('transfer.from')}</Text>
                     <Text style={styles.receiptVal}>Wema Merchant (0129384756)</Text>
                   </View>
                   <View style={styles.receiptRow}>
-                    <Text style={styles.receiptLbl}>Amount Sent</Text>
+                    <Text style={styles.receiptLbl}>{t('transfer.amountSent')}</Text>
                     <Text style={styles.receiptAmt}>₦{amount}</Text>
                   </View>
                   <View style={styles.receiptRow}>
-                    <Text style={styles.receiptLbl}>Recipient</Text>
+                    <Text style={styles.receiptLbl}>{t('transfer.recipient')}</Text>
                     <Text style={styles.receiptVal}>{recipientName}</Text>
                   </View>
                   <View style={styles.receiptRow}>
-                    <Text style={styles.receiptLbl}>Account No.</Text>
+                    <Text style={styles.receiptLbl}>{t('transfer.accountNo')}</Text>
                     <Text style={styles.receiptVal}>{accountNum} ({bankName})</Text>
                   </View>
                 </View>
@@ -520,7 +519,7 @@ export function TransferPinScreen() {
                     start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
                     style={styles.modalGrad}
                   >
-                    <Text style={styles.modalPrimaryText}>Back to Dashboard</Text>
+                    <Text style={styles.modalPrimaryText}>{t('transfer.backToDashboard')}</Text>
                   </LinearGradient>
                 </TouchableOpacity>
               </>
@@ -529,9 +528,9 @@ export function TransferPinScreen() {
                 <View style={styles.failIconCircle}>
                   <Icon name="close" size={32} color={colors.warningOrange} />
                 </View>
-                <Text style={styles.modalTitle}>Transfer Intercepted</Text>
+                <Text style={styles.modalTitle}>{t('transfer.interceptedTitle')}</Text>
                 <Text style={styles.modalSub}>
-                  Network connection slow or API timeout (&gt;3000ms). Tap to execute via Wema Bank USSD fallback.
+                  {t('transfer.interceptedSub')}
                 </Text>
 
                 <TouchableOpacity
@@ -544,7 +543,7 @@ export function TransferPinScreen() {
                     start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
                     style={styles.modalGrad}
                   >
-                    <Text style={styles.modalPrimaryText}>⚡ Transfer via USSD (*945#)</Text>
+                    <Text style={styles.modalPrimaryText}>{t('transfer.ussdTransfer')}</Text>
                   </LinearGradient>
                 </TouchableOpacity>
               </>
@@ -561,23 +560,23 @@ export function TransferPinScreen() {
               <ActivityIndicator size="large" color={colors.primaryDeep} />
             </View>
 
-            <Text style={styles.processingTitle}>Processing Transfer…</Text>
+            <Text style={styles.processingTitle}>{t('transfer.processingTitle')}</Text>
             <Text style={styles.processingSub}>
-              Sending ₦{amount} to {recipientName} ({bankName})
+              {t('transfer.sendingTo', { amount, recipient: recipientName, bank: bankName })}
             </Text>
 
             <View style={styles.processingStepsBox}>
               <View style={styles.stepRow}>
                 <Icon name={processStep >= 1 ? "checkmark-circle" : "radio-button-off"} size={16} color={processStep >= 1 ? colors.successGreen : colors.textMuted} />
-                <Text style={[styles.stepText, processStep >= 1 && styles.stepTextDone]}>1. Security PIN Verified</Text>
+                <Text style={[styles.stepText, processStep >= 1 && styles.stepTextDone]}>{t('transfer.step1')}</Text>
               </View>
               <View style={styles.stepRow}>
                 <Icon name={processStep >= 2 ? "checkmark-circle" : "radio-button-off"} size={16} color={processStep >= 2 ? colors.successGreen : colors.textMuted} />
-                <Text style={[styles.stepText, processStep >= 2 && styles.stepTextDone]}>2. Connecting to NIP Handoff Gateway</Text>
+                <Text style={[styles.stepText, processStep >= 2 && styles.stepTextDone]}>{t('transfer.step2')}</Text>
               </View>
               <View style={styles.stepRow}>
                 <Icon name={processStep >= 3 ? "checkmark-circle" : "radio-button-off"} size={16} color={processStep >= 3 ? colors.successGreen : colors.textMuted} />
-                <Text style={[styles.stepText, processStep >= 3 && styles.stepTextDone]}>3. Debiting Merchant Settlement Account</Text>
+                <Text style={[styles.stepText, processStep >= 3 && styles.stepTextDone]}>{t('transfer.step3')}</Text>
               </View>
             </View>
           </View>

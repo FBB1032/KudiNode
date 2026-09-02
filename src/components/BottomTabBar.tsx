@@ -4,19 +4,21 @@ import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { colors, spacing, radius, typography, shadows } from '../theme/theme';
 import { Icon } from './Icon';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useLanguage } from '../context/LanguageContext';
 
 type TabName = 'Home' | 'CoopEsusu' | 'LogSales' | 'WemaCredit' | 'Profile';
 
-const TAB_CONFIG: Record<TabName, { icon: any; label: string; center?: boolean }> = {
-  Home:       { icon: 'home',        label: 'Home' },
-  CoopEsusu:  { icon: 'people',      label: 'Co-op' },
-  LogSales:   { icon: 'mic',         label: 'Log Sales', center: true },
-  WemaCredit: { icon: 'stats-chart', label: 'Credit' },
-  Profile:    { icon: 'person',      label: 'Profile' },
+const TAB_CONFIG: Record<TabName, { icon: any; labelKey: string; center?: boolean }> = {
+  Home:       { icon: 'home',        labelKey: 'nav.home' },
+  CoopEsusu:  { icon: 'people',      labelKey: 'nav.coop' },
+  LogSales:   { icon: 'mic',         labelKey: 'nav.logSales', center: true },
+  WemaCredit: { icon: 'stats-chart', labelKey: 'nav.credit' },
+  Profile:    { icon: 'person',      labelKey: 'nav.profile' },
 };
 
 export function BottomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
+  const { t } = useLanguage();
 
   return (
     <View style={[styles.root, { paddingBottom: Math.max(insets.bottom, 8) }]}>
@@ -53,7 +55,7 @@ export function BottomTabBar({ state, descriptors, navigation }: BottomTabBarPro
                   </View>
                 </TouchableOpacity>
                 <Text style={[styles.centerLabel, focused && styles.labelActive]}>
-                  {config.label}
+                  {t(config.labelKey)}
                 </Text>
               </View>
             );
@@ -79,7 +81,7 @@ export function BottomTabBar({ state, descriptors, navigation }: BottomTabBarPro
                 />
               </View>
               <Text style={[styles.label, focused && styles.labelActive]}>
-                {config.label}
+                {t(config.labelKey)}
               </Text>
             </TouchableOpacity>
           );

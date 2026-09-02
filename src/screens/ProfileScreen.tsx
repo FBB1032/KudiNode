@@ -24,41 +24,41 @@ const LANGUAGES: { id: Language; label: string; flag: string }[] = [
 
 const MENU_SECTIONS = [
   {
-    title: 'AI Advisory & Financial Intelligence',
+    titleKey: 'profile.aiAdvisory',
     items: [
-      { icon: 'robot'         as const, label: 'AI Financial Advisor (KudiBot)', sub: 'Instant credit, profit & reinvestment advice', route: 'AI_BOT_MODAL' as const },
-      { icon: 'stats-chart'   as const, label: 'Credit Score',                  sub: 'KudiNode AI trust score breakdown',        route: 'TrustScore' as const },
+      { icon: 'robot'         as const, labelKey: 'profile.kudibot', subKey: 'profile.kudibotSub', route: 'AI_BOT_MODAL' as const },
+      { icon: 'stats-chart'   as const, labelKey: 'profile.creditScore', subKey: 'profile.creditScoreSub', route: 'TrustScore' as const },
     ],
   },
   {
-    title: 'Finances & Ledger',
+    titleKey: 'profile.finances',
     items: [
-      { icon: 'receipt'    as const, label: 'Transaction History',  sub: 'Full ledger export',         route: 'AllTransactions' as const },
-      { icon: 'receipt'    as const, label: 'Sales Ledger',         sub: 'Voice & scan records',       route: 'Ledger'          as const },
+      { icon: 'receipt'    as const, labelKey: 'profile.transactionHistory', subKey: 'profile.transactionHistorySub', route: 'AllTransactions' as const },
+      { icon: 'receipt'    as const, labelKey: 'profile.salesLedger', subKey: 'profile.salesLedgerSub', route: 'Ledger'          as const },
     ],
   },
   {
-    title: 'Community',
+    titleKey: 'profile.community',
     items: [
-      { icon: 'people'     as const, label: 'My Co-op Group',       sub: 'Mushin Market Node',         route: 'CoopEsusu'       as const },
-      { icon: 'plus'       as const, label: 'Create Co-op Group',   sub: 'Start a new Esusu circle',   route: 'CoopCreate'      as const },
+      { icon: 'people'     as const, labelKey: 'profile.myCoop', subKey: 'profile.myCoopSub', route: 'CoopEsusu'       as const },
+      { icon: 'plus'       as const, labelKey: 'profile.createCoop', subKey: 'profile.createCoopSub', route: 'CoopCreate'      as const },
     ],
   },
   {
-    title: 'Account & Settings',
+    titleKey: 'profile.accountSettings',
     items: [
-      { icon: 'globe'      as const, label: 'Voice & Language',     sub: 'Hausa, Yoruba, Igbo, Pidgin, EN', route: 'LANG_MODAL' as const },
-      { icon: 'lock'       as const, label: 'Set Transfer PIN',     sub: 'Set or change 4-digit security PIN', route: 'PIN_SETUP_MODAL' as const },
-      { icon: 'bell'       as const, label: 'Notifications',        sub: 'Manage alerts & SMS',        route: 'Notifications'   as const },
-      { icon: 'shield'     as const, label: 'Security & PIN',       sub: 'Biometrics & login security', route: 'SecuritySettings'as const },
-      { icon: 'id-card'    as const, label: 'KYC Documents',        sub: 'Uploaded ID & liveness',     route: 'KYCDocuments'    as const },
-      { icon: 'help'       as const, label: 'Help & Support',       sub: 'Chat, FAQ, call centre',     route: 'HelpSupport'     as const },
+      { icon: 'globe'      as const, labelKey: 'profile.voiceLanguage', subKey: 'profile.voiceLanguageSub', route: 'LANG_MODAL' as const },
+      { icon: 'lock'       as const, labelKey: 'profile.setTransferPin', subKey: 'profile.setTransferPinSub', route: 'PIN_SETUP_MODAL' as const },
+      { icon: 'bell'       as const, labelKey: 'profile.notifications', subKey: 'profile.notificationsSub', route: 'Notifications'   as const },
+      { icon: 'shield'     as const, labelKey: 'profile.security', subKey: 'profile.securitySub', route: 'SecuritySettings'as const },
+      { icon: 'id-card'    as const, labelKey: 'profile.kyc', subKey: 'profile.kycSub', route: 'KYCDocuments'    as const },
+      { icon: 'help'       as const, labelKey: 'profile.help', subKey: 'profile.helpSub', route: 'HelpSupport'     as const },
     ],
   },
   {
-    title: '',
+    titleKey: '',
     items: [
-      { icon: 'logout'     as const, label: 'Sign Out',             sub: 'Log out of merchant hub',    route: null, danger: true },
+      { icon: 'logout'     as const, labelKey: 'profile.signOut', subKey: 'profile.signOutSub', route: null, danger: true },
     ],
   },
 ];
@@ -75,18 +75,18 @@ export function ProfileScreen() {
 
   const handleSavePin = () => {
     if (newPinVal.length !== 4) {
-      setPinError('PIN must be exactly 4 digits');
+      setPinError(t('profile.pinErrorLength'));
       return;
     }
     if (newPinVal !== confirmPinVal) {
-      setPinError('PINs do not match');
+      setPinError(t('profile.pinErrorMismatch'));
       return;
     }
     setPinError('');
     setShowPinSetupModal(false);
     setNewPinVal('');
     setConfirmPinVal('');
-    Alert.alert('Transfer PIN Updated', 'Your 4-digit security transfer PIN has been updated successfully!');
+    Alert.alert(t('profile.pinUpdated'), t('profile.pinUpdatedMsg'));
   };
 
   const handlePress = (route: string | null, danger?: boolean) => {
@@ -115,7 +115,7 @@ export function ProfileScreen() {
   };
 
   const handleCopyAcc = () => {
-    Alert.alert('Copied to Clipboard', 'Wema Settlement Account 0129384756 (Amina Babangida Bello) copied.');
+    Alert.alert(t('profile.copiedTitle'), t('profile.copiedMsg', { account: '0129384756', name: 'Amina Babangida Bello' }));
   };
 
   return (
@@ -135,7 +135,7 @@ export function ProfileScreen() {
               <Icon name="arrow-back" size={22} color={colors.white} />
             </TouchableOpacity>
 
-            <Text style={styles.navTitle}>Merchant Profile</Text>
+            <Text style={styles.navTitle}>{t('profile.merchantProfile')}</Text>
 
             {/* Top Right Corner Language Selector Pill */}
             <TouchableOpacity
@@ -165,7 +165,7 @@ export function ProfileScreen() {
             <Text style={styles.profileId}>KN-783462 · Mushin Central Market</Text>
             <View style={styles.tierBadge}>
               <Icon name="shield-checkmark" size={12} color={colors.successGreen} />
-              <Text style={styles.tierText}>{t('tier1')}</Text>
+              <Text style={styles.tierText}>{t('profile.tier1')}</Text>
             </View>
           </View>
 
@@ -176,7 +176,7 @@ export function ProfileScreen() {
                 <Icon name="bank" size={22} color={colors.primaryDeep} />
               </View>
               <View>
-                <Text style={styles.bankLbl}>Wema Bank Settlement Account</Text>
+                <Text style={styles.bankLbl}>{t('profile.wemaSettlement')}</Text>
                 <Text style={styles.bankNum}>0129 3847 56</Text>
               </View>
             </View>
@@ -196,14 +196,14 @@ export function ProfileScreen() {
         {/* Stats row */}
         <View style={styles.statsRow}>
           {[
-            { label: 'Total Sales',  value: '₦1.2M',   icon: 'receipt'      as const },
-            { label: 'Credit Used',  value: '₦50K',    icon: 'card'         as const },
-            { label: 'Trust Score',  value: '91 / 100', icon: 'stats-chart' as const },
+            { labelKey: 'profile.totalSales',  value: '₦1.2M',   icon: 'receipt'      as const },
+            { labelKey: 'profile.creditUsed',  value: '₦50K',    icon: 'card'         as const },
+            { labelKey: 'profile.trustScore',  value: '91 / 100', icon: 'stats-chart' as const },
           ].map(s => (
-            <View key={s.label} style={[styles.statCard, shadows.card]}>
+            <View key={s.labelKey} style={[styles.statCard, shadows.card]}>
               <Icon name={s.icon} size={17} color={colors.primaryMid} />
               <Text style={styles.statValue}>{s.value}</Text>
-              <Text style={styles.statLabel}>{s.label}</Text>
+              <Text style={styles.statLabel}>{t(s.labelKey)}</Text>
             </View>
           ))}
         </View>
@@ -211,13 +211,13 @@ export function ProfileScreen() {
         {/* Menu sections */}
         {MENU_SECTIONS.map((section, si) => (
           <View key={si}>
-            {section.title ? (
-              <Text style={styles.sectionTitle}>{section.title}</Text>
+            {section.titleKey ? (
+              <Text style={styles.sectionTitle}>{t(section.titleKey)}</Text>
             ) : null}
             <View style={[styles.menuCard, shadows.card]}>
               {section.items.map((item, ii) => (
                 <TouchableOpacity
-                  key={item.label}
+                  key={item.labelKey}
                   style={[styles.menuRow, ii < section.items.length - 1 && styles.menuBorder]}
                   onPress={() => handlePress(item.route, (item as any).danger)}
                   activeOpacity={0.75}
@@ -231,9 +231,9 @@ export function ProfileScreen() {
                   </View>
                   <View style={styles.menuText}>
                     <Text style={[styles.menuLabel, (item as any).danger && styles.menuLabelDanger]}>
-                      {item.label}
+                      {t(item.labelKey)}
                     </Text>
-                    <Text style={styles.menuSub}>{item.sub}</Text>
+                    <Text style={styles.menuSub}>{t(item.subKey)}</Text>
                   </View>
                   {!(item as any).danger && (
                     <Icon name="chevron-forward" size={16} color={colors.textMuted} />
@@ -244,7 +244,7 @@ export function ProfileScreen() {
           </View>
         ))}
 
-        <Text style={styles.version}>KudiNode AI v1.0.0 · Financial Sandbox</Text>
+        <Text style={styles.version}>{t('profile.version')}</Text>
         <View style={{ height: spacing.xxxl * 2 }} />
       </ScrollView>
 
@@ -253,7 +253,7 @@ export function ProfileScreen() {
         <TouchableOpacity style={styles.modalBg} activeOpacity={1} onPress={() => setShowLangModal(false)}>
           <View style={[styles.langCard, shadows.cardLg]}>
             <View style={styles.langHeader}>
-              <Text style={styles.langTitle}>Select App & AI Voice Language</Text>
+              <Text style={styles.langTitle}>{t('profile.selectLanguage')}</Text>
               <TouchableOpacity onPress={() => setShowLangModal(false)}>
                 <Icon name="close" size={20} color={colors.textDark} />
               </TouchableOpacity>
@@ -289,18 +289,18 @@ export function ProfileScreen() {
         <View style={styles.modalOverlay}>
           <View style={[styles.pinSetupCard, shadows.cardLg]}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Set Transfer PIN</Text>
+              <Text style={styles.modalTitle}>{t('profile.setPinTitle')}</Text>
               <TouchableOpacity onPress={() => setShowPinSetupModal(false)} activeOpacity={0.8}>
                 <Icon name="close" size={22} color={colors.textDark} />
               </TouchableOpacity>
             </View>
 
             <Text style={styles.pinSetupSub}>
-              Set a secret 4-digit PIN to authorize transfers and Esusu contributions.
+              {t('profile.setPinSub')}
             </Text>
 
             <View style={styles.pinInputWrap}>
-              <Text style={styles.pinInputLabel}>New 4-Digit Security PIN</Text>
+              <Text style={styles.pinInputLabel}>{t('profile.newPin')}</Text>
               <TextInput
                 style={styles.pinInputField}
                 value={newPinVal}
@@ -314,7 +314,7 @@ export function ProfileScreen() {
             </View>
 
             <View style={styles.pinInputWrap}>
-              <Text style={styles.pinInputLabel}>Confirm 4-Digit PIN</Text>
+              <Text style={styles.pinInputLabel}>{t('profile.confirmPin')}</Text>
               <TextInput
                 style={styles.pinInputField}
                 value={confirmPinVal}
@@ -330,7 +330,7 @@ export function ProfileScreen() {
             {pinError ? <Text style={styles.pinErrorText}>{pinError}</Text> : null}
 
             <TouchableOpacity style={styles.savePinBtn} onPress={handleSavePin} activeOpacity={0.88}>
-              <Text style={styles.savePinBtnText}>Save Security PIN</Text>
+              <Text style={styles.savePinBtnText}>{t('profile.savePin')}</Text>
             </TouchableOpacity>
           </View>
         </View>

@@ -6,8 +6,10 @@ import {
 import { colors, spacing, radius, typography, shadows } from '../theme/theme';
 import { TopHeader } from '../components/TopHeader';
 import { Icon } from '../components/Icon';
+import { useLanguage } from '../context/LanguageContext';
 
 export function SecuritySettingsScreen() {
+  const { t } = useLanguage();
   const [biometricsEnabled, setBiometricsEnabled] = useState(true);
   const [twoFactorEnabled, setTwoFactorEnabled]   = useState(true);
   const [smsAlerts, setSmsAlerts]                 = useState(true);
@@ -17,17 +19,17 @@ export function SecuritySettingsScreen() {
 
   const handleUpdatePin = () => {
     if (newPin.length !== 4) {
-      Alert.alert('Invalid PIN', 'Please enter a valid 4-digit PIN.');
+      Alert.alert(t('security.invalidPin'), t('security.invalidPinMsg'));
       return;
     }
-    Alert.alert('Success', 'Security PIN updated successfully.');
+    Alert.alert(t('common.success'), t('security.pinUpdated'));
     setOldPin(''); setNewPin(''); setShowPinModal(false);
   };
 
   return (
     <View style={styles.root}>
       <StatusBar barStyle="light-content" backgroundColor={colors.primaryDeep} translucent={false} />
-      <TopHeader showBack title="Security & PIN" subtitle="Protect your merchant account" />
+      <TopHeader showBack title={t('security.title')} subtitle={t('security.subtitle')} />
 
       <ScrollView
         style={styles.scroll}
@@ -35,7 +37,7 @@ export function SecuritySettingsScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* Authentication Options */}
-        <Text style={styles.sectionTitle}>Authentication</Text>
+        <Text style={styles.sectionTitle}>{t('security.authentication')}</Text>
         <View style={[styles.card, shadows.card]}>
           <View style={styles.row}>
             <View style={styles.rowLeft}>
@@ -43,8 +45,8 @@ export function SecuritySettingsScreen() {
                 <Icon name="fingerprint" size={20} color={colors.primaryMid} />
               </View>
               <View style={{ flex: 1, minWidth: 0 }}>
-                <Text style={styles.rowTitle}>Biometric Authentication</Text>
-                <Text style={styles.rowSub}>Use fingerprint or Face ID for fast login</Text>
+                <Text style={styles.rowTitle}>{t('security.biometric')}</Text>
+                <Text style={styles.rowSub}>{t('security.biometricSub')}</Text>
               </View>
             </View>
             <Switch
@@ -61,8 +63,8 @@ export function SecuritySettingsScreen() {
                 <Icon name="lock" size={20} color={colors.primaryMid} />
               </View>
               <View style={{ flex: 1, minWidth: 0 }}>
-                <Text style={styles.rowTitle}>Two-Factor Authentication (2FA)</Text>
-                <Text style={styles.rowSub}>Require SMS code for transfers over ₦50,000</Text>
+                <Text style={styles.rowTitle}>{t('security.twoFactor')}</Text>
+                <Text style={styles.rowSub}>{t('security.twoFactorSub')}</Text>
               </View>
             </View>
             <Switch
@@ -75,7 +77,7 @@ export function SecuritySettingsScreen() {
         </View>
 
         {/* Change PIN Section */}
-        <Text style={styles.sectionTitle}>Security PIN</Text>
+        <Text style={styles.sectionTitle}>{t('security.securityPin')}</Text>
         <View style={[styles.card, shadows.card]}>
           <TouchableOpacity
             style={styles.row}
@@ -87,8 +89,8 @@ export function SecuritySettingsScreen() {
                 <Icon name="lock-closed" size={20} color={colors.primaryMid} />
               </View>
               <View style={{ flex: 1, minWidth: 0 }}>
-                <Text style={styles.rowTitle}>Change 4-Digit Security PIN</Text>
-                <Text style={styles.rowSub}>Last updated 30 days ago</Text>
+                <Text style={styles.rowTitle}>{t('security.changePin')}</Text>
+                <Text style={styles.rowSub}>{t('security.changePinSub', { days: '30' })}</Text>
               </View>
             </View>
             <Icon name={showPinModal ? 'chevron-up' : 'chevron-down'} size={18} color={colors.textMuted} />
@@ -97,7 +99,7 @@ export function SecuritySettingsScreen() {
           {showPinModal && (
             <View style={styles.pinForm}>
               <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Current Security PIN</Text>
+                <Text style={styles.inputLabel}>{t('security.currentPin')}</Text>
                 <TextInput
                   style={styles.pinInput}
                   value={oldPin}
@@ -111,7 +113,7 @@ export function SecuritySettingsScreen() {
               </View>
 
               <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>New 4-Digit PIN</Text>
+                <Text style={styles.inputLabel}>{t('security.newPin')}</Text>
                 <TextInput
                   style={styles.pinInput}
                   value={newPin}
@@ -125,14 +127,14 @@ export function SecuritySettingsScreen() {
               </View>
 
               <TouchableOpacity style={styles.saveBtn} onPress={handleUpdatePin} activeOpacity={0.85}>
-                <Text style={styles.saveBtnText}>Update PIN</Text>
+                <Text style={styles.saveBtnText}>{t('security.updatePin')}</Text>
               </TouchableOpacity>
             </View>
           )}
         </View>
 
         {/* Limits & Notifications */}
-        <Text style={styles.sectionTitle}>Transaction Safety</Text>
+        <Text style={styles.sectionTitle}>{t('security.transactionSafety')}</Text>
         <View style={[styles.card, shadows.card]}>
           <View style={styles.row}>
             <View style={styles.rowLeft}>
@@ -140,8 +142,8 @@ export function SecuritySettingsScreen() {
                 <Icon name="bell" size={20} color={colors.primaryMid} />
               </View>
               <View style={{ flex: 1, minWidth: 0 }}>
-                <Text style={styles.rowTitle}>Instant SMS Alerts</Text>
-                <Text style={styles.rowSub}>Receive real-time SMS for all transfers</Text>
+                <Text style={styles.rowTitle}>{t('security.smsAlerts')}</Text>
+                <Text style={styles.rowSub}>{t('security.smsAlertsSub')}</Text>
               </View>
             </View>
             <Switch
@@ -158,12 +160,12 @@ export function SecuritySettingsScreen() {
                 <Icon name="card" size={20} color={colors.primaryMid} />
               </View>
               <View style={{ flex: 1, minWidth: 0 }}>
-                <Text style={styles.rowTitle}>Daily Transfer Limit</Text>
-                <Text style={styles.rowSub}>Current limit: ₦500,000 / day</Text>
+                <Text style={styles.rowTitle}>{t('security.dailyLimit')}</Text>
+                <Text style={styles.rowSub}>{t('security.dailyLimitSub', { limit: '500,000' })}</Text>
               </View>
             </View>
             <TouchableOpacity style={styles.linkPill}>
-              <Text style={styles.linkText}>Edit</Text>
+              <Text style={styles.linkText}>{t('security.edit')}</Text>
             </TouchableOpacity>
           </View>
         </View>

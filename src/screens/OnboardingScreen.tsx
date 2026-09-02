@@ -8,6 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing, radius, typography, shadows } from '../theme/theme';
 import { KudiNodeLogo } from '../components/KudiNodeLogo';
 import { Icon } from '../components/Icon';
+import { useLanguage } from '../context/LanguageContext';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../AppNavigator';
@@ -19,46 +20,47 @@ const SLIDES = [
   {
     id: 1,
     image: require('../../assets/images/slide_voice_intake.jpg'),
-    badge: 'VOICE-FIRST INTAKE',
+    badgeKey: 'onboarding.voiceFirst',
     badgeColor: colors.successGreen,
-    title: 'Speak Daily Sales Instantly',
-    subtitle: 'Voice intake in Hausa, Yoruba, Igbo, Pidgin & English. AI parses items & prices automatically.',
+    titleKey: 'onboarding.slide1Title',
+    subtitleKey: 'onboarding.slide1Sub',
   },
   {
     id: 2,
     image: require('../../assets/images/slide_kudibot_ai.jpg'),
-    badge: 'KUDIBOT AI ADVISOR',
+    badgeKey: 'onboarding.kudibot',
     badgeColor: colors.warningOrange,
-    title: '24/7 AI Trade Advisor',
-    subtitle: 'Ask KudiBot about profit margin analysis, stock reinvestments & credit velocity in your language.',
+    titleKey: 'onboarding.slide2Title',
+    subtitleKey: 'onboarding.slide2Sub',
   },
   {
     id: 3,
     image: require('../../assets/images/slide_camera_scanner.jpg'),
-    badge: 'SMART RECEIPT SCANNER',
+    badgeKey: 'onboarding.smartScanner',
     badgeColor: '#8B5CF6',
-    title: 'Snap & Digitize Receipts',
-    subtitle: 'Photograph paper ledgers & physical receipts to instantly turn paper notes into digital income.',
+    titleKey: 'onboarding.slide3Title',
+    subtitleKey: 'onboarding.slide3Sub',
   },
   {
     id: 4,
     image: require('../../assets/images/slide_esusu_circle.jpg'),
-    badge: 'ESUSU CO-OP CIRCLES',
+    badgeKey: 'onboarding.esusu',
     badgeColor: '#3B82F6',
-    title: 'Automated Group Savings',
-    subtitle: 'Participate in rotating esusu savings payouts backed by Wema Bank settlement accounts.',
+    titleKey: 'onboarding.slide4Title',
+    subtitleKey: 'onboarding.slide4Sub',
   },
   {
     id: 5,
     image: require('../../assets/images/slide_micro_credit.jpg'),
-    badge: 'INSTANT MICRO-CREDIT',
+    badgeKey: 'onboarding.microCredit',
     badgeColor: colors.successGreen,
-    title: 'Pre-Approved Trade Loans',
-    subtitle: 'Access micro-loans up to ₦500,000 based on your AI Trust Score & verified sales velocity.',
+    titleKey: 'onboarding.slide5Title',
+    subtitleKey: 'onboarding.slide5Sub',
   },
 ];
 
 export function OnboardingScreen() {
+  const { t } = useLanguage();
   const nav = useNavigation<Nav>();
   const insets = useSafeAreaInsets();
   const [activeIndex, setActiveIndex] = useState(0);
@@ -101,7 +103,7 @@ export function OnboardingScreen() {
       <View style={[styles.headerRow, { paddingTop: Math.max(insets.top, 24) + spacing.sm }]}>
         <KudiNodeLogo size="small" variant="light" />
         <TouchableOpacity style={styles.skipBtn} onPress={handleSkip} activeOpacity={0.75}>
-          <Text style={styles.skipText}>Skip</Text>
+          <Text style={styles.skipText}>{t('common.skip')}</Text>
         </TouchableOpacity>
       </View>
 
@@ -135,11 +137,11 @@ export function OnboardingScreen() {
             <View style={styles.contentWrap}>
               {/* Category Badge Pill */}
               <View style={[styles.categoryBadge, { backgroundColor: slide.badgeColor }]}>
-                <Text style={styles.categoryBadgeText}>{slide.badge}</Text>
+                <Text style={styles.categoryBadgeText}>{t(slide.badgeKey)}</Text>
               </View>
 
-              <Text style={styles.slideTitle}>{slide.title}</Text>
-              <Text style={styles.slideSubtitle}>{slide.subtitle}</Text>
+              <Text style={styles.slideTitle}>{t(slide.titleKey)}</Text>
+              <Text style={styles.slideSubtitle}>{t(slide.subtitleKey)}</Text>
             </View>
           </View>
         ))}
@@ -176,7 +178,7 @@ export function OnboardingScreen() {
             style={styles.nextGrad}
           >
             <Text style={styles.nextText}>
-              {activeIndex === SLIDES.length - 1 ? 'Get Started' : 'Continue'}
+              {activeIndex === SLIDES.length - 1 ? t('onboarding.getStarted') : t('onboarding.continue')}
             </Text>
             <Icon name="arrow-forward" size={18} color={colors.white} />
           </LinearGradient>

@@ -12,6 +12,7 @@ import * as Sharing from 'expo-sharing';
 import { colors, spacing, radius, typography, shadows } from '../theme/theme';
 import { TopHeader } from '../components/TopHeader';
 import { Icon } from '../components/Icon';
+import { useLanguage } from '../context/LanguageContext';
 import { LinearGradient } from 'expo-linear-gradient';
 
 const LEDGER_ENTRIES = [
@@ -23,6 +24,17 @@ const LEDGER_ENTRIES = [
 ];
 
 type Filter = 'All' | 'Voice' | 'Scan';
+
+const FILTER_KEYS: Record<Filter, string> = {
+  All: 'ledger.all',
+  Voice: 'ledger.voice',
+  Scan: 'ledger.scan',
+};
+
+const SOURCE_KEYS = {
+  voice: 'ledger.voiceLog',
+  scan: 'ledger.receiptScan',
+} as const;
 
 function buildCSV(entries: typeof LEDGER_ENTRIES) {
   const header = 'Date,Source,Item,Qty,Unit Price (₦),Line Total (₦)\n';
@@ -37,6 +49,7 @@ function buildCSV(entries: typeof LEDGER_ENTRIES) {
 }
 
 export function LedgerScreen() {
+  const { t } = useLanguage();
   const [filter, setFilter] = useState<Filter>('All');
   const [expanded, setExpanded] = useState<number | null>(null);
 
@@ -58,13 +71,13 @@ export function LedgerScreen() {
       if (canShare) {
         await Sharing.shareAsync(fileUri, {
           mimeType: 'text/csv',
-          dialogTitle: 'Export KudiNode Sales Ledger',
+          dialogTitle: t('ledger.exportDialog'),
         });
       } else {
-        Alert.alert('Exported', `Ledger saved successfully.`);
+        Alert.alert(t('ledger.exported'), t('ledger.exportedMsg'));
       }
     } catch (err) {
-      Alert.alert('Export Error', 'Could not export ledger. Please try again.');
+      Alert.alert(t('ledger.exportError'), t('ledger.exportErrorMsg'));
     }
   };
 
@@ -72,8 +85,8 @@ export function LedgerScreen() {
     <View style={styles.root}>
       <TopHeader
         showBack
-        title="Sales Ledger"
-        subtitle="Voice logs & receipt scans"
+        title={t('ledger.title')}
+        subtitle={t('ledger.subtitle')}
         rightSlot={
           <TouchableOpacity style={styles.exportBtn} onPress={handleExport} activeOpacity={0.8}>
             <Icon name="send" size={16} color={colors.white} />
@@ -89,19 +102,19 @@ export function LedgerScreen() {
       >
         <View style={styles.stripStat}>
           <Text style={styles.stripValue}>{filtered.length}</Text>
-          <Text style={styles.stripLabel}>Entries</Text>
+          <Text style={styles.stripLabel}>{t('ledger.entries')}</Text>
         </View>
         <View style={styles.stripDivider} />
         <View style={styles.stripStat}>
           <Text style={styles.stripValue}>
             ₦{totalRevenue.toLocaleString()}
           </Text>
-          <Text style={styles.stripLabel}>Total Revenue</Text>
+          <Text style={styles.stripLabel}>{t('ledger.totalRevenue')}</Text>
         </View>
         <View style={styles.stripDivider} />
         <TouchableOpacity style={styles.exportStrip} onPress={handleExport} activeOpacity={0.85}>
           <Icon name="send" size={15} color={colors.white} />
-          <Text style={styles.exportStripText}>Export CSV</Text>
+          <Text style={styles.exportStripText}>{t('ledger.exportCsv')}</Text>
         </TouchableOpacity>
       </LinearGradient>
 
@@ -121,7 +134,7 @@ export function LedgerScreen() {
                 color={filter === f ? colors.white : colors.textMuted}
               />
             )}
-            <Text style={[styles.pillText, filter === f && styles.pillTextActive]}>{f}</Text>
+            <Text style={[styles.pillText, filter === f && styles.pillTextActive]}>{t(FILTER_KEYS[f])}</Text>
           </TouchableOpacity>
         ))}
       </View>
@@ -151,7 +164,7 @@ export function LedgerScreen() {
                 <Text style={styles.cardDate}>{entry.date}</Text>
                 <View style={styles.cardBadge}>
                   <Text style={[styles.cardBadgeText, { color: entry.source === 'voice' ? colors.successGreen : colors.warningOrange }]}>
-                    {entry.source === 'voice' ? 'Voice Log' : 'Receipt Scan'}
+                    {t(SOURCE_KEYS[entry.source as keyof typeof SOURCE_KEYS])}
                   </Text>
                 </View>
               </View>
@@ -169,10 +182,10 @@ export function LedgerScreen() {
             {expanded === entry.id && (
               <View style={styles.itemsWrap}>
                 <View style={styles.itemsHeader}>
-                  <Text style={[styles.itemCol, { flex: 2.2 }]}>Item</Text>
-                  <Text style={[styles.itemCol, { flex: 0.8, textAlign: 'center' as const }]}>Qty</Text>
-                  <Text style={[styles.itemCol, { flex: 1.3, textAlign: 'right' as const }]}>Price</Text>
-                  <Text style={[styles.itemCol, { flex: 1.3, textAlign: 'right' as const }]}>Total</Text>
+                  <Text style={[styles.itemCol, { flex: 2.2 }]}>{t('ledger.item')}</Text>
+                  <Text style={[styles.itemCol, { flex: 0.8, textAlign: 'center' as const }]}>{t('ledger.qty')}</Text>
+                  <Text style={[styles.itemCol, { flex: 1.3, textAlign: 'right' as const }]}>{t('ledger.price')}</Text>
+                  <Text style={[styles.itemCol, { flex: 1.3, textAlign: 'right' as const }]}>{t('ledger.total')}</Text>
                 </View>
                 {entry.items.map((it, j) => (
                   <View key={j} style={styles.itemRow}>
@@ -185,7 +198,7 @@ export function LedgerScreen() {
                   </View>
                 ))}
                 <View style={styles.totalRow}>
-                  <Text style={styles.totalLabel}>Entry Total</Text>
+                  <Text style={styles.totalLabel}>{t('ledger.entryTotal')}</Text>
                   <Text style={styles.totalValue}>₦{entry.total.toLocaleString()}</Text>
                 </View>
               </View>
@@ -196,8 +209,8 @@ export function LedgerScreen() {
         {filtered.length === 0 && (
           <View style={styles.empty}>
             <Icon name="receipt" size={48} color={colors.border} />
-            <Text style={styles.emptyTitle}>No entries found</Text>
-            <Text style={styles.emptySub}>Log a voice sale or scan a receipt to see it here.</Text>
+            <Text style={styles.emptyTitle}>{t('ledger.noEntries')}</Text>
+            <Text style={styles.emptySub}>{t('ledger.noEntriesSub')}</Text>
           </View>
         )}
 

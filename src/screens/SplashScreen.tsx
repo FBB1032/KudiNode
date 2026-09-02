@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Animated, StatusBar } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, typography, spacing } from '../theme/theme';
 import { KudiNodeLogo } from '../components/KudiNodeLogo';
+import { useLanguage } from '../context/LanguageContext';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../AppNavigator';
@@ -10,6 +11,7 @@ import { RootStackParamList } from '../AppNavigator';
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 export function SplashScreen() {
+  const { t } = useLanguage();
   const nav = useNavigation<Nav>();
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.88)).current;
@@ -68,7 +70,7 @@ export function SplashScreen() {
           <KudiNodeLogo size="large" variant="light" showSub={true} />
 
           <Text style={styles.mottoText}>
-            Voice & Scan Sales Intake for Nigerian Merchants
+            {t('splash.motto')}
           </Text>
         </Animated.View>
       </LinearGradient>

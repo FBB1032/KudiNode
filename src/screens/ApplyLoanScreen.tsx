@@ -7,6 +7,7 @@ import { colors, spacing, radius, typography, shadows } from '../theme/theme';
 import { TopHeader } from '../components/TopHeader';
 import { PrimaryButton } from '../components/PrimaryButton';
 import { Icon } from '../components/Icon';
+import { useLanguage } from '../context/LanguageContext';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -22,23 +23,24 @@ const LOAN_AMOUNTS = [
 ];
 
 const TENURES = [
-  { label: '30 Days (1 Mo)', rate: 0.025, months: 1 },
-  { label: '60 Days (2 Mo)', rate: 0.045, months: 2 },
-  { label: '90 Days (3 Mo)', rate: 0.065, months: 3 },
+  { labelKey: 'loan.tenure30', rate: 0.025, months: 1 },
+  { labelKey: 'loan.tenure60', rate: 0.045, months: 2 },
+  { labelKey: 'loan.tenure90', rate: 0.065, months: 3 },
 ];
 
 const PURPOSES = [
-  'Store Inventory & Stock Expansion',
-  'Market Day Wholesale Supply',
-  'Equipment & Stall Upgrade',
-  'Emergency Operating Capital',
+  { labelKey: 'loan.purpose1' },
+  { labelKey: 'loan.purpose2' },
+  { labelKey: 'loan.purpose3' },
+  { labelKey: 'loan.purpose4' },
 ];
 
 export function ApplyLoanScreen() {
+  const { t } = useLanguage();
   const nav = useNavigation<Nav>();
   const [selectedAmount, setSelectedAmount]   = useState(150000);
   const [selectedTenure, setSelectedTenure]   = useState(TENURES[0]);
-  const [selectedPurpose, setSelectedPurpose] = useState(PURPOSES[0]);
+  const [selectedPurpose, setSelectedPurpose] = useState(PURPOSES[0].labelKey);
   const [disbursementBank, setDisbursementBank] = useState('Wema Merchant (0129384756)');
   const [isSubmitting, setIsSubmitting]       = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -64,7 +66,7 @@ export function ApplyLoanScreen() {
   return (
     <View style={styles.root}>
       <StatusBar barStyle="light-content" backgroundColor={colors.primaryDeep} translucent={false} />
-      <TopHeader showBack title="Apply for Wema Credit" subtitle="Pre-Approved Micro-Loan" />
+      <TopHeader showBack title={t('loan.title')} subtitle={t('loan.subtitle')} />
 
       <ScrollView
         style={styles.scroll}
@@ -79,17 +81,17 @@ export function ApplyLoanScreen() {
         >
           <View style={styles.heroBadge}>
             <Icon name="shield-checkmark" size={13} color={colors.successGreen} />
-            <Text style={styles.heroBadgeText}>Instant Disbursement · Pre-Approved</Text>
+            <Text style={styles.heroBadgeText}>{t('loan.instantDisbursement')}</Text>
           </View>
-          <Text style={styles.heroTitle}>Maximum Credit Line Available</Text>
+          <Text style={styles.heroTitle}>{t('loan.maxCredit')}</Text>
           <Text style={styles.heroAmount}>₦150,000.00</Text>
           <Text style={styles.heroSub}>
-            Based on your KN-783462 trade volume and Esusu contribution history via Wema Bank sandbox.
+            {t('loan.creditBasis')}
           </Text>
         </LinearGradient>
 
         {/* 1. Select Loan Amount */}
-        <Text style={styles.sectionTitle}>1. Select Loan Amount</Text>
+        <Text style={styles.sectionTitle}>{t('loan.selectAmount')}</Text>
         <View style={[styles.card, shadows.card]}>
           <View style={styles.amountGrid}>
             {LOAN_AMOUNTS.map(a => {
@@ -111,26 +113,26 @@ export function ApplyLoanScreen() {
         </View>
 
         {/* 2. Select Repayment Tenure */}
-        <Text style={styles.sectionTitle}>2. Repayment Period</Text>
+        <Text style={styles.sectionTitle}>{t('loan.repaymentPeriod')}</Text>
         <View style={[styles.card, shadows.card]}>
-          {TENURES.map((t, idx) => {
-            const isSel = selectedTenure.label === t.label;
+          {TENURES.map((tenure, idx) => {
+            const isSel = selectedTenure.labelKey === tenure.labelKey;
             return (
               <TouchableOpacity
-                key={t.label}
+                key={tenure.labelKey}
                 style={[styles.tenureRow, idx < TENURES.length - 1 && styles.borderBottom]}
-                onPress={() => setSelectedTenure(t)}
+                onPress={() => setSelectedTenure(tenure)}
                 activeOpacity={0.8}
               >
                 <View style={styles.radioCircle}>
                   {isSel && <View style={styles.radioInner} />}
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.tenureTitle}>{t.label}</Text>
-                  <Text style={styles.tenureSub}>{(t.rate * 100).toFixed(1)}% monthly interest rate</Text>
+                  <Text style={styles.tenureTitle}>{t(tenure.labelKey)}</Text>
+                  <Text style={styles.tenureSub}>{t('loan.interestRate', { rate: (tenure.rate * 100).toFixed(1) })}</Text>
                 </View>
                 <Text style={styles.tenureAmount}>
-                  ₦{Math.round((selectedAmount * (1 + t.rate)) / t.months).toLocaleString()}/mo
+                  {t('loan.monthlyPayment', { amount: Math.round((selectedAmount * (1 + tenure.rate)) / tenure.months).toLocaleString() })}
                 </Text>
               </TouchableOpacity>
             );
@@ -138,15 +140,15 @@ export function ApplyLoanScreen() {
         </View>
 
         {/* 3. Purpose of Loan */}
-        <Text style={styles.sectionTitle}>3. Purpose of Loan</Text>
+        <Text style={styles.sectionTitle}>{t('loan.loanPurpose')}</Text>
         <View style={[styles.card, shadows.card]}>
           {PURPOSES.map((p, idx) => {
-            const isSel = selectedPurpose === p;
+            const isSel = selectedPurpose === p.labelKey;
             return (
               <TouchableOpacity
-                key={p}
+                key={p.labelKey}
                 style={[styles.purposeRow, idx < PURPOSES.length - 1 && styles.borderBottom]}
-                onPress={() => setSelectedPurpose(p)}
+                onPress={() => setSelectedPurpose(p.labelKey)}
                 activeOpacity={0.8}
               >
                 <Icon
@@ -154,37 +156,37 @@ export function ApplyLoanScreen() {
                   size={18}
                   color={isSel ? colors.primaryMid : colors.textMuted}
                 />
-                <Text style={[styles.purposeText, isSel && styles.purposeTextSel]}>{p}</Text>
+                <Text style={[styles.purposeText, isSel && styles.purposeTextSel]}>{t(p.labelKey)}</Text>
               </TouchableOpacity>
             );
           })}
         </View>
 
         {/* Loan Calculation Breakdown */}
-        <Text style={styles.sectionTitle}>Loan Repayment Summary</Text>
+        <Text style={styles.sectionTitle}>{t('loan.loanSummary')}</Text>
         <View style={[styles.summaryCard, shadows.card]}>
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Loan Principal</Text>
+            <Text style={styles.summaryLabel}>{t('loan.principal')}</Text>
             <Text style={styles.summaryValue}>₦{selectedAmount.toLocaleString()}</Text>
           </View>
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Interest & Processing Fee</Text>
+            <Text style={styles.summaryLabel}>{t('loan.interest')}</Text>
             <Text style={styles.summaryValue}>₦{interestAmount.toLocaleString()}</Text>
           </View>
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Disbursement Account</Text>
+            <Text style={styles.summaryLabel}>{t('loan.disbursementAccount')}</Text>
             <Text style={styles.summaryValue}>{disbursementBank}</Text>
           </View>
           <View style={styles.summaryDivider} />
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryTotalLabel}>Total Repayment</Text>
+            <Text style={styles.summaryTotalLabel}>{t('loan.totalRepayment')}</Text>
             <Text style={styles.summaryTotalValue}>₦{totalRepayment.toLocaleString()}</Text>
           </View>
         </View>
 
         {/* Submit Button */}
         <PrimaryButton
-          title={isSubmitting ? 'Processing Application...' : 'Submit Loan Application'}
+          title={isSubmitting ? t('loan.processing') : t('loan.submit')}
           icon={<Icon name="bank" size={18} color={colors.white} />}
           loading={isSubmitting}
           onPress={handleSubmitLoan}
@@ -202,23 +204,23 @@ export function ApplyLoanScreen() {
               <Icon name="checkmark-circle" size={52} color={colors.successGreen} />
             </View>
 
-            <Text style={styles.modalTitle}>Loan Approved & Disbursed!</Text>
+            <Text style={styles.modalTitle}>{t('loan.approved')}</Text>
             <Text style={styles.modalSub}>
-              ₦{selectedAmount.toLocaleString()} has been credited straight to your Wema Merchant Settlement Account.
+              {t('loan.approvedMsg', { amount: selectedAmount.toLocaleString() })}
             </Text>
 
             <View style={styles.modalDetailsBox}>
               <View style={styles.mRow}>
-                <Text style={styles.mLbl}>Loan Reference</Text>
+                <Text style={styles.mLbl}>{t('loan.reference')}</Text>
                 <Text style={styles.mVal}>LN-WEMA-782910</Text>
               </View>
               <View style={styles.mRow}>
-                <Text style={styles.mLbl}>Amount Credited</Text>
+                <Text style={styles.mLbl}>{t('loan.amountCredited')}</Text>
                 <Text style={styles.mAmt}>₦{selectedAmount.toLocaleString()}</Text>
               </View>
               <View style={styles.mRow}>
-                <Text style={styles.mLbl}>Repayment Due</Text>
-                <Text style={styles.mVal}>₦{totalRepayment.toLocaleString()} ({selectedTenure.label})</Text>
+                <Text style={styles.mLbl}>{t('loan.repaymentDue')}</Text>
+                <Text style={styles.mVal}>₦{totalRepayment.toLocaleString()} ({t(selectedTenure.labelKey)})</Text>
               </View>
             </View>
 
@@ -228,7 +230,7 @@ export function ApplyLoanScreen() {
                 start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
                 style={styles.modalDoneGrad}
               >
-                <Text style={styles.modalDoneText}>Return to Home Dashboard</Text>
+                <Text style={styles.modalDoneText}>{t('loan.returnDashboard')}</Text>
               </LinearGradient>
             </TouchableOpacity>
           </View>

@@ -5,6 +5,7 @@ import {
 import { colors, spacing, radius, typography, shadows } from '../theme/theme';
 import { TopHeader } from '../components/TopHeader';
 import { Icon } from '../components/Icon';
+import { useLanguage } from '../context/LanguageContext';
 import { useNavigation } from '@react-navigation/native';
 
 const NOTIFICATIONS = [
@@ -41,11 +42,12 @@ const NOTIFICATIONS = [
 ];
 
 export function NotificationsScreen() {
+  const { t } = useLanguage();
   const navigation = useNavigation<any>();
 
   return (
     <View style={styles.root}>
-      <TopHeader showBack title="Notifications" subtitle="Alerts & account updates" />
+      <TopHeader showBack title={t('notifications.title')} subtitle={t('notifications.subtitle')} />
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.content}

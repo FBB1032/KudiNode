@@ -18,6 +18,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { RootStackParamList } from "../AppNavigator";
 import { KudiNodeLogo } from "../components/KudiNodeLogo";
 import { useAuth } from "../context/AuthContext";
+import { useLanguage } from "../context/LanguageContext";
 import { FloatingLabelInput } from "../components/FloatingLabelInput";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -25,6 +26,7 @@ type Nav = NativeStackNavigationProp<RootStackParamList>;
 export function LoginScreen() {
   const nav = useNavigation<Nav>();
   const insets = useSafeAreaInsets();
+  const { t } = useLanguage();
   const { signIn } = useAuth();
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
@@ -34,7 +36,7 @@ export function LoginScreen() {
 
   const handleLogin = async () => {
     if (!phone.trim() || !password.trim()) {
-      setError("Enter your phone number and password.");
+      setError(t("login.errorEmpty"));
       return;
     }
     setError(null);
@@ -43,7 +45,7 @@ export function LoginScreen() {
       await signIn(phone.trim(), password);
       nav.reset({ index: 0, routes: [{ name: "MainTabs" }] });
     } catch (e: any) {
-      setError(e?.message || "Sign in failed. Please try again.");
+      setError(e?.message || t("login.errorSignIn"));
     } finally {
       setLoading(false);
     }
@@ -80,8 +82,8 @@ export function LoginScreen() {
       >
         <View style={styles.dragHandle} />
 
-        <Text style={styles.heading}>Welcome back</Text>
-        <Text style={styles.subheading}>Sign in to your merchant account</Text>
+        <Text style={styles.heading}>{t("login.welcomeBack")}</Text>
+        <Text style={styles.subheading}>{t("login.signInSub")}</Text>
 
         {error && (
           <View style={styles.errorBox}>
@@ -92,7 +94,7 @@ export function LoginScreen() {
 
         <View style={styles.fieldsBlock}>
           <FloatingLabelInput
-            label="Phone Number"
+            label={t("login.phone")}
             prefix="+234"
             keyboardType="phone-pad"
             value={phone}
@@ -102,7 +104,7 @@ export function LoginScreen() {
           />
 
           <FloatingLabelInput
-            label="Password"
+            label={t("login.password")}
             secureTextEntry={!showPassword}
             value={password}
             onChangeText={setPassword}
@@ -112,7 +114,7 @@ export function LoginScreen() {
           />
 
           <TouchableOpacity activeOpacity={0.7} style={styles.forgotRow}>
-            <Text style={styles.forgotText}>Forgot password?</Text>
+            <Text style={styles.forgotText}>{t("login.forgotPassword")}</Text>
           </TouchableOpacity>
         </View>
 
@@ -133,7 +135,7 @@ export function LoginScreen() {
               <Icon name="sync" size={20} color={colors.white} />
             ) : (
               <>
-                <Text style={styles.ctaText}>Sign In</Text>
+                <Text style={styles.ctaText}>{t("login.signIn")}</Text>
                 <Icon name="arrow-forward" size={18} color={colors.white} />
               </>
             )}
@@ -143,7 +145,7 @@ export function LoginScreen() {
         {/* Divider */}
         <View style={styles.dividerRow}>
           <View style={styles.dividerLine} />
-          <Text style={styles.dividerText}>New to KudiNode?</Text>
+          <Text style={styles.dividerText}>{t("login.newToKudiNode")}</Text>
           <View style={styles.dividerLine} />
         </View>
 
@@ -154,7 +156,7 @@ export function LoginScreen() {
           activeOpacity={0.8}
         >
           <Icon name="person-add" size={16} color={colors.primaryMid} />
-          <Text style={styles.registerBtnText}>Create Merchant Account</Text>
+          <Text style={styles.registerBtnText}>{t("login.createAccount")}</Text>
         </TouchableOpacity>
       </ScrollView>
     </KeyboardAvoidingView>

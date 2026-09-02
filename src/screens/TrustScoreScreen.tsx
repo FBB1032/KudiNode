@@ -33,7 +33,7 @@ export function TrustScoreScreen() {
   return (
     <View style={styles.root}>
       <StatusBar barStyle="light-content" backgroundColor={colors.primaryDeep} />
-      <TopHeader showBack title="KudiNode Credit Score" subtitle="AI-powered trust & credit analysis" />
+      <TopHeader showBack title={t('trust.title')} subtitle={t('trust.subtitle')} />
 
       <ScrollView
         style={styles.scroll}
@@ -46,22 +46,22 @@ export function TrustScoreScreen() {
             <View style={styles.scoreRingInner}>
               <Text style={styles.scoreNumber}>91</Text>
               <Text style={styles.scoreMax}>/ 100</Text>
-              <Text style={styles.scoreWord}>Trust Score</Text>
+              <Text style={styles.scoreWord}>{t('trust.scoreWord')}</Text>
             </View>
           </View>
 
           <View style={styles.scoreTagRow}>
             <Icon name="trending-up" size={16} color={colors.successGreen} />
-            <Text style={styles.scoreTagText}>Trade Velocity: HIGH</Text>
+            <Text style={styles.scoreTagText}>{t('trust.tradeVelocity')}</Text>
             <Icon name="checkmark-circle" size={16} color={colors.successGreen} />
           </View>
           <Text style={styles.scoreDesc}>
-            Eligible for ₦150,000 KudiNode credit line at 1.5% monthly interest
+            {t('trust.creditEligible', { amount: '150,000', rate: '1.5%' })}
           </Text>
         </View>
 
         {/* Score axes */}
-        <Text style={styles.sectionTitle}>Score Breakdown</Text>
+        <Text style={styles.sectionTitle}>{t('trust.scoreBreakdown')}</Text>
         <View style={[styles.card, shadows.card]}>
           {AXES.map((axis, i) => (
             <View key={i} style={[styles.axisRow, i < AXES.length - 1 && styles.axisBorder]}>
@@ -81,7 +81,7 @@ export function TrustScoreScreen() {
         </View>
 
         {/* Credit tiers */}
-        <Text style={styles.sectionTitle}>Credit Tiers</Text>
+        <Text style={styles.sectionTitle}>{t('trust.creditTiers')}</Text>
         {CREDIT_TIERS.map((tier, i) => (
           <View
             key={i}
@@ -101,7 +101,7 @@ export function TrustScoreScreen() {
                 </Text>
                 <View style={[styles.tierPill, { backgroundColor: tier.status === 'active' ? '#E8FFF2' : colors.grayBG }]}>
                   <Text style={[styles.tierPillText, { color: tier.status === 'active' ? colors.successGreen : colors.textMuted }]}>
-                    {tier.status === 'active' ? 'Unlocked' : 'Locked'}
+                    {tier.status === 'active' ? t('common.unlocked') : t('common.locked')}
                   </Text>
                 </View>
               </View>
@@ -125,7 +125,7 @@ export function TrustScoreScreen() {
             style={styles.applyGrad}
           >
             <Icon name="bank" size={20} color={colors.white} />
-            <Text style={styles.applyText}>Apply for KudiNode Credit</Text>
+            <Text style={styles.applyText}>{t('trust.applyButton')}</Text>
             <Icon name="arrow-forward" size={18} color={colors.white} />
           </LinearGradient>
         </TouchableOpacity>

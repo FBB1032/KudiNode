@@ -24,9 +24,11 @@ import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../AppNavigator";
 import { parseVoiceTransferFromAudio } from "../services/aiApi";
+import { useLanguage, LANGUAGE_TO_VOICE } from "../context/LanguageContext";
 import {
   WHISPER_RECORDING_OPTIONS,
   LANG_OPTIONS,
+  VoiceLanguage,
 } from "../constants/voice";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -34,11 +36,13 @@ type Nav = NativeStackNavigationProp<RootStackParamList>;
 export function VoiceTransferScreen() {
   const nav = useNavigation<Nav>();
   const insets = useSafeAreaInsets();
+  const { t, language: appLanguage } = useLanguage();
   const [phase, setPhase] = useState<
     "idle" | "recording" | "processing" | "done"
   >("idle");
   const [seconds, setSeconds] = useState(0);
-  const [language, setLanguage] = useState("auto");
+  const [language, setLanguage] = useState<VoiceLanguage>(LANGUAGE_TO_VOICE[appLanguage]);
+  const [manualLangOverride, setManualLangOverride] = useState(false);
   const recordingRef = useRef<Audio.Recording | null>(null);
 
   // Pulse animation for mic ring
@@ -166,13 +170,21 @@ export function VoiceTransferScreen() {
     };
   }, []);
 
+  // Sync transcription language with the app language while idle.
+  useEffect(() => {
+    if (phase === "idle") {
+      setManualLangOverride(false);
+      setLanguage(LANGUAGE_TO_VOICE[appLanguage]);
+    }
+  }, [appLanguage]);
+
   const startRecording = async () => {
     try {
       const permission = await Audio.requestPermissionsAsync();
       if (!permission.granted) {
         Alert.alert(
-          "Microphone Required",
-          "Please grant microphone permission to use voice transfer.",
+          t("voice.micRequired"),
+          t("voice.micRequiredMsg"),
         );
         return;
       }
@@ -189,8 +201,8 @@ export function VoiceTransferScreen() {
       setPhase("recording");
     } catch (error) {
       Alert.alert(
-        "Recording Error",
-        "Unable to start recording. Please try again.",
+        t("voice.recordingError"),
+        t("voice.recordingErrorMsg"),
       );
       setPhase("idle");
     }
@@ -240,15 +252,15 @@ export function VoiceTransferScreen() {
       if (errorMessage.includes("AI features are temporarily unavailable") || 
           errorMessage.includes("GEMINI_API_KEY")) {
         Alert.alert(
-          "AI Service Unavailable",
-          "Voice transfer AI is currently unavailable. Please use Manual Transfer instead or contact support.",
-          [{ text: "Use Manual Transfer", onPress: () => nav.replace("ManualTransfer") }]
+          t("voice.aiUnavailable"),
+          t("voice.aiUnavailableMsg"),
+          [{ text: t("voice.useManual"), onPress: () => nav.replace("ManualTransfer") }]
         );
       } else {
         Alert.alert(
-          "Voice Parse Failed",
+          t("voice.parseFailed"),
           errorMessage,
-          [{ text: "Use Manual Transfer", onPress: () => nav.replace("ManualTransfer") }, { text: "Try Again" }]
+          [{ text: t("voice.useManual"), onPress: () => nav.replace("ManualTransfer") }, { text: t("voice.tryAgain") }]
         );
       }
     }
@@ -268,12 +280,12 @@ export function VoiceTransferScreen() {
 
   const statusLabel =
     phase === "idle"
-      ? "Tap to Speak"
+      ? t("voice.tapToSpeak")
       : phase === "recording"
-        ? `Listening… 0:${String(seconds).padStart(2, "0")}`
+        ? t("voice.listening", { time: `0:${String(seconds).padStart(2, "0")}` })
         : phase === "processing"
-          ? "Processing Voice…"
-          : "Voice Parsed ✓";
+          ? t("voice.processing")
+          : t("voice.parsed");
 
   const statusColor =
     phase === "idle"
@@ -314,8 +326,8 @@ export function VoiceTransferScreen() {
           <Icon name="arrow-back" size={22} color={colors.white} />
         </TouchableOpacity>
         <View style={styles.headerCenter}>
-          <Text style={styles.headerTitle}>Voice Transfer</Text>
-          <Text style={styles.headerSub}>Speak your transfer command</Text>
+          <Text style={styles.headerTitle}>{t("voice.title")}</Text>
+          <Text style={styles.headerSub}>{t("voice.speakCommand")}</Text>
         </View>
         <View style={{ width: 40 }} />
       </View>
@@ -377,12 +389,12 @@ export function VoiceTransferScreen() {
         </Text>
         <Text style={styles.statusHint}>
           {phase === "idle"
-            ? "Speak in Hausa, Yoruba, Igbo, Pidgin, or English"
+            ? t("voice.speakHint")
             : phase === "recording"
-              ? "Tap again when done speaking"
+              ? t("voice.tapWhenDone")
               : phase === "processing"
-                ? "KudiBot AI is parsing your command…"
-                : "Redirecting to confirm details…"}
+                ? t("voice.parsingCommand")
+                : t("voice.redirecting")}
         </Text>
 
         {/* Supported languages chips */}
@@ -397,7 +409,10 @@ export function VoiceTransferScreen() {
                     styles.langPill,
                     active && styles.langPillActive,
                   ]}
-                  onPress={() => setLanguage(opt.value)}
+                  onPress={() => {
+                    setManualLangOverride(true);
+                    setLanguage(opt.value);
+                  }}
                   activeOpacity={0.75}
                 >
                   <Text
@@ -424,7 +439,7 @@ export function VoiceTransferScreen() {
       >
         <View style={styles.dividerRow}>
           <View style={styles.dividerLine} />
-          <Text style={styles.dividerText}>or</Text>
+          <Text style={styles.dividerText}>{t("common.or")}</Text>
           <View style={styles.dividerLine} />
         </View>
         <TouchableOpacity
@@ -433,7 +448,7 @@ export function VoiceTransferScreen() {
           activeOpacity={0.85}
         >
           <Icon name="pencil" size={17} color={colors.primaryDeep} />
-          <Text style={styles.manualBtnText}>Use Manual Transfer Instead</Text>
+          <Text style={styles.manualBtnText}>{t("voice.manualFallback")}</Text>
         </TouchableOpacity>
       </View>
     </View>

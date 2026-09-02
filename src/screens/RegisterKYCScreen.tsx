@@ -23,6 +23,7 @@ import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "../context/AuthContext";
+import { useLanguage } from "../context/LanguageContext";
 import { FloatingLabelInput } from "../components/FloatingLabelInput";
 import {
   updateProfile,
@@ -68,6 +69,7 @@ export function RegisterKYCScreen() {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const insets = useSafeAreaInsets();
+  const { t } = useLanguage();
   const { register } = useAuth();
   const [currentStep, setCurrentStep] = useState<Step>(1);
   const [busy, setBusy] = useState(false);
@@ -132,7 +134,7 @@ export function RegisterKYCScreen() {
         password.length < 8
       ) {
         setFormError(
-          "Please provide your name, phone, email, and a password of at least 8 characters.",
+          t("register.requiredFields"),
         );
         return;
       }
@@ -188,7 +190,7 @@ export function RegisterKYCScreen() {
     // Step 3 → submit for admin review.
     if (!idCaptured || !selfieCaptured) {
       setFormError(
-        "Please capture your ID document and a live selfie before submitting.",
+        t("register.captureRequired"),
       );
       return;
     }
@@ -258,7 +260,7 @@ export function RegisterKYCScreen() {
     }
   };
 
-  const STEP_LABELS = ['Personal', 'Trade', 'Documents'];
+  const STEP_LABELS = [t('register.step1'), t('register.step2'), t('register.step3')];
   const STEP_ICONS: string[] = [
     'person-outline',
     'storefront-outline',
@@ -288,12 +290,12 @@ export function RegisterKYCScreen() {
         <Icon name="arrow-back" size={20} color={colors.white} />
         </TouchableOpacity>
         <View style={styles.heroTextBlock}>
-          <Text style={styles.heroTitle}>Merchant Registration</Text>
-          <Text style={styles.heroSub}>Tier-1 Identity Verification</Text>
+          <Text style={styles.heroTitle}>{t('register.title')}</Text>
+          <Text style={styles.heroSub}>{t('register.subtitle')}</Text>
         </View>
         <View style={styles.heroBadge}>
           <Icon name="shield-checkmark" size={12} color="#34D399" />
-          <Text style={styles.heroBadgeText}>KYC</Text>
+          <Text style={styles.heroBadgeText}>{t('register.kyc')}</Text>
         </View>
       </LinearGradient>
 
@@ -359,8 +361,8 @@ export function RegisterKYCScreen() {
                   <Icon name="person" size={18} color={colors.primaryMid} />
                 </View>
                 <View style={{ flex: 1, marginLeft: spacing.sm }}>
-                  <Text style={styles.cardTitle}>Personal Identity</Text>
-                  <Text style={styles.cardSub}>Identity &amp; credentials</Text>
+                  <Text style={styles.cardTitle}>{t('register.personalIdentity')}</Text>
+                  <Text style={styles.cardSub}>{t('register.personalSub')}</Text>
                 </View>
               </View>
 
@@ -372,7 +374,7 @@ export function RegisterKYCScreen() {
               )}
 
               <FloatingLabelInput
-                label="Email Address"
+                label={t("register.email")}
                 leadingIcon="mail"
                 keyboardType="email-address"
                 autoCapitalize="none"
@@ -383,7 +385,7 @@ export function RegisterKYCScreen() {
               />
 
               <FloatingLabelInput
-                label="Password (min. 8 characters)"
+                label={t("register.password")}
                 leadingIcon="lock"
                 secureTextEntry={!showPassword}
                 editable={!accountCreated}
@@ -394,14 +396,14 @@ export function RegisterKYCScreen() {
               />
 
               <FloatingLabelInput
-                label="Full Legal Name"
+                label={t("register.fullName")}
                 leadingIcon="person"
                 value={fullName}
                 onChangeText={setFullName}
               />
 
               <FloatingLabelInput
-                label="Mobile Phone Number"
+                label={t("register.phone")}
                 prefix="+234"
                 keyboardType="phone-pad"
                 value={phone}
@@ -411,7 +413,7 @@ export function RegisterKYCScreen() {
               />
 
               <FloatingLabelInput
-                label="BVN (11-Digit)"
+                label={t("register.bvn")}
                 leadingIcon="card"
                 keyboardType="number-pad"
                 secureTextEntry
@@ -424,7 +426,7 @@ export function RegisterKYCScreen() {
               />
 
               <FloatingLabelInput
-                label="NIN (11-Digit)"
+                label={t("register.nin")}
                 leadingIcon="card"
                 keyboardType="number-pad"
                 value={nin}
@@ -434,7 +436,7 @@ export function RegisterKYCScreen() {
 
               <View style={styles.inputGroup}>
                 <Text style={styles.inputLabel}>
-                  Preferred Voice & App Language
+                  {t("register.preferredLanguage")}
                 </Text>
                 <View style={styles.langGrid}>
                   {LANGUAGES.map((lang) => {
@@ -480,13 +482,13 @@ export function RegisterKYCScreen() {
                   <Icon name="storefront-outline" size={18} color="#D97706" />
                 </View>
                 <View style={{ flex: 1, marginLeft: spacing.sm }}>
-                  <Text style={styles.cardTitle}>Trade &amp; Settlement</Text>
-                  <Text style={styles.cardSub}>Market &amp; account details</Text>
+                  <Text style={styles.cardTitle}>{t('register.tradeSettlement')}</Text>
+                  <Text style={styles.cardSub}>{t('register.tradeSub')}</Text>
                 </View>
               </View>
 
               <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Market Location</Text>
+                <Text style={styles.inputLabel}>{t("register.marketLocation")}</Text>
                 <View style={styles.pickerOptionsWrap}>
                   {MARKETS.map((mkt) => {
                     const selected = marketCluster === mkt;
@@ -521,7 +523,7 @@ export function RegisterKYCScreen() {
               </View>
 
               <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Commodities</Text>
+                <Text style={styles.inputLabel}>{t("register.commodities")}</Text>
                 <View style={styles.pickerOptionsWrap}>
                   {COMMODITIES.map((item) => {
                     const selected = commodityType === item;
@@ -556,14 +558,14 @@ export function RegisterKYCScreen() {
               </View>
 
               <FloatingLabelInput
-                label="Esusu Co-op Name (Optional)"
+                label={t("register.esusuCoop")}
                 leadingIcon="people"
                 value={esusuCoopName}
                 onChangeText={setEsusuCoopName}
               />
 
               <FloatingLabelInput
-                label="Wema Account Number"
+                label={t("register.wemaAccount")}
                 leadingIcon="bank"
                 keyboardType="number-pad"
                 value={wemaAccountNumber}
@@ -572,7 +574,7 @@ export function RegisterKYCScreen() {
               />
 
               <FloatingLabelInput
-                label="Wema Account Name"
+                label={t("register.wemaAccountName")}
                 value={wemaAccountName}
                 onChangeText={setWemaAccountName}
                 trailingIcon={
@@ -586,7 +588,7 @@ export function RegisterKYCScreen() {
                 </View>
                 <View style={{ flex: 1 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                    <Text style={styles.settlementTitle}>Settlement Account</Text>
+                    <Text style={styles.settlementTitle}>{t('register.settlementAccount')}</Text>
                     <Icon name="checkmark-circle" size={13} color={colors.successGreen} />
                   </View>
                   <Text style={styles.settlementAccNum}>
@@ -605,20 +607,20 @@ export function RegisterKYCScreen() {
                   <Icon name="camera-outline" size={18} color="#059669" />
                 </View>
                 <View style={{ flex: 1, marginLeft: spacing.sm }}>
-                  <Text style={styles.cardTitle}>Biometrics &amp; Documents</Text>
-                  <Text style={styles.cardSub}>Selfie &amp; ID scan</Text>
+                  <Text style={styles.cardTitle}>{t('register.biometrics')}</Text>
+                  <Text style={styles.cardSub}>{t('register.biometricSub')}</Text>
                 </View>
               </View>
 
               {/* ID Document Selector & Camera Scan */}
               <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Government ID Type</Text>
+                <Text style={styles.inputLabel}>{t("register.idType")}</Text>
                 <View style={styles.idTypeRow}>
                   {[
-                    { id: "NIN", label: "NIN Slip" },
-                    { id: "DRIVER_LICENSE", label: "Driver License" },
-                    { id: "PASSPORT", label: "Passport" },
-                    { id: "VOTER_CARD", label: "Voters Card" },
+                    { id: "NIN", labelKey: "register.idNin" },
+                    { id: "DRIVER_LICENSE", labelKey: "register.idDriver" },
+                    { id: "PASSPORT", labelKey: "register.idPassport" },
+                    { id: "VOTER_CARD", labelKey: "register.idVoter" },
                   ].map((doc) => {
                     const selected = idType === doc.id;
                     return (
@@ -637,7 +639,7 @@ export function RegisterKYCScreen() {
                             selected && styles.idChipTextSelected,
                           ]}
                         >
-                          {doc.label}
+                          {t(doc.labelKey)}
                         </Text>
                       </TouchableOpacity>
                     );
@@ -655,17 +657,17 @@ export function RegisterKYCScreen() {
                     color={idCaptured ? colors.successGreen : colors.primaryMid}
                   />
                   <Text style={styles.uploadBoxTitle}>
-                    {idCaptured ? "ID Document Scanned" : "Scan ID Document"}
+                    {idCaptured ? t("register.idScanned") : t("register.scanId")}
                   </Text>
                   <Text style={styles.uploadBoxSub}>
-                    {idCaptured ? "Captured & verified" : "Tap to open camera"}
+                    {idCaptured ? t("register.capturedVerified") : t("register.tapToOpen")}
                   </Text>
                 </TouchableOpacity>
               </View>
 
               {/* Live Selfie Camera Capture */}
               <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Live Selfie Capture</Text>
+                <Text style={styles.inputLabel}>{t("register.liveSelfie")}</Text>
                 <TouchableOpacity
                   style={[
                     styles.selfieBox,
@@ -682,17 +684,17 @@ export function RegisterKYCScreen() {
                     />
                   </View>
                   <Text style={styles.selfieTitle}>
-                    {selfieCaptured ? "Selfie Captured" : "Take Live Selfie"}
+                    {selfieCaptured ? t("register.selfieCaptured") : t("register.takeSelfie")}
                   </Text>
                   <Text style={styles.selfieSub}>
-                    {selfieCaptured ? "Liveness verified" : "Tap to open front camera"}
+                    {selfieCaptured ? t("register.livenessVerified") : t("register.tapToOpen")}
                   </Text>
                 </TouchableOpacity>
               </View>
 
               {/* Proof of Business / Trade Evidence Scan */}
               <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Trade Ledger Scan <Text style={{ color: colors.textMuted, fontWeight: '400' }}>(Optional)</Text></Text>
+                <Text style={styles.inputLabel}>{t("register.tradeLedger")}</Text>
                 <TouchableOpacity
                   style={[
                     styles.uploadBox,
@@ -707,10 +709,10 @@ export function RegisterKYCScreen() {
                     color={ledgerCaptured ? colors.successGreen : colors.primaryMid}
                   />
                   <Text style={styles.uploadBoxTitle}>
-                    {ledgerCaptured ? "Sales Ledger Uploaded" : "Scan Trade Ledger"}
+                    {ledgerCaptured ? t("register.ledgerUploaded") : t("register.scanLedger")}
                   </Text>
                   <Text style={styles.uploadBoxSub}>
-                    {ledgerCaptured ? "AI-parsed for Trust Score" : "Tap to scan paper receipts"}
+                    {ledgerCaptured ? t("register.aiParsedTrust") : t("register.tapToScan")}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -721,12 +723,12 @@ export function RegisterKYCScreen() {
           <View style={styles.actionRow}>
             {currentStep > 1 && (
               <View style={{ flex: 1, marginRight: spacing.md }}>
-                <SecondaryButton title="Back" onPress={handlePrevStep} />
+                <SecondaryButton title={t("register.back")} onPress={handlePrevStep} />
               </View>
             )}
             <View style={{ flex: 1 }}>
               <PrimaryButton
-                title={currentStep === 3 ? "Submit" : "Continue"}
+                title={currentStep === 3 ? t("register.submit") : t("register.continue")}
                 showArrow={currentStep !== 3}
                 onPress={handleNextStep}
               />
@@ -765,8 +767,8 @@ export function RegisterKYCScreen() {
             </TouchableOpacity>
             <Text style={styles.cameraHeaderTitle}>
               {cameraMode === "SELFIE"
-                ? "Take Liveness Selfie"
-                : "Scan Document"}
+                ? t("register.takeSelfie")
+                : t("register.scanDocument")}
             </Text>
             <View style={{ width: 44 }} />
           </View>
@@ -776,13 +778,13 @@ export function RegisterKYCScreen() {
             {cameraMode === "SELFIE" ? (
               <View style={styles.ovalSelfieFrame}>
                 <Text style={styles.cameraGuideText}>
-                  Center your face in oval frame
+                  {t("register.faceFrame")}
                 </Text>
               </View>
             ) : (
               <View style={styles.rectDocFrame}>
                 <Text style={styles.cameraGuideText}>
-                  Align document within rectangular frame
+                  {t("register.docFrame")}
                 </Text>
               </View>
             )}
@@ -805,7 +807,7 @@ export function RegisterKYCScreen() {
               </View>
             </TouchableOpacity>
             <Text style={styles.shutterCaption}>
-              Tap shutter to capture photo
+              {t("register.tapShutter")}
             </Text>
           </View>
         </View>
@@ -818,11 +820,10 @@ export function RegisterKYCScreen() {
             <View style={styles.modalCard}>
               <ActivityIndicator size="large" color={colors.primaryMid} />
               <Text style={styles.verifyingTitle}>
-                Connecting to Regulatory Sandboxes...
+                {t("register.verifyingTitle")}
               </Text>
               <Text style={styles.verifyingSub}>
-                Executing BVN / NIN liveness match & provisioning Wema Bank
-                settlement account (&lt; 60s)
+                {t("register.verifyingSub")}
               </Text>
             </View>
           ) : (
@@ -830,42 +831,40 @@ export function RegisterKYCScreen() {
               <View style={styles.successIconCircle}>
                 <Icon name="checkmark-circle" size={48} color={colors.successGreen} />
               </View>
-              <Text style={styles.successTitle}>KYC Submitted!</Text>
+              <Text style={styles.successTitle}>{t("register.submitted")}</Text>
               <Text style={styles.successSub}>
-                Your details and documents have been submitted for review. An
-                admin will verify your account shortly — you'll be able to sign
-                in once you're approved.
+                {t("register.submittedSub")}
               </Text>
 
               <View style={styles.detailsBox}>
                 <View style={styles.detailItem}>
-                  <Text style={styles.detailKey}>Merchant Name:</Text>
+                  <Text style={styles.detailKey}>{t("register.merchantName")}</Text>
                   <Text style={styles.detailVal}>
                     {fullName || "Amina Babangida"}
                   </Text>
                 </View>
                 <View style={styles.detailItem}>
-                  <Text style={styles.detailKey}>Account Number:</Text>
+                  <Text style={styles.detailKey}>{t("register.accountNumber")}</Text>
                   <Text style={styles.detailVal}>
                     {wemaAccountNumber} (Wema Bank)
                   </Text>
                 </View>
                 <View style={styles.detailItem}>
-                  <Text style={styles.detailKey}>Verified Status:</Text>
+                  <Text style={styles.detailKey}>{t("register.verifiedStatus")}</Text>
                   <Text
                     style={[styles.detailVal, { color: colors.successGreen }]}
                   >
-                    Tier-1 Verified
+                    {t("register.tier1Verified")}
                   </Text>
                 </View>
                 <View style={styles.detailItem}>
-                  <Text style={styles.detailKey}>Daily Limit:</Text>
+                  <Text style={styles.detailKey}>{t("register.dailyLimit")}</Text>
                   <Text style={styles.detailVal}>₦50,000 / Day</Text>
                 </View>
               </View>
 
               <PrimaryButton
-                title="Enter KudiNode Hub"
+                title={t("register.enterHub")}
                 icon={
                   <Icon name="arrow-forward" size={18} color={colors.white} />
                 }

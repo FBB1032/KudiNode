@@ -19,9 +19,11 @@ import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../AppNavigator";
 import { extractReceiptFromImage, parseVoiceSalesLog } from "../services/aiApi";
+import { useLanguage, LANGUAGE_TO_VOICE } from "../context/LanguageContext";
 import {
   WHISPER_RECORDING_OPTIONS,
   LANG_OPTIONS,
+  VoiceLanguage,
 } from "../constants/voice";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -32,6 +34,7 @@ export function SalesIntakeScreen() {
   const nav = useNavigation<Nav>();
   const route = useRoute<Route>();
   const insets = useSafeAreaInsets();
+  const { t, language: appLanguage } = useLanguage();
   const initialMode = route.params?.initialMode ?? "PHOTO";
   const [mode, setMode] = useState<Mode>(initialMode);
   const [isRecording, setIsRecording] = useState(false);
@@ -39,7 +42,8 @@ export function SalesIntakeScreen() {
   const [permission, requestPermission] = useCameraPermissions();
   const [isProcessingPhoto, setIsProcessingPhoto] = useState(false);
   const [isProcessingVoice, setIsProcessingVoice] = useState(false);
-  const [voiceLanguage, setVoiceLanguage] = useState("auto");
+  const [voiceLanguage, setVoiceLanguage] = useState<VoiceLanguage>(LANGUAGE_TO_VOICE[appLanguage]);
+  const [manualLangOverride, setManualLangOverride] = useState(false);
 
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const pulseLoop = useRef<Animated.CompositeAnimation | null>(null);
@@ -74,6 +78,14 @@ export function SalesIntakeScreen() {
     }
   }, [isRecording, pulseAnim]);
 
+  // Sync voice language with app language when not recording
+  useEffect(() => {
+    if (!isRecording) {
+      setManualLangOverride(false);
+      setVoiceLanguage(LANGUAGE_TO_VOICE[appLanguage]);
+    }
+  }, [appLanguage]);
+
   const handleMicPress = async () => {
     if (isRecording) {
       // Stop recording and process
@@ -105,13 +117,13 @@ export function SalesIntakeScreen() {
           errorMessage.includes("GROQ_API_KEY")
         ) {
           Alert.alert(
-            "AI Service Unavailable",
-            "Voice sales log parsing is currently unavailable. Please contact support or try again later.",
+            t("sales.aiUnavailable"),
+            t("sales.aiUnavailableVoice"),
           );
         } else {
           Alert.alert(
-            "Voice Parsing Failed",
-            "Could not parse your voice recording. Please try again with clearer speech or contact support if this persists.",
+            t("sales.voiceParseFailed"),
+            t("sales.voiceParseFailedMsg"),
           );
         }
       } finally {
@@ -123,8 +135,8 @@ export function SalesIntakeScreen() {
         const { granted } = await Audio.requestPermissionsAsync();
         if (!granted) {
           Alert.alert(
-            "Microphone Access Required",
-            "Please grant microphone access to record voice sales logs.",
+            t("sales.micRequired"),
+            t("sales.micRequiredMsg"),
           );
           return;
         }
@@ -141,8 +153,8 @@ export function SalesIntakeScreen() {
         setIsRecording(true);
       } catch (error) {
         Alert.alert(
-          "Recording Error",
-          "Could not start audio recording. Please check microphone permissions.",
+          t("sales.recordingError"),
+          t("sales.recordingErrorMsg"),
         );
       }
     }
@@ -151,7 +163,7 @@ export function SalesIntakeScreen() {
   const handleSnap = async () => {
     if (isProcessingPhoto) return;
     if (!cameraRef.current) {
-      Alert.alert("Camera Not Ready", "Please wait a moment and try again.");
+      Alert.alert(t("sales.cameraNotReady"), t("sales.cameraNotReadyMsg"));
       return;
     }
 
@@ -168,13 +180,13 @@ export function SalesIntakeScreen() {
       if (errorMessage.includes("AI features are temporarily unavailable") || 
           errorMessage.includes("OPENROUTER_API_KEY")) {
         Alert.alert(
-          "AI Service Unavailable",
-          "Receipt scanning AI is currently unavailable. Please contact support or try again later.",
+          t("sales.aiUnavailable"),
+          t("sales.aiUnavailableReceipt"),
         );
       } else {
         Alert.alert(
-          "Scan Failed",
-          "Could not parse this receipt. Please retake with better lighting or contact support if this persists.",
+          t("sales.scanFailed"),
+          t("sales.scanFailedMsg"),
         );
       }
     } finally {
@@ -186,7 +198,7 @@ export function SalesIntakeScreen() {
   if (!permission) {
     return (
       <View style={styles.permRoot}>
-        <Text style={styles.permText}>Requesting camera access...</Text>
+        <Text style={styles.permText}>{t("sales.requestingCamera")}</Text>
       </View>
     );
   }
@@ -195,16 +207,16 @@ export function SalesIntakeScreen() {
     return (
       <View style={styles.permRoot}>
         <Icon name="camera" size={48} color={colors.primaryMid} />
-        <Text style={styles.permTitle}>Camera Access Required</Text>
+        <Text style={styles.permTitle}>{t("sales.cameraRequired")}</Text>
         <Text style={styles.permSub}>
-          KudiNode needs camera access to scan receipts and sales ledgers.
+          {t("sales.cameraMsg")}
         </Text>
         <TouchableOpacity
           style={styles.permBtn}
           onPress={requestPermission}
           activeOpacity={0.85}
         >
-          <Text style={styles.permBtnText}>Grant Camera Access</Text>
+          <Text style={styles.permBtnText}>{t("sales.grantCamera")}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -254,7 +266,7 @@ export function SalesIntakeScreen() {
           </TouchableOpacity>
 
           <Text style={styles.topTitle}>
-            {mode === "PHOTO" ? "Receipt Scanner" : "Voice Sales Log"}
+            {mode === "PHOTO" ? t("sales.receiptScanner") : t("sales.voiceSalesLog")}
           </Text>
 
           {mode === "PHOTO" ? (
@@ -283,7 +295,7 @@ export function SalesIntakeScreen() {
             <View style={[styles.corner, styles.cTR]} />
             <View style={[styles.corner, styles.cBL]} />
             <View style={[styles.corner, styles.cBR]} />
-            <Text style={styles.finderHint}>Align receipt within frame</Text>
+            <Text style={styles.finderHint}>{t("sales.alignReceipt")}</Text>
           </View>
         </View>
       )}
@@ -310,8 +322,8 @@ export function SalesIntakeScreen() {
               <View style={styles.recDot} />
               <Text style={styles.recText}>
                 {isProcessingVoice
-                  ? "Processing..."
-                  : "Recording · AI parsing active"}
+                  ? t("common.processing")
+                  : t("sales.recordingActive")}
               </Text>
             </View>
           )}
@@ -339,8 +351,8 @@ export function SalesIntakeScreen() {
 
           <Text style={styles.voiceHint}>
             {isRecording
-              ? "Speak items & prices in English, Pidgin, Hausa, Yoruba or Igbo"
-              : "Tap mic to record your sales. AI will parse items & amounts."}
+              ? t("sales.speakItemsHint")
+              : t("sales.tapMicHint")}
           </Text>
 
           {!isRecording && (
@@ -354,7 +366,10 @@ export function SalesIntakeScreen() {
                       styles.langPill,
                       active && styles.langPillActive,
                     ]}
-                    onPress={() => setVoiceLanguage(opt.value)}
+                    onPress={() => {
+                      setManualLangOverride(true);
+                      setVoiceLanguage(opt.value);
+                    }}
                     activeOpacity={0.75}
                   >
                     <Text
@@ -402,7 +417,7 @@ export function SalesIntakeScreen() {
                   mode === "PHOTO" && styles.segTextActive,
                 ]}
               >
-                Photo
+                {t("sales.photo")}
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -421,7 +436,7 @@ export function SalesIntakeScreen() {
                   mode === "VOICE" && styles.segTextActive,
                 ]}
               >
-                Voice
+                {t("sales.voice")}
               </Text>
             </TouchableOpacity>
           </View>
@@ -447,8 +462,8 @@ export function SalesIntakeScreen() {
                 </View>
                 <Text style={styles.actionCaption}>
                   {isProcessingPhoto
-                    ? "Extracting receipt..."
-                    : "Tap to capture receipt"}
+                    ? t("sales.extracting")
+                    : t("sales.tapToCapture")}
                 </Text>
               </TouchableOpacity>
             ) : (
@@ -458,12 +473,12 @@ export function SalesIntakeScreen() {
                   {isRecording ? (
                     <>
                       <View style={styles.stopSquare} />
-                      <Text style={styles.recIndicatorText}>Stop</Text>
+                      <Text style={styles.recIndicatorText}>{t("sales.stop")}</Text>
                     </>
                   ) : (
                     <>
                       <View style={styles.recCircle} />
-                      <Text style={styles.recIndicatorText}>Record</Text>
+                      <Text style={styles.recIndicatorText}>{t("sales.record")}</Text>
                     </>
                   )}
                 </View>

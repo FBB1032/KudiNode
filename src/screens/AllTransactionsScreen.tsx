@@ -5,6 +5,7 @@ import {
 import { colors, spacing, radius, typography, shadows } from '../theme/theme';
 import { TopHeader } from '../components/TopHeader';
 import { Icon } from '../components/Icon';
+import { useLanguage } from '../context/LanguageContext';
 
 const ALL_TXN = [
   { id: 1,  label: 'Rice (10kg)',         amount: '+₦23,000',  type: 'sale',   date: 'Today 09:14',    note: 'Scan receipt'    },
@@ -21,7 +22,15 @@ const ALL_TXN = [
 
 type Filter = 'All' | 'Sales' | 'Debits' | 'Credits';
 
+const FILTER_KEYS: Record<Filter, string> = {
+  All: 'transactions.all',
+  Sales: 'transactions.sales',
+  Debits: 'transactions.debits',
+  Credits: 'transactions.credits',
+};
+
 export function AllTransactionsScreen() {
+  const { t } = useLanguage();
   const [filter, setFilter] = useState<Filter>('All');
 
   const filtered = ALL_TXN.filter(t => {
@@ -40,7 +49,7 @@ export function AllTransactionsScreen() {
 
   return (
     <View style={styles.root}>
-      <TopHeader showBack title="All Transactions" subtitle="Complete ledger history" />
+      <TopHeader showBack title={t('transactions.title')} subtitle={t('transactions.subtitle')} />
 
       {/* Filter pills */}
       <View style={styles.filterRow}>
@@ -51,7 +60,7 @@ export function AllTransactionsScreen() {
             onPress={() => setFilter(f)}
             activeOpacity={0.75}
           >
-            <Text style={[styles.pillText, filter === f && styles.pillTextActive]}>{f}</Text>
+            <Text style={[styles.pillText, filter === f && styles.pillTextActive]}>{t(FILTER_KEYS[f])}</Text>
           </TouchableOpacity>
         ))}
       </View>

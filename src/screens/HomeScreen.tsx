@@ -17,7 +17,7 @@ type Nav = NativeStackNavigationProp<RootStackParamList>;
 const QUICK_ACTIONS = [
   {
     icon: 'send' as const,
-    label: 'Transfer',
+    labelKey: 'home.transfer',
     color: '#7C3AED',
     bg: '#F3E8FF',
     route: 'VoiceTransfer' as const,
@@ -25,7 +25,7 @@ const QUICK_ACTIONS = [
   },
   {
     icon: 'mic' as const,
-    label: 'Voice Log',
+    labelKey: 'home.voiceLog',
     color: '#059669',
     bg: '#D1FAE5',
     route: 'SalesIntake' as const,
@@ -33,7 +33,7 @@ const QUICK_ACTIONS = [
   },
   {
     icon: 'camera' as const,
-    label: 'Scan',
+    labelKey: 'home.scan',
     color: '#D97706',
     bg: '#FEF3C7',
     route: 'SalesIntake' as const,
@@ -41,7 +41,7 @@ const QUICK_ACTIONS = [
   },
   {
     icon: 'receipt' as const,
-    label: 'Ledger',
+    labelKey: 'home.ledger',
     color: '#1D4ED8',
     bg: '#DBEAFE',
     route: 'Ledger' as const,
@@ -76,7 +76,7 @@ export function HomeScreen() {
   const [showBalance, setShowBalance] = useState(true);
 
   const handleCopyWema = () =>
-    Alert.alert('Copied', 'Account · 0129384756 (Amina Babangida Bello)');
+    Alert.alert(t('common.copied'), t('home.accountCopied', { account: '0129384756', name: 'Amina Babangida Bello' }));
 
   return (
     <View style={s.root}>
@@ -114,7 +114,7 @@ export function HomeScreen() {
           {/* Merchant status row */}
           <View style={s.statusRow}>
             <Icon name="shield-checkmark" size={12} color="#34D399" />
-            <Text style={s.statusText}>Tier-1 Verified · Amina Bello</Text>
+            <Text style={s.statusText}>{t('home.verifiedStatus')} · Amina Bello</Text>
           </View>
 
           {/* ─── Balance card ─── */}
@@ -126,8 +126,8 @@ export function HomeScreen() {
                   <Icon name="wallet-outline" size={16} color={colors.primaryDeep} />
                 </View>
                 <View>
-                  <Text style={s.balLabel}>Cash in Hand</Text>
-                  <Text style={s.balSublabel}>Settlement Account</Text>
+                  <Text style={s.balLabel}>{t('home.cashInHand')}</Text>
+                  <Text style={s.balSublabel}>{t('home.settlementAccount')}</Text>
                 </View>
               </View>
               <TouchableOpacity onPress={() => setShowBalance(!showBalance)} activeOpacity={0.7}>
@@ -147,7 +147,7 @@ export function HomeScreen() {
               <View style={s.statItem}>
                 <View style={s.statLabelRow}>
                   <Icon name="trending-up" size={11} color="#059669" />
-                  <Text style={s.statLabel}>Today's Profit</Text>
+                  <Text style={s.statLabel}>{t('home.todayProfit')}</Text>
                 </View>
                 <Text style={s.statValue}>{showBalance ? '₦24,680' : '••••'}</Text>
               </View>
@@ -157,7 +157,7 @@ export function HomeScreen() {
               <View style={s.statItem}>
                 <View style={s.statLabelRow}>
                   <Icon name="flash" size={11} color={colors.primaryLight} />
-                  <Text style={s.statLabel}>Credit Limit</Text>
+                  <Text style={s.statLabel}>{t('home.creditLimit')}</Text>
                 </View>
                 <Text style={s.statValue}>{showBalance ? '₦150,000' : '••••'}</Text>
               </View>
@@ -171,7 +171,7 @@ export function HomeScreen() {
                 activeOpacity={0.85}
               >
                 <Icon name="send" size={14} color={colors.white} />
-                <Text style={s.actionBtnPrimaryText}>Transfer</Text>
+                <Text style={s.actionBtnPrimaryText}>{t('home.transfer')}</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -180,7 +180,7 @@ export function HomeScreen() {
                 activeOpacity={0.85}
               >
                 <Icon name="flash-outline" size={14} color={colors.primaryDeep} />
-                <Text style={s.actionBtnSecondaryText}>Get Credit</Text>
+                <Text style={s.actionBtnSecondaryText}>{t('home.getCredit')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -194,11 +194,11 @@ export function HomeScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* ── Quick Actions ── */}
-        <Text style={s.sectionTitle}>Quick Actions</Text>
+        <Text style={s.sectionTitle}>{t('home.quickActions')}</Text>
         <View style={s.quickGrid}>
           {QUICK_ACTIONS.map((a) => (
             <TouchableOpacity
-              key={a.label}
+              key={a.labelKey}
               style={[s.quickTile, shadows.card]}
               onPress={() => nav.navigate(a.route as any, a.params as any)}
               activeOpacity={0.82}
@@ -206,7 +206,7 @@ export function HomeScreen() {
               <View style={[s.quickTileIcon, { backgroundColor: a.bg }]}>
                 <Icon name={a.icon} size={21} color={a.color} />
               </View>
-              <Text style={s.quickTileLabel}>{a.label}</Text>
+              <Text style={s.quickTileLabel}>{t(a.labelKey)}</Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -227,8 +227,8 @@ export function HomeScreen() {
               <Icon name="flash" size={20} color="#FCD34D" />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={s.creditBannerTitle}>Pre-Approved: ₦150,000</Text>
-              <Text style={s.creditBannerSub}>0.5% daily · 1-click disbursement</Text>
+              <Text style={s.creditBannerTitle}>{t('home.creditBannerTitle')}</Text>
+              <Text style={s.creditBannerSub}>{t('home.creditBannerSub')}</Text>
             </View>
             <Icon name="chevron-forward" size={18} color="rgba(255,255,255,0.7)" />
           </LinearGradient>
@@ -236,9 +236,9 @@ export function HomeScreen() {
 
         {/* ── Recent activity ── */}
         <View style={s.sectionRow}>
-          <Text style={s.sectionTitle}>Recent Activity</Text>
+          <Text style={s.sectionTitle}>{t('home.recentActivity')}</Text>
           <TouchableOpacity onPress={() => nav.navigate('AllTransactions')} activeOpacity={0.7}>
-            <Text style={s.seeAll}>See all</Text>
+            <Text style={s.seeAll}>{t('home.seeAll')}</Text>
           </TouchableOpacity>
         </View>
 

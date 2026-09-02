@@ -30,6 +30,7 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../AppNavigator";
 import { UssdFallbackModule } from "../services/UssdFallbackModule";
 import { FloatingLabelInput } from "../components/FloatingLabelInput";
+import { useLanguage } from "../context/LanguageContext";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type Route = RouteProp<RootStackParamList, "ManualTransfer">;
@@ -55,6 +56,7 @@ const NIGERIAN_BANKS = [
 ];
 
 export function ManualTransferScreen() {
+  const { t } = useLanguage();
   const nav = useNavigation<Nav>();
   const route = useRoute<Route>();
   const prefilled = route.params?.prefilled;
@@ -100,12 +102,12 @@ export function ManualTransferScreen() {
 
   const validate = () => {
     const e: Record<string, string> = {};
-    if (!recipientName.trim()) e.recipientName = "Recipient name is required";
+    if (!recipientName.trim()) e.recipientName = t('manual.recipientRequired');
     if (!accountNum.trim() || accountNum.length < 10)
-      e.accountNum = "10-digit account number required";
-    if (!selectedBank) e.selectedBank = "Please select a bank";
+      e.accountNum = t('manual.accountNumRequired');
+    if (!selectedBank) e.selectedBank = t('manual.selectBankRequired');
     if (!amount.trim() || isNaN(Number(amount.replace(/,/g, ""))))
-      e.amount = "Enter a valid amount";
+      e.amount = t('manual.amountRequired');
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -115,12 +117,12 @@ export function ManualTransferScreen() {
 
     if (isLowConfidence) {
       Alert.alert(
-        "Low AI Confidence",
-        "The voice parse confidence is low. Review recipient, bank, account number and amount carefully before authorizing.",
+        t("manual.lowConfidenceTitle"),
+        t("manual.lowConfidenceMsg"),
         [
-          { text: "Review Again", style: "cancel" },
+          { text: t("manual.reviewAgain"), style: "cancel" },
           {
-            text: "Proceed Anyway",
+            text: t("manual.proceedAnyway"),
             style: "destructive",
             onPress: () => {
               setPin("");
@@ -194,11 +196,11 @@ export function ManualTransferScreen() {
       />
       <TopHeader
         showBack
-        title={fromVoice ? "Review Transfer Details" : "Manual Transfer"}
+        title={fromVoice ? t("manual.reviewTitle") : t("manual.manualTitle")}
         subtitle={
           fromVoice
-            ? "Verify AI-parsed details below"
-            : "Fill in all transfer details"
+            ? t("manual.reviewSub")
+            : t("manual.manualSub")
         }
       />
       <KeyboardAvoidingView
@@ -219,14 +221,14 @@ export function ManualTransferScreen() {
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={styles.voiceBannerTitle}>
-                  Voice Command Parsed
+                  {t("manual.voiceParsed")}
                 </Text>
                 <Text style={styles.voiceBannerSub}>
-                  {`Language: ${aiMeta?.languageDetected || "unknown"}`}
+                  {t("manual.language", { lang: aiMeta?.languageDetected || "unknown" })}
                 </Text>
                 {aiConfidence !== null ? (
                   <Text style={styles.voiceBannerSub}>
-                    Confidence: {(aiConfidence * 100).toFixed(0)}%
+                    {t("manual.confidence", { pct: (aiConfidence * 100).toFixed(0) })}
                   </Text>
                 ) : null}
               </View>
@@ -237,25 +239,24 @@ export function ManualTransferScreen() {
             <View style={styles.infoBanner}>
               <Icon name="info" size={16} color={colors.warningOrange} />
               <Text style={styles.infoText}>
-                AI confidence is low for this voice command. Please verify all
-                details manually before you authorize transfer.
+                {t("manual.lowConfidenceInfo")}
               </Text>
             </View>
           ) : null}
 
           {/* ── Transfer Form Card ── */}
           <View style={[styles.card, shadows.card]}>
-            <Text style={styles.cardTitle}>Transfer Details</Text>
+            <Text style={styles.cardTitle}>{t("manual.detailsTitle")}</Text>
 
             {/* Fixed Non-Editable Sender / From Account */}
             <View style={styles.fieldGroup}>
-              <Text style={styles.fieldLabel}>From Account (Fixed)</Text>
+              <Text style={styles.fieldLabel}>{t("manual.fromAccount")}</Text>
               <View style={styles.fixedFromWrap}>
                 <Icon name="bank" size={18} color={colors.primaryDeep} />
                 <View style={{ flex: 1 }}>
                   <Text style={styles.fixedFromTitle}>Wema Bank PLC</Text>
                   <Text style={styles.fixedFromSub}>
-                    Settlement Account · 0129384756 (Amina Bello)
+                    {t("manual.fixedFromSub", { account: "0129384756", name: "Amina Bello" })}
                   </Text>
                 </View>
                 <Icon name="lock-closed" size={14} color={colors.textMuted} />
@@ -264,7 +265,7 @@ export function ManualTransferScreen() {
 
             {/* Recipient */}
             <FloatingLabelInput
-              label="Recipient / Beneficiary Name"
+              label={t("manual.recipientLabel")}
               leadingIcon="person"
               value={recipientName}
               onChangeText={(v) => {
@@ -277,7 +278,7 @@ export function ManualTransferScreen() {
 
             {/* Bank Selector */}
             <View style={styles.fieldGroup}>
-              <Text style={styles.fieldLabel}>Destination Bank</Text>
+              <Text style={styles.fieldLabel}>{t("manual.destBank")}</Text>
               <TouchableOpacity
                 style={[
                   styles.inputWrap,
@@ -300,7 +301,7 @@ export function ManualTransferScreen() {
                     },
                   ]}
                 >
-                  {selectedBank || "Select bank…"}
+                  {selectedBank || t("manual.selectBank")}
                 </Text>
                 {fromVoice && selectedBank ? (
                   <Icon name="mic" size={13} color={colors.primaryMid} />
@@ -314,7 +315,7 @@ export function ManualTransferScreen() {
 
             {/* Account Number */}
             <FloatingLabelInput
-              label="Account Number (10 digits)"
+              label={t("manual.accountNum")}
               leadingIcon="card"
               keyboardType="numeric"
               maxLength={10}
@@ -338,7 +339,7 @@ export function ManualTransferScreen() {
 
             {/* Amount */}
             <FloatingLabelInput
-              label="Transfer Amount (₦)"
+              label={t("manual.amount")}
               prefix="₦"
               keyboardType="numeric"
               value={amount}
@@ -353,7 +354,7 @@ export function ManualTransferScreen() {
 
             {/* Optional note */}
             <FloatingLabelInput
-              label="Transfer Note (Optional)"
+              label={t("manual.transferNote")}
               leadingIcon="document-text"
               value={note}
               onChangeText={setNote}
@@ -369,22 +370,22 @@ export function ManualTransferScreen() {
                   size={18}
                   color={colors.successGreen}
                 />
-                <Text style={styles.summaryTitle}>Transfer Summary</Text>
+                <Text style={styles.summaryTitle}>{t("manual.summaryTitle")}</Text>
               </View>
               <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabel}>To</Text>
+                <Text style={styles.summaryLabel}>{t("manual.to")}</Text>
                 <Text style={styles.summaryValue}>{recipientName}</Text>
               </View>
               <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabel}>Account</Text>
+                <Text style={styles.summaryLabel}>{t("manual.account")}</Text>
                 <Text style={styles.summaryValue}>{accountNum}</Text>
               </View>
               <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabel}>Bank</Text>
+                <Text style={styles.summaryLabel}>{t("manual.bank")}</Text>
                 <Text style={styles.summaryValue}>{selectedBank}</Text>
               </View>
               <View style={[styles.summaryRow, styles.summaryAmountRow]}>
-                <Text style={styles.summaryLabel}>Amount</Text>
+                <Text style={styles.summaryLabel}>{t("manual.amountSummary")}</Text>
                 <Text style={styles.summaryAmount}>
                   ₦{Number(amount.replace(/,/g, "")).toLocaleString()}
                 </Text>
@@ -405,7 +406,7 @@ export function ManualTransferScreen() {
               style={styles.proceedGrad}
             >
               <Icon name="lock" size={20} color={colors.white} />
-              <Text style={styles.proceedText}>Proceed to Authorize</Text>
+              <Text style={styles.proceedText}>{t("manual.proceed")}</Text>
               <Icon name="arrow-forward" size={18} color={colors.white} />
             </LinearGradient>
           </TouchableOpacity>
@@ -419,8 +420,8 @@ export function ManualTransferScreen() {
             <Icon name="mic" size={16} color={colors.primaryMid} />
             <Text style={styles.voiceBackText}>
               {fromVoice
-                ? "Re-record Voice Command"
-                : "Use Voice Transfer Instead"}
+                ? t("manual.reRecord")
+                : t("manual.useVoice")}
             </Text>
           </TouchableOpacity>
 
@@ -433,7 +434,7 @@ export function ManualTransferScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalCard}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Select Destination Bank</Text>
+              <Text style={styles.modalTitle}>{t("manual.selectDestBank")}</Text>
               <TouchableOpacity
                 onPress={() => setShowBankPicker(false)}
                 activeOpacity={0.8}
@@ -445,7 +446,7 @@ export function ManualTransferScreen() {
               <Icon name="search" size={16} color={colors.textMuted} />
               <TextInput
                 style={styles.searchInput}
-                placeholder="Search bank…"
+                placeholder={t("manual.searchBank")}
                 placeholderTextColor={colors.textMuted}
                 value={bankSearch}
                 onChangeText={setBankSearch}
@@ -500,7 +501,7 @@ export function ManualTransferScreen() {
           <View style={[styles.pinModalCard, shadows.cardLg]}>
             {/* Header */}
             <View style={styles.pinModalHeader}>
-              <Text style={styles.pinModalTitle}>Authorize Transfer</Text>
+              <Text style={styles.pinModalTitle}>{t("manual.authorizePin")}</Text>
               <TouchableOpacity
                 onPress={() => setShowPinModal(false)}
                 activeOpacity={0.8}
@@ -511,16 +512,16 @@ export function ManualTransferScreen() {
 
             {/* Summary line */}
             <View style={styles.pinSummaryBox}>
-              <Text style={styles.pinSummarySub}>Sending</Text>
+              <Text style={styles.pinSummarySub}>{t("manual.sending")}</Text>
               <Text style={styles.pinSummaryAmt}>
                 ₦{Number(amount.replace(/,/g, "") || 0).toLocaleString()}
               </Text>
               <Text style={styles.pinSummaryTo}>
-                To {recipientName} · {selectedBank}
+                {t("manual.toRecipient", { name: recipientName, bank: selectedBank })}
               </Text>
             </View>
 
-            <Text style={styles.pinPrompt}>Enter 4-Digit Security PIN</Text>
+            <Text style={styles.pinPrompt}>{t("manual.enterPin")}</Text>
 
             {/* PIN Dots */}
             <View style={styles.pinDotsRow}>
@@ -538,7 +539,7 @@ export function ManualTransferScreen() {
             {isVerifyingPin ? (
               <View style={styles.verifyingBox}>
                 <ActivityIndicator size="small" color={colors.primaryMid} />
-                <Text style={styles.verifyingText}>Verifying PIN…</Text>
+                <Text style={styles.verifyingText}>{t("manual.verifyingPin")}</Text>
               </View>
             ) : null}
 
@@ -590,7 +591,7 @@ export function ManualTransferScreen() {
             >
               <Icon name="phone" size={14} color={colors.primaryMid} />
               <Text style={styles.pinUssdText}>
-                Network slow? Pay via USSD code
+                {t("manual.networkSlow")}
               </Text>
             </TouchableOpacity>
           </View>
@@ -605,10 +606,9 @@ export function ManualTransferScreen() {
               <ActivityIndicator size="large" color={colors.primaryDeep} />
             </View>
 
-            <Text style={styles.processingTitle}>Processing Transfer…</Text>
+            <Text style={styles.processingTitle}>{t("manual.processingTitle")}</Text>
             <Text style={styles.processingSub}>
-              Sending ₦{Number(amount.replace(/,/g, "") || 0).toLocaleString()}{" "}
-              to {recipientName}
+              {t("manual.sendingTo", { amount: Number(amount.replace(/,/g, "") || 0).toLocaleString(), name: recipientName })}
             </Text>
 
             <View style={styles.processingStepsBox}>
@@ -628,7 +628,7 @@ export function ManualTransferScreen() {
                     processStep >= 1 && styles.stepTextDone,
                   ]}
                 >
-                  1. Security PIN Verified
+                  {t("manual.step1")}
                 </Text>
               </View>
               <View style={styles.stepRow}>
@@ -647,7 +647,7 @@ export function ManualTransferScreen() {
                     processStep >= 2 && styles.stepTextDone,
                   ]}
                 >
-                  2. Connecting to NIP Handoff Gateway
+                  {t("manual.step2")}
                 </Text>
               </View>
               <View style={styles.stepRow}>
@@ -666,7 +666,7 @@ export function ManualTransferScreen() {
                     processStep >= 3 && styles.stepTextDone,
                   ]}
                 >
-                  3. Debiting Merchant Settlement Account
+                  {t("manual.step3")}
                 </Text>
               </View>
             </View>
@@ -682,32 +682,32 @@ export function ManualTransferScreen() {
               <Icon name="checkmark" size={36} color={colors.white} />
             </View>
 
-            <Text style={styles.successTitle}>Transfer Successful!</Text>
+            <Text style={styles.successTitle}>{t("manual.successTitle")}</Text>
             <Text style={styles.successAmt}>
               ₦{Number(amount.replace(/,/g, "") || 0).toLocaleString()}
             </Text>
 
             <View style={styles.successDetailBox}>
               <View style={styles.successDetailRow}>
-                <Text style={styles.successDetailLabel}>Recipient</Text>
+                <Text style={styles.successDetailLabel}>{t("manual.recipient")}</Text>
                 <Text style={styles.successDetailVal}>{recipientName}</Text>
               </View>
               <View style={styles.successDetailRow}>
-                <Text style={styles.successDetailLabel}>Bank</Text>
+                <Text style={styles.successDetailLabel}>{t("manual.bank")}</Text>
                 <Text style={styles.successDetailVal}>{selectedBank}</Text>
               </View>
               <View style={styles.successDetailRow}>
-                <Text style={styles.successDetailLabel}>Account</Text>
+                <Text style={styles.successDetailLabel}>{t("manual.account")}</Text>
                 <Text style={styles.successDetailVal}>{accountNum}</Text>
               </View>
               <View style={styles.successDetailRow}>
-                <Text style={styles.successDetailLabel}>From</Text>
+                <Text style={styles.successDetailLabel}>{t("manual.fromLabel")}</Text>
                 <Text style={styles.successDetailVal}>
                   Wema Settlement (0129384756)
                 </Text>
               </View>
               <View style={styles.successDetailRow}>
-                <Text style={styles.successDetailLabel}>Txn Ref</Text>
+                <Text style={styles.successDetailLabel}>{t("manual.txnRef")}</Text>
                 <Text style={styles.successDetailVal}>
                   KN-{Math.floor(10000000 + Math.random() * 90000000)}
                 </Text>
@@ -719,7 +719,7 @@ export function ManualTransferScreen() {
               onPress={handleDoneSuccess}
               activeOpacity={0.85}
             >
-              <Text style={styles.successDoneText}>Done</Text>
+              <Text style={styles.successDoneText}>{t("manual.done")}</Text>
             </TouchableOpacity>
           </View>
         </View>

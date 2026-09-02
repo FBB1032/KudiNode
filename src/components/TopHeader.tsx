@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, StatusBar } from 'react-nativ
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, spacing, radius, typography } from '../theme/theme';
+import { useLanguage } from '../context/LanguageContext';
 import { Icon } from './Icon';
 import { Avatar } from './Avatar';
 import { useNavigation } from '@react-navigation/native';
@@ -31,6 +32,7 @@ export function TopHeader({
   rightSlot,
 }: TopHeaderProps) {
   const navigation = useNavigation<any>();
+  const { t } = useLanguage();
 
   if (showGreeting) {
     return (
@@ -50,8 +52,8 @@ export function TopHeader({
               <Avatar size={46} uri={avatarUri} initials="AB" verified={verified} verifiedSize={16} />
             </TouchableOpacity>
             <View style={styles.greetText}>
-              <Text style={styles.greetHello}>Good morning,</Text>
-              <Text style={styles.greetName}>{greetingName ?? 'Merchant'}</Text>
+              <Text style={styles.greetHello}>{t('components.goodMorning')}</Text>
+              <Text style={styles.greetName}>{greetingName ?? t('components.merchant')}</Text>
             </View>
             <TouchableOpacity
               style={styles.iconBtn}
@@ -65,7 +67,7 @@ export function TopHeader({
           {verified && (
             <View style={styles.verifiedRow}>
               <Icon name="shield-checkmark" size={12} color={colors.successGreen} />
-              <Text style={styles.verifiedText}>Tier-1 Verified · KN-783462</Text>
+              <Text style={styles.verifiedText}>{t('components.tier1Verified')}</Text>
             </View>
           )}
           <View style={{ height: spacing.xxxl + spacing.xl }} />

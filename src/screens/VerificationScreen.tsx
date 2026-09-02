@@ -137,8 +137,8 @@ export function VerificationScreen() {
       />
       <TopHeader
         showBack
-        title="Verify Transaction"
-        subtitle="Review, edit & confirm sale details"
+        title={t('verification.title')}
+        subtitle={t('verification.subtitle')}
       />
 
       <ScrollView
@@ -152,9 +152,9 @@ export function VerificationScreen() {
             <View style={styles.aiBadge}>
               <Icon name="checkmark-circle" size={16} color={colors.primaryMid} />
               <Text style={styles.aiText}>
-                AI parsed receipt
+                {t('verification.aiParsed')}
                 {parsedReceipt.confidence > 0
-                  ? ` · Confidence ${(parsedReceipt.confidence * 100).toFixed(0)}%`
+                  ? ` · ${t('verification.confidence', { pct: (parsedReceipt.confidence * 100).toFixed(0) })}`
                   : ""}
               </Text>
             </View>
@@ -171,7 +171,7 @@ export function VerificationScreen() {
                 <View style={[styles.metaChip, { backgroundColor: "#FFF3E8" }]}>
                   <Icon name="create" size={12} color={colors.warningOrange} />
                   <Text style={[styles.metaChipText, { color: colors.warningOrange }]}>
-                    Handwritten detected
+                    {t('verification.handwrittenDetected')}
                   </Text>
                 </View>
               ) : null}
@@ -195,7 +195,7 @@ export function VerificationScreen() {
                 <View style={styles.metaChip}>
                   <Icon name="person" size={12} color={colors.primaryMid} />
                   <Text style={styles.metaChipText} numberOfLines={1}>
-                    Customer: {parsedReceipt.customerName}
+                    {t('verification.customer', { name: parsedReceipt.customerName })}
                   </Text>
                 </View>
               ) : null}
@@ -211,7 +211,7 @@ export function VerificationScreen() {
                 <View style={styles.metaChip}>
                   <Icon name="card" size={12} color={colors.primaryMid} />
                   <Text style={styles.metaChipText} numberOfLines={1}>
-                    Paid by {parsedReceipt.paymentMethod.toUpperCase()}
+                    {t('verification.paidBy', { method: parsedReceipt.paymentMethod.toUpperCase() })}
                   </Text>
                 </View>
               ) : null}
@@ -225,7 +225,7 @@ export function VerificationScreen() {
                 <View style={styles.metaChip}>
                   <Icon name="receipt" size={12} color={colors.primaryMid} />
                   <Text style={styles.metaChipText}>
-                    Subtotal ₦{parsedReceipt.subtotal.toLocaleString()}
+                    {t('verification.subtotal', { amount: parsedReceipt.subtotal.toLocaleString() })}
                   </Text>
                 </View>
               ) : null}
@@ -233,7 +233,7 @@ export function VerificationScreen() {
                 <View style={styles.metaChip}>
                   <Icon name="trending-up" size={12} color={colors.primaryMid} />
                   <Text style={styles.metaChipText}>
-                    VAT ₦{parsedReceipt.tax.toLocaleString()}
+                    {t('verification.vat', { amount: parsedReceipt.tax.toLocaleString() })}
                     {parsedReceipt.vatRate != null
                       ? ` (${parsedReceipt.vatRate}%)`
                       : ""}
@@ -244,7 +244,7 @@ export function VerificationScreen() {
                 <View style={styles.metaChip}>
                   <Icon name="trending-up" size={12} color={colors.successGreen} />
                   <Text style={styles.metaChipText}>
-                    Discount −₦{parsedReceipt.discount.toLocaleString()}
+                    {t('verification.discount', { amount: parsedReceipt.discount.toLocaleString() })}
                   </Text>
                 </View>
               ) : null}
@@ -252,7 +252,7 @@ export function VerificationScreen() {
                 <View style={styles.metaChip}>
                   <Icon name="card" size={12} color={colors.warningOrange} />
                   <Text style={styles.metaChipText}>
-                    Service fee +₦{parsedReceipt.serviceCharge.toLocaleString()}
+                    {t('verification.serviceFee', { amount: parsedReceipt.serviceCharge.toLocaleString() })}
                   </Text>
                 </View>
               ) : null}
@@ -264,34 +264,34 @@ export function VerificationScreen() {
         <View style={[styles.card, shadows.card]}>
           {/* Card Header */}
           <View style={styles.cardHead}>
-            <Text style={styles.cardTitle}>Sale Items</Text>
+            <Text style={styles.cardTitle}>{t('verification.saleItems')}</Text>
             <TouchableOpacity
               style={styles.addBtn}
               onPress={addRow}
               activeOpacity={0.8}
             >
               <Icon name="plus" size={13} color={colors.primaryMid} />
-              <Text style={styles.addBtnText}>Add item</Text>
+              <Text style={styles.addBtnText}>{t('verification.addItem')}</Text>
             </TouchableOpacity>
           </View>
 
           {/* Table Header (Exact 1:1 match with rows) */}
           <View style={styles.tableHead}>
-            <Text style={[styles.th, { flex: 2.2 }]}>ITEM</Text>
+            <Text style={[styles.th, { flex: 2.2 }]}>{t('verification.item')}</Text>
             <Text
               style={[styles.th, { width: 36, textAlign: "center" as const }]}
             >
-              QTY
+              {t('verification.qty')}
             </Text>
             <Text
               style={[styles.th, { flex: 1.25, textAlign: "right" as const }]}
             >
-              PRICE
+              {t('verification.price')}
             </Text>
             <Text
               style={[styles.th, { flex: 1.25, textAlign: "right" as const }]}
             >
-              TOTAL
+              {t('verification.total')}
             </Text>
             <View style={{ width: 52 }} />
           </View>
@@ -317,7 +317,7 @@ export function VerificationScreen() {
                       onChangeText={(v) =>
                         setEditVals((p) => ({ ...p, item: v }))
                       }
-                      placeholder="Item name"
+                      placeholder={t('verification.itemNamePlaceholder')}
                       autoFocus
                     />
                     <TextInput
@@ -438,10 +438,10 @@ export function VerificationScreen() {
 
         {/* Merchant Note Card */}
         <View style={[styles.card, shadows.card]}>
-          <Text style={styles.noteTitle}>Merchant Note (Optional)</Text>
+          <Text style={styles.noteTitle}>{t('verification.merchantNote')}</Text>
           <TextInput
             style={styles.noteInput}
-            placeholder="e.g. Wholesale buyer, credit sale, market day..."
+            placeholder={t('verification.notePlaceholder')}
             placeholderTextColor={colors.textMuted}
             multiline
             numberOfLines={3}
@@ -461,7 +461,7 @@ export function VerificationScreen() {
             style={styles.confirmGrad}
           >
             <Icon name="checkmark-circle" size={20} color={colors.white} />
-            <Text style={styles.confirmText}>Confirm & Save to Ledger</Text>
+            <Text style={styles.confirmText}>{t('verification.confirmSave')}</Text>
           </LinearGradient>
         </TouchableOpacity>
 
@@ -471,7 +471,7 @@ export function VerificationScreen() {
           activeOpacity={0.75}
         >
           <Icon name="refresh" size={16} color={colors.textMuted} />
-          <Text style={styles.editAgainText}>Scan or speak again</Text>
+          <Text style={styles.editAgainText}>{t('verification.scanOrSpeakAgain')}</Text>
         </TouchableOpacity>
 
         <View style={{ height: spacing.xxxl * 2 }} />

@@ -6,43 +6,45 @@ import {
 import { colors, spacing, radius, typography, shadows } from '../theme/theme';
 import { TopHeader } from '../components/TopHeader';
 import { Icon } from '../components/Icon';
+import { useLanguage } from '../context/LanguageContext';
 
 const FAQS = [
   {
-    q: 'How does voice sales logging work?',
-    a: 'Simply tap the Log Sales mic icon and speak your sale items in English, Pidgin, Hausa, Yoruba, or Igbo (e.g. "I sold 2 bags of rice for 23 thousand"). KudiNode AI automatically parses the items and amounts into your ledger.',
+    qKey: 'help.faq1q',
+    aKey: 'help.faq1a',
   },
   {
-    q: 'What is KudiNode Credit Score?',
-    a: 'Your credit score is calculated using your sales ledger history and Co-op Esusu contribution consistency. Higher scores unlock instant micro-credit lines up to ₦500,000 via KudiNode.',
+    qKey: 'help.faq2q',
+    aKey: 'help.faq2a',
   },
   {
-    q: 'Can I use KudiNode offline?',
-    a: 'Yes! All voice records and receipt scans are cached locally on your device when network is unavailable and automatically synced once you reconnect.',
+    qKey: 'help.faq3q',
+    aKey: 'help.faq3a',
   },
   {
-    q: 'How do I withdraw funds to my main bank account?',
-    a: 'Tap Send Money on your Wema balance card, enter the destination bank account and your 4-digit security PIN to authorize an instant transfer.',
+    qKey: 'help.faq4q',
+    aKey: 'help.faq4a',
   },
 ];
 
 export function HelpSupportScreen() {
+  const { t } = useLanguage();
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [issueText, setIssueText] = useState('');
 
   const handleSendReport = () => {
     if (!issueText.trim()) {
-      Alert.alert('Empty Message', 'Please enter details about your issue.');
+      Alert.alert(t('help.emptyMessage'), t('help.emptyMessageText'));
       return;
     }
-    Alert.alert('Support Ticket Created', 'Thank you! A KudiNode Merchant Support Agent will review your ticket and reach out via SMS/App Notification.');
+    Alert.alert(t('help.ticketCreated'), t('help.ticketCreatedMsg'));
     setIssueText('');
   };
 
   return (
     <View style={styles.root}>
       <StatusBar barStyle="light-content" backgroundColor={colors.primaryDeep} translucent={false} />
-      <TopHeader showBack title="Help & Support" subtitle="24/7 Merchant assistance" />
+      <TopHeader showBack title={t('help.title')} subtitle={t('help.subtitle')} />
 
       <ScrollView
         style={styles.scroll}
@@ -54,31 +56,31 @@ export function HelpSupportScreen() {
         <View style={styles.channelsRow}>
           <TouchableOpacity
             style={[styles.channelCard, shadows.card]}
-            onPress={() => Alert.alert('KudiNode Merchant Support', 'Calling 0800-KUDI-NODE (Toll Free)...')}
+            onPress={() => Alert.alert(t('help.callCenter'), t('help.callMsg'))}
             activeOpacity={0.8}
           >
             <View style={[styles.channelIcon, { backgroundColor: '#E8FFF2' }]}>
               <Icon name="phone" size={22} color={colors.successGreen} />
             </View>
-            <Text style={styles.channelTitle}>Call Center</Text>
-            <Text style={styles.channelSub}>Toll Free 24/7</Text>
+            <Text style={styles.channelTitle}>{t('help.callCenter')}</Text>
+            <Text style={styles.channelSub}>{t('help.callCenterSub')}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={[styles.channelCard, shadows.card]}
-            onPress={() => Alert.alert('Live Agent Chat', 'Connecting to KudiNode AI Support Agent...')}
+            onPress={() => Alert.alert(t('help.liveChat'), t('help.liveChatMsg'))}
             activeOpacity={0.8}
           >
             <View style={[styles.channelIcon, { backgroundColor: colors.accentLight }]}>
               <Icon name="help" size={22} color={colors.primaryDeep} />
             </View>
-            <Text style={styles.channelTitle}>Live Chat</Text>
-            <Text style={styles.channelSub}>Instant AI Help</Text>
+            <Text style={styles.channelTitle}>{t('help.liveChat')}</Text>
+            <Text style={styles.channelSub}>{t('help.liveChatSub')}</Text>
           </TouchableOpacity>
         </View>
 
         {/* FAQs */}
-        <Text style={styles.sectionTitle}>Frequently Asked Questions</Text>
+        <Text style={styles.sectionTitle}>{t('help.faq')}</Text>
         <View style={[styles.card, shadows.card]}>
           {FAQS.map((faq, i) => {
             const isOpen = openFaq === i;
@@ -89,24 +91,24 @@ export function HelpSupportScreen() {
                   onPress={() => setOpenFaq(isOpen ? null : i)}
                   activeOpacity={0.7}
                 >
-                  <Text style={styles.faqQuestion}>{faq.q}</Text>
+                  <Text style={styles.faqQuestion}>{t(faq.qKey)}</Text>
                   <Icon name={isOpen ? 'chevron-up' : 'chevron-down'} size={16} color={colors.textMuted} />
                 </TouchableOpacity>
-                {isOpen && <Text style={styles.faqAnswer}>{faq.a}</Text>}
+                {isOpen && <Text style={styles.faqAnswer}>{t(faq.aKey)}</Text>}
               </View>
             );
           })}
         </View>
 
         {/* Report an Issue Form */}
-        <Text style={styles.sectionTitle}>Report an Issue</Text>
+        <Text style={styles.sectionTitle}>{t('help.reportIssue')}</Text>
         <View style={[styles.card, shadows.card, { padding: spacing.lg }]}>
-          <Text style={styles.formTitle}>Describe the problem you are experiencing</Text>
+          <Text style={styles.formTitle}>{t('help.formTitle')}</Text>
           <TextInput
             style={styles.issueInput}
             value={issueText}
             onChangeText={setIssueText}
-            placeholder="Type your issue here..."
+            placeholder={t('help.issuePlaceholder')}
             placeholderTextColor={colors.textMuted}
             multiline
             numberOfLines={4}
@@ -114,7 +116,7 @@ export function HelpSupportScreen() {
           />
           <TouchableOpacity style={styles.submitBtn} onPress={handleSendReport} activeOpacity={0.85}>
             <Icon name="send" size={16} color={colors.white} />
-            <Text style={styles.submitBtnText}>Submit Support Ticket</Text>
+            <Text style={styles.submitBtnText}>{t('help.submitTicket')}</Text>
           </TouchableOpacity>
         </View>
 

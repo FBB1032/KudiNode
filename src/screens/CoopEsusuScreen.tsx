@@ -7,6 +7,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { colors, spacing, radius, typography, shadows } from '../theme/theme';
 import { TopHeader } from '../components/TopHeader';
 import { Icon } from '../components/Icon';
+import { useLanguage } from '../context/LanguageContext';
 import { Avatar } from '../components/Avatar';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -80,6 +81,7 @@ const ROUNDS = [
 ];
 
 export function CoopEsusuScreen() {
+  const { t } = useLanguage();
   const nav = useNavigation<Nav>();
   const [tab, setTab] = useState<'overview' | 'groups' | 'members' | 'rounds'>('overview');
   const [showPayModal, setShowPayModal] = useState(false);
@@ -107,8 +109,8 @@ export function CoopEsusuScreen() {
       <StatusBar barStyle="light-content" backgroundColor={colors.primaryDeep} translucent={false} />
       <TopHeader
         showBack
-        title="Co-op Esusu"
-        subtitle="My Savings Groups"
+        title={t('coop.title')}
+        subtitle={t('coop.subtitle')}
         rightSlot={
           <TouchableOpacity style={styles.headerBtn} onPress={() => nav.navigate('CoopCreate')}>
             <Icon name="plus" size={20} color={colors.white} />
@@ -125,33 +127,33 @@ export function CoopEsusuScreen() {
       >
         <View style={styles.stripStat}>
           <Text style={styles.stripValue}>{COOP_GROUPS.length}</Text>
-          <Text style={styles.stripLabel}>My Groups</Text>
+          <Text style={styles.stripLabel}>{t('coop.myGroups')}</Text>
         </View>
         <View style={styles.stripSep} />
         <View style={styles.stripStat}>
           <Text style={styles.stripValue}>
             {COOP_GROUPS.reduce((s, g) => s + g.members.length, 0)}
           </Text>
-          <Text style={styles.stripLabel}>Total Members</Text>
+          <Text style={styles.stripLabel}>{t('coop.totalMembers')}</Text>
         </View>
         <View style={styles.stripSep} />
         <View style={styles.stripStat}>
           <Text style={styles.stripValue}>₦30,000</Text>
-          <Text style={styles.stripLabel}>Monthly Total</Text>
+          <Text style={styles.stripLabel}>{t('coop.monthlyTotal')}</Text>
         </View>
       </LinearGradient>
 
       {/* Tabs */}
       <View style={styles.tabs}>
-        {(['overview', 'groups', 'members', 'rounds'] as const).map(t => (
+        {(['overview', 'groups', 'members', 'rounds'] as const).map(tabKey => (
           <TouchableOpacity
-            key={t}
-            style={[styles.tabBtn, tab === t && styles.tabBtnActive]}
-            onPress={() => setTab(t)}
+            key={tabKey}
+            style={[styles.tabBtn, tab === tabKey && styles.tabBtnActive]}
+            onPress={() => setTab(tabKey)}
             activeOpacity={0.75}
           >
-            <Text style={[styles.tabText, tab === t && styles.tabTextActive]}>
-              {t === 'groups' ? 'My Groups' : t.charAt(0).toUpperCase() + t.slice(1)}
+            <Text style={[styles.tabText, tab === tabKey && styles.tabTextActive]}>
+              {t(tabKey === 'groups' ? 'coop.groups' : `coop.${tabKey}`)}
             </Text>
           </TouchableOpacity>
         ))}
@@ -167,21 +169,21 @@ export function CoopEsusuScreen() {
           <>
             {/* My contribution summary card */}
             <View style={[styles.card, shadows.card]}>
-              <Text style={styles.cardTitle}>My Contribution Status</Text>
+              <Text style={styles.cardTitle}>{t('coop.myContribution')}</Text>
               <View style={styles.contribRow}>
                 <View style={styles.contribStat}>
                   <Text style={styles.contribAmount}>₦60,000</Text>
-                  <Text style={styles.contribLabel}>Total Paid Across All Groups</Text>
+                  <Text style={styles.contribLabel}>{t('coop.totalPaid')}</Text>
                 </View>
                 <View style={styles.contribBadge}>
                   <Icon name="checkmark-circle" size={16} color={colors.successGreen} />
-                  <Text style={styles.contribBadgeText}>Up to date</Text>
+                  <Text style={styles.contribBadgeText}>{t('coop.upToDate')}</Text>
                 </View>
               </View>
               <View style={styles.progressBar}>
                 <View style={[styles.progressFill, { width: '60%' }]} />
               </View>
-              <Text style={styles.progressNote}>Next payout in 3 rounds · Estimated Oct 2026</Text>
+              <Text style={styles.progressNote}>{t('coop.nextPayout', { rounds: '3', date: 'Oct 2026' })}</Text>
             </View>
 
             {/* Pay now CTA */}
@@ -197,12 +199,12 @@ export function CoopEsusuScreen() {
                 style={styles.payGrad}
               >
                 <Icon name="send" size={18} color={colors.white} />
-                <Text style={styles.payText}>Pay Contribution Now</Text>
+                <Text style={styles.payText}>{t('coop.payContribution')}</Text>
               </LinearGradient>
             </TouchableOpacity>
 
             {/* Groups listed with quick member count */}
-            <Text style={styles.sectionHeaderTitle}>My Active Contributions</Text>
+            <Text style={styles.sectionHeaderTitle}>{t('coop.myActive')}</Text>
             <View style={styles.groupsList}>
               {COOP_GROUPS.map(grp => (
                 <TouchableOpacity
@@ -220,7 +222,7 @@ export function CoopEsusuScreen() {
                       {grp.accountNumber} ({grp.bankName})
                     </Text>
                     <Text style={styles.groupCardMeta}>
-                      {grp.members.length} members · {grp.cycle}
+                      {grp.members.length} {t('coop.membersWord')} · {grp.cycle}
                     </Text>
                   </View>
                   <View style={{ alignItems: 'flex-end' }}>
@@ -238,7 +240,7 @@ export function CoopEsusuScreen() {
         {/* ── Groups Tab ── */}
         {tab === 'groups' && (
           <View style={{ gap: spacing.md }}>
-            <Text style={styles.sectionHeaderTitle}>All Enrolled Co-op Groups</Text>
+            <Text style={styles.sectionHeaderTitle}>{t('coop.groupsEnrolled')}</Text>
             {COOP_GROUPS.map(grp => (
               <View key={grp.id} style={[styles.groupDetailCard, shadows.card]}>
                 <View style={styles.groupDetailHeader}>
@@ -255,7 +257,7 @@ export function CoopEsusuScreen() {
                 <View style={styles.bankAccountBox}>
                   <Icon name="bank" size={16} color={colors.primaryDeep} />
                   <Text style={styles.bankAccountText}>
-                    Collection: <Text style={{ fontWeight: '800' }}>{grp.accountNumber}</Text> ({grp.bankName})
+                    {t('coop.collection', { account: grp.accountNumber, bank: grp.bankName })}
                   </Text>
                 </View>
 
@@ -264,7 +266,7 @@ export function CoopEsusuScreen() {
                   onPress={() => handleSelectContributionToPay(grp)}
                   activeOpacity={0.8}
                 >
-                  <Text style={styles.payGroupBtnText}>Pay ₦{grp.amount} Contribution</Text>
+                  <Text style={styles.payGroupBtnText}>{t('coop.payContributionBtn', { amount: grp.amount })}</Text>
                   <Icon name="arrow-forward" size={14} color={colors.white} />
                 </TouchableOpacity>
               </View>
@@ -275,7 +277,7 @@ export function CoopEsusuScreen() {
         {/* ── Members Tab ── Groups first, then members of each group ── */}
         {tab === 'members' && (
           <View style={{ gap: spacing.md }}>
-            <Text style={styles.sectionHeaderTitle}>Members by Contribution Group</Text>
+            <Text style={styles.sectionHeaderTitle}>{t('coop.membersByGroup')}</Text>
             {COOP_GROUPS.map(grp => {
               const isExpanded = expandedGroupId === grp.id;
               const paidCount = grp.members.filter(m => m.paid).length;
@@ -297,13 +299,13 @@ export function CoopEsusuScreen() {
                           {grp.title}
                         </Text>
                         <Text style={styles.groupMemberMeta}>
-                          {grp.members.length} members · ₦{grp.amount}/month
+                          {t('coop.membersCount', { count: String(grp.members.length), amount: grp.amount })}
                         </Text>
                       </View>
                     </View>
                     <View style={styles.groupMemberHeaderRight}>
                       <View style={styles.paidBadge}>
-                        <Text style={styles.paidBadgeText}>{paidCount}/{grp.members.length} Paid</Text>
+                        <Text style={styles.paidBadgeText}>{t('coop.paidCount', { paid: String(paidCount), total: String(grp.members.length) })}</Text>
                       </View>
                       <Icon
                         name={isExpanded ? 'chevron-up' : 'chevron-down'}
@@ -335,7 +337,7 @@ export function CoopEsusuScreen() {
                               )}
                             </View>
                             <Text style={styles.memberSub}>
-                              {m.paid ? 'July Contribution Paid' : 'Pending July Payment'}
+                              {m.paid ? t('coop.julyPaid') : t('coop.julyPending')}
                             </Text>
                           </View>
 
@@ -345,7 +347,7 @@ export function CoopEsusuScreen() {
                             </Text>
                             <View style={[styles.statusPill, { backgroundColor: m.paid ? '#E8FFF2' : '#FFF3E8' }]}>
                               <Text style={[styles.statusPillText, { color: m.paid ? colors.successGreen : colors.warningOrange }]}>
-                                {m.paid ? 'PAID' : 'PENDING'}
+                                {m.paid ? t('common.paid') : t('common.pending')}
                               </Text>
                             </View>
                           </View>
@@ -362,7 +364,7 @@ export function CoopEsusuScreen() {
         {/* ── Rounds Tab ── */}
         {tab === 'rounds' && (
           <View style={[styles.card, shadows.card]}>
-            <Text style={styles.cardTitle}>Rotation & Payout History</Text>
+            <Text style={styles.cardTitle}>{t('coop.rotation')}</Text>
             {ROUNDS.map((r, i) => (
               <View key={r.round} style={[styles.roundRow, i < ROUNDS.length - 1 && styles.borderBottom]}>
                 <View style={styles.roundLeft}>
@@ -373,7 +375,7 @@ export function CoopEsusuScreen() {
                   />
                   <View>
                     <Text style={styles.roundMonth}>{r.round}</Text>
-                    <Text style={styles.roundRecipient}>Recipient: {r.recipient}</Text>
+                    <Text style={styles.roundRecipient}>{t('coop.recipient', { name: r.recipient })}</Text>
                   </View>
                 </View>
                 <Text style={styles.roundTotal}>{r.total}</Text>
@@ -390,13 +392,13 @@ export function CoopEsusuScreen() {
         <View style={styles.modalOverlay}>
           <View style={[styles.modalCard, shadows.cardLg]}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Select Contribution to Pay</Text>
+              <Text style={styles.modalTitle}>{t('coop.selectContribution')}</Text>
               <TouchableOpacity onPress={() => setShowPayModal(false)}>
                 <Icon name="close" size={22} color={colors.textDark} />
               </TouchableOpacity>
             </View>
             <Text style={styles.modalSub}>
-              Select which Co-op Esusu contribution you are paying. Account details will be automatically pre-filled!
+            {t('coop.selectContributionSub')}
             </Text>
 
             <View style={{ gap: spacing.md, width: '100%', marginVertical: spacing.md }}>
@@ -418,7 +420,7 @@ export function CoopEsusuScreen() {
                   </View>
                   <View style={{ alignItems: 'flex-end' }}>
                     <Text style={styles.grpTileAmount}>₦{grp.amount}</Text>
-                    <Text style={{ fontSize: 10, color: colors.primaryMid, fontWeight: '700' }}>Tap to Pay</Text>
+                    <Text style={{ fontSize: 10, color: colors.primaryMid, fontWeight: '700' }}>{t('coop.tapToPay')}</Text>
                   </View>
                 </TouchableOpacity>
               ))}

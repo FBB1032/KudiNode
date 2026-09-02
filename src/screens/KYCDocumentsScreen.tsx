@@ -5,6 +5,7 @@ import {
 import { colors, spacing, radius, typography, shadows } from '../theme/theme';
 import { TopHeader } from '../components/TopHeader';
 import { Icon } from '../components/Icon';
+import { useLanguage } from '../context/LanguageContext';
 import { LinearGradient } from 'expo-linear-gradient';
 
 const DOCUMENTS = [
@@ -15,10 +16,11 @@ const DOCUMENTS = [
 ];
 
 export function KYCDocumentsScreen() {
+  const { t } = useLanguage();
   return (
     <View style={styles.root}>
       <StatusBar barStyle="light-content" backgroundColor={colors.primaryDeep} translucent={false} />
-      <TopHeader showBack title="KYC & Verification" subtitle="KudiNode regulatory compliance" />
+      <TopHeader showBack title={t('kyc.title')} subtitle={t('kyc.subtitle')} />
 
       <ScrollView
         style={styles.scroll}
@@ -33,27 +35,27 @@ export function KYCDocumentsScreen() {
         >
           <View style={styles.statusBadge}>
             <Icon name="shield-checkmark" size={14} color={colors.successGreen} />
-            <Text style={styles.statusBadgeText}>Tier-1 Active</Text>
+            <Text style={styles.statusBadgeText}>{t('kyc.tier1Active')}</Text>
           </View>
-          <Text style={styles.statusTitle}>Verified Merchant Account</Text>
+          <Text style={styles.statusTitle}>{t('kyc.verifiedMerchant')}</Text>
           <Text style={styles.statusSub}>
-            Your identity has been authenticated against Central Bank of Nigeria (CBN) databases via KudiNode sandbox.
+            {t('kyc.verifiedSub')}
           </Text>
           <View style={styles.limitRow}>
             <View style={styles.limitCol}>
-              <Text style={styles.limitLbl}>Single Transfer Limit</Text>
+              <Text style={styles.limitLbl}>{t('kyc.singleTransferLimit')}</Text>
               <Text style={styles.limitVal}>₦50,000</Text>
             </View>
             <View style={styles.limitSep} />
             <View style={styles.limitCol}>
-              <Text style={styles.limitLbl}>Maximum Balance</Text>
+              <Text style={styles.limitLbl}>{t('kyc.maximumBalance')}</Text>
               <Text style={styles.limitVal}>₦300,000</Text>
             </View>
           </View>
         </LinearGradient>
 
         {/* Uploaded Documents */}
-        <Text style={styles.sectionTitle}>Verification Documents</Text>
+        <Text style={styles.sectionTitle}>{t('kyc.verificationDocuments')}</Text>
         <View style={[styles.card, shadows.card]}>
           {DOCUMENTS.map((doc, i) => {
             const isVerified = doc.status === 'Verified';
@@ -80,11 +82,11 @@ export function KYCDocumentsScreen() {
         <View style={[styles.upgradeCard, shadows.card]}>
           <Icon name="trending-up" size={24} color={colors.primaryDeep} />
           <View style={styles.upgradeText}>
-            <Text style={styles.upgradeTitle}>Upgrade to Tier-2 Merchant</Text>
-            <Text style={styles.upgradeSub}>Upload a photo of your paper sales ledger to unlock up to ₦500,000 daily limits & credit expansion.</Text>
+            <Text style={styles.upgradeTitle}>{t('kyc.upgradeToTier2')}</Text>
+            <Text style={styles.upgradeSub}>{t('kyc.upgradeSub')}</Text>
           </View>
           <TouchableOpacity style={styles.uploadBtn} activeOpacity={0.85}>
-            <Text style={styles.uploadBtnText}>Upload Proof</Text>
+            <Text style={styles.uploadBtnText}>{t('kyc.uploadProof')}</Text>
           </TouchableOpacity>
         </View>
 

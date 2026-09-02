@@ -11,6 +11,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { colors, spacing, radius, typography, shadows } from '../theme/theme';
 import { TopHeader } from '../components/TopHeader';
 import { Icon } from '../components/Icon';
+import { useLanguage } from '../context/LanguageContext';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../AppNavigator';
@@ -38,6 +39,7 @@ const NIGERIAN_BANKS = [
 ];
 
 export function CoopCreateScreen() {
+  const { t } = useLanguage();
   const nav = useNavigation<Nav>();
   const [groupName, setGroupName]         = useState('');
   const [desc, setDesc]                   = useState('');
@@ -63,12 +65,12 @@ export function CoopCreateScreen() {
 
   const handleCreate = () => {
     if (!groupName) {
-      Alert.alert('Missing Field', 'Please enter a group name.');
+      Alert.alert(t('coopCreate.missingField'), t('coopCreate.missingFieldMsg'));
       return;
     }
     Alert.alert(
-      'Co-op Group Created',
-      `"${groupName}" has been successfully initialized.\nCollection Account: ${collectionAccNum} (${collectionBank})\nAccount Name: ${collectionName}`,
+      t('coopCreate.created'),
+      t('coopCreate.createdMsg', { name: groupName, acc: collectionAccNum, bank: collectionBank, accName: collectionName }),
       [{ text: 'OK', onPress: () => nav.goBack() }]
     );
   };
@@ -76,7 +78,7 @@ export function CoopCreateScreen() {
   return (
     <View style={styles.root}>
       <StatusBar barStyle="light-content" backgroundColor={colors.primaryDeep} translucent={false} />
-      <TopHeader showBack title="Create Co-op Group" subtitle="Set up a new Esusu savings circle" />
+      <TopHeader showBack title={t('coopCreate.title')} subtitle={t('coopCreate.subtitle')} />
 
       <ScrollView
         style={styles.scroll}
@@ -88,20 +90,20 @@ export function CoopCreateScreen() {
         <View style={styles.infoCard}>
           <Icon name="people" size={24} color={colors.primaryMid} />
           <Text style={styles.infoText}>
-            An Esusu group pools members' contributions and rotates the full payout to one member each cycle.
+            {t('coopCreate.info')}
           </Text>
         </View>
 
         {/* Group Details */}
-        <Text style={styles.sectionTitle}>Group Details</Text>
+        <Text style={styles.sectionTitle}>{t('coopCreate.groupDetails')}</Text>
         <View style={[styles.card, shadows.card]}>
           <View style={styles.field}>
-            <Text style={styles.fieldLabel}>Group Name *</Text>
+            <Text style={styles.fieldLabel}>{t('coopCreate.groupName')}</Text>
             <View style={styles.inputRow}>
               <Icon name="people" size={18} color={colors.textMuted} />
               <TextInput
                 style={styles.input}
-                placeholder="e.g. Mushin Market Node B"
+                placeholder={t('coopCreate.groupNamePlaceholder')}
                 placeholderTextColor={colors.textMuted}
                 value={groupName}
                 onChangeText={setGroupName}
@@ -110,10 +112,10 @@ export function CoopCreateScreen() {
           </View>
 
           <View style={[styles.field, styles.fieldBorder]}>
-            <Text style={styles.fieldLabel}>Description (Optional)</Text>
+            <Text style={styles.fieldLabel}>{t('coopCreate.description')}</Text>
             <TextInput
               style={[styles.input, styles.inputMulti]}
-              placeholder="Purpose or rules of the group..."
+              placeholder={t('coopCreate.descPlaceholder')}
               placeholderTextColor={colors.textMuted}
               value={desc}
               onChangeText={setDesc}
@@ -125,11 +127,11 @@ export function CoopCreateScreen() {
         </View>
 
         {/* Contribution Settings */}
-        <Text style={styles.sectionTitle}>Contribution Settings</Text>
+        <Text style={styles.sectionTitle}>{t('coopCreate.contributionSettings')}</Text>
         <View style={[styles.card, shadows.card]}>
           {/* Contribution amount */}
           <View style={styles.field}>
-            <Text style={styles.fieldLabel}>Contribution Amount *</Text>
+            <Text style={styles.fieldLabel}>{t('coopCreate.contributionAmount')}</Text>
             <View style={styles.inputRow}>
               <Text style={styles.nairaSign}>₦</Text>
               <TextInput
@@ -145,7 +147,7 @@ export function CoopCreateScreen() {
 
           {/* Frequency */}
           <View style={[styles.field, styles.fieldBorder]}>
-            <Text style={styles.fieldLabel}>Payment Frequency</Text>
+            <Text style={styles.fieldLabel}>{t('coopCreate.frequency')}</Text>
             <View style={styles.freqRow}>
               {(['Weekly', 'Bi-weekly', 'Monthly'] as FreqOption[]).map(f => (
                 <TouchableOpacity
@@ -154,7 +156,7 @@ export function CoopCreateScreen() {
                   onPress={() => setFreq(f)}
                   activeOpacity={0.75}
                 >
-                  <Text style={[styles.freqText, freq === f && styles.freqTextActive]}>{f}</Text>
+                  <Text style={[styles.freqText, freq === f && styles.freqTextActive]}>{t('coopCreate.' + f.toLowerCase())}</Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -162,7 +164,7 @@ export function CoopCreateScreen() {
 
           {/* Max members */}
           <View style={[styles.field, styles.fieldBorder]}>
-            <Text style={styles.fieldLabel}>Max Members</Text>
+            <Text style={styles.fieldLabel}>{t('coopCreate.maxMembers')}</Text>
             <View style={styles.inputRow}>
               <Icon name="person" size={18} color={colors.textMuted} />
               <TextInput
@@ -178,11 +180,11 @@ export function CoopCreateScreen() {
         </View>
 
         {/* Group Collection Account Details */}
-        <Text style={styles.sectionTitle}>Group Collection Bank Account</Text>
+        <Text style={styles.sectionTitle}>{t('coopCreate.bankAccount')}</Text>
         <View style={[styles.card, shadows.card]}>
           {/* Collection Account Number */}
           <View style={styles.field}>
-            <Text style={styles.fieldLabel}>Collection Account Number *</Text>
+            <Text style={styles.fieldLabel}>{t('coopCreate.collectionAccNum')}</Text>
             <View style={styles.inputRow}>
               <Icon name="card" size={18} color={colors.primaryDeep} />
               <TextInput
@@ -199,7 +201,7 @@ export function CoopCreateScreen() {
 
           {/* Collection Bank Name Dropdown Picker Trigger */}
           <View style={[styles.field, styles.fieldBorder]}>
-            <Text style={styles.fieldLabel}>Collection Bank Name *</Text>
+            <Text style={styles.fieldLabel}>{t('coopCreate.collectionBank')}</Text>
             <TouchableOpacity
               style={styles.bankPickerTrigger}
               onPress={() => setShowBankModal(true)}
@@ -215,7 +217,7 @@ export function CoopCreateScreen() {
 
           {/* Collection Account Name */}
           <View style={[styles.field, styles.fieldBorder]}>
-            <Text style={styles.fieldLabel}>Collection Account Name *</Text>
+            <Text style={styles.fieldLabel}>{t('coopCreate.collectionAccName')}</Text>
             <View style={styles.inputRow}>
               <Icon name="person" size={18} color={colors.primaryDeep} />
               <TextInput
@@ -230,10 +232,10 @@ export function CoopCreateScreen() {
         </View>
 
         {/* Invite Members */}
-        <Text style={styles.sectionTitle}>Invite Members</Text>
+        <Text style={styles.sectionTitle}>{t('coopCreate.inviteMembers')}</Text>
         <View style={[styles.card, shadows.card]}>
           <View style={styles.field}>
-            <Text style={styles.fieldLabel}>Invite via</Text>
+            <Text style={styles.fieldLabel}>{t('coopCreate.inviteVia')}</Text>
             <View style={styles.methodRow}>
               <TouchableOpacity
                 style={[styles.methodBtn, inviteMethod === 'phone' && styles.methodBtnActive]}
@@ -241,7 +243,7 @@ export function CoopCreateScreen() {
                 activeOpacity={0.8}
               >
                 <Icon name="phone" size={16} color={inviteMethod === 'phone' ? colors.white : colors.textMuted} />
-                <Text style={[styles.methodText, inviteMethod === 'phone' && styles.methodTextActive]}>Phone Number</Text>
+                <Text style={[styles.methodText, inviteMethod === 'phone' && styles.methodTextActive]}>{t('coopCreate.phoneNumber')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.methodBtn, inviteMethod === 'qr' && styles.methodBtnActive]}
@@ -249,14 +251,14 @@ export function CoopCreateScreen() {
                 activeOpacity={0.8}
               >
                 <Icon name="qr-code" size={16} color={inviteMethod === 'qr' ? colors.white : colors.textMuted} />
-                <Text style={[styles.methodText, inviteMethod === 'qr' && styles.methodTextActive]}>QR Code</Text>
+                <Text style={[styles.methodText, inviteMethod === 'qr' && styles.methodTextActive]}>{t('coopCreate.qrCode')}</Text>
               </TouchableOpacity>
             </View>
           </View>
 
           {inviteMethod === 'phone' ? (
             <View style={[styles.field, styles.fieldBorder]}>
-              <Text style={styles.fieldLabel}>Phone Numbers (comma-separated)</Text>
+              <Text style={styles.fieldLabel}>{t('coopCreate.phoneNumbers')}</Text>
               <View style={styles.inputRow}>
                 <Icon name="phone" size={18} color={colors.textMuted} />
                 <TextInput
@@ -272,7 +274,7 @@ export function CoopCreateScreen() {
           ) : (
             <View style={[styles.qrBox, styles.fieldBorder]}>
               <Icon name="qr-code" size={64} color={colors.primaryDeep} />
-              <Text style={styles.qrText}>Scan this QR code to join group</Text>
+              <Text style={styles.qrText}>{t('coopCreate.scanQr')}</Text>
             </View>
           )}
         </View>
@@ -290,7 +292,7 @@ export function CoopCreateScreen() {
             style={styles.submitGrad}
           >
             <Icon name="checkmark" size={20} color={colors.white} />
-            <Text style={styles.submitText}>Create Group & Share Invite</Text>
+            <Text style={styles.submitText}>{t('coopCreate.createButton')}</Text>
           </LinearGradient>
         </TouchableOpacity>
 
@@ -302,7 +304,7 @@ export function CoopCreateScreen() {
         <View style={styles.bankModalOverlay}>
           <View style={styles.bankModalCard}>
             <View style={styles.bankModalHeader}>
-              <Text style={styles.bankModalTitle}>Select Collection Bank</Text>
+              <Text style={styles.bankModalTitle}>{t('coopCreate.selectBank')}</Text>
               <TouchableOpacity onPress={() => setShowBankModal(false)} activeOpacity={0.8}>
                 <Icon name="close" size={22} color={colors.textDark} />
               </TouchableOpacity>
@@ -312,7 +314,7 @@ export function CoopCreateScreen() {
               <Icon name="search" size={16} color={colors.textMuted} />
               <TextInput
                 style={styles.searchInput}
-                placeholder="Search bank name..."
+                placeholder={t('coopCreate.searchBank')}
                 placeholderTextColor={colors.textMuted}
                 value={bankSearchQuery}
                 onChangeText={setBankSearchQuery}

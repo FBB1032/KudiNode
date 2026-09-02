@@ -1,229 +1,90 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
+import { Platform } from 'react-native';
+import * as SecureStore from 'expo-secure-store';
+import { EN } from './i18n/en';
+import { Pidgin } from './i18n/pidgin';
+import { Hausa } from './i18n/hausa';
+import { Yoruba } from './i18n/yoruba';
+import { Igbo } from './i18n/igbo';
 
 export type Language = 'EN' | 'Pidgin' | 'Hausa' | 'Yoruba' | 'Igbo';
+export type VoiceLanguage = 'en' | 'ha' | 'yo' | 'ig' | 'pid';
+
+export const LANGUAGE_TO_VOICE: Record<Language, VoiceLanguage> = {
+  EN: 'en',
+  Pidgin: 'pid',
+  Hausa: 'ha',
+  Yoruba: 'yo',
+  Igbo: 'ig',
+};
+
+const STORAGE_KEY = 'kn_app_language';
+
+const isWeb = Platform.OS === 'web';
+const memory: Record<string, string | null> = {};
+
+async function setItem(key: string, value: string | null) {
+  if (isWeb) { memory[key] = value; return; }
+  if (value == null) await SecureStore.deleteItemAsync(key);
+  else await SecureStore.setItemAsync(key, value);
+}
+
+async function getItem(key: string): Promise<string | null> {
+  if (isWeb) return memory[key] ?? null;
+  return SecureStore.getItemAsync(key);
+}
 
 interface LanguageContextType {
   language: Language;
   setLanguage: (lang: Language) => void;
-  t: (key: string) => string;
+  t: (key: string, params?: Record<string, string>) => string;
 }
 
 const translations: Record<Language, Record<string, string>> = {
-  EN: {
-    goodMorning: 'Good morning',
-    cloudSynced: '☁ Cloud Synced',
-    todayProfit: "Today's Profit",
-    cashInHand: 'Cash in Hand',
-    fromYesterday: 'from yesterday',
-    walletBalance: 'Wema Settlement Balance',
-    availableCredit: 'Available Wema Credit Line',
-    withdrawNow: 'Withdraw Now',
-    quickActions: 'Quick Actions',
-    seeAll: 'See All',
-    logVoice: 'Log Voice',
-    scanReceipt: 'Scan Receipt',
-    coopLedger: 'Co-op Ledger',
-    sendMoney: 'Send Money',
-    salesReceipt: 'Sales Receipt',
-    aiParsed: 'AI Parsed',
-    item: 'Item',
-    qty: 'Qty',
-    price: 'Price',
-    amount: 'Amount',
-    total: 'Total',
-    confirmSave: 'Confirm & Save',
-    editSpeakAgain: 'Edit / Speak Again',
-    trustScoreTitle: 'Your Trust & Trade Velocity Score Breakdown',
-    voiceIntentCaptured: 'Voice Intent Captured',
-    transferTo: 'Transfer',
-    transferDetails: 'Transfer Details',
-    recipient: 'Recipient',
-    account: 'Account',
-    verifyPin: 'Please verify with your 4-digit PIN',
-    authorizeTransfer: 'Authorize Transfer',
-    languagePref: 'Language Preference',
-    english: 'English',
-    pidgin: 'Pidgin',
-    hausa: 'Hausa',
-    yoruba: 'Yoruba',
-    igbo: 'Igbo',
-    offlineAlert: 'Network connection slow. Tap to transfer via USSD (*945#)',
-    ussdTriggered: 'Opening Wema Bank USSD Dialer (*945*Amount*Acc%23)...',
-  },
-  Pidgin: {
-    goodMorning: 'Good morning',
-    cloudSynced: '☁ Cloud Don Sync',
-    todayProfit: 'Today Profit',
-    cashInHand: 'Cash Wey Dey Hand',
-    fromYesterday: 'pass yesterday',
-    walletBalance: 'Wema Settlement Balance',
-    availableCredit: 'Wema Credit Line Wey Dey Available',
-    withdrawNow: 'Collect Am Now',
-    quickActions: 'Quick Actions',
-    seeAll: 'See All',
-    logVoice: 'Record Voice',
-    scanReceipt: 'Scan Receipt',
-    coopLedger: 'Co-op Book',
-    sendMoney: 'Send Money',
-    salesReceipt: 'Sales Receipt',
-    aiParsed: 'AI Don Read Am',
-    item: 'Item',
-    qty: 'Qty',
-    price: 'Price',
-    amount: 'Amount',
-    total: 'Total',
-    confirmSave: 'Confirm & Save',
-    editSpeakAgain: 'Edit / Talk Again',
-    trustScoreTitle: 'Your Trust & Trade Velocity Score Breakdown',
-    voiceIntentCaptured: 'Voice Intent Don Capture',
-    transferTo: 'Transfer',
-    transferDetails: 'Transfer Details',
-    recipient: 'Who You Dey Send',
-    account: 'Account',
-    verifyPin: 'Enter your 4-digit PIN',
-    authorizeTransfer: 'Authorize Transfer',
-    languagePref: 'Language Wey You Like',
-    english: 'English',
-    pidgin: 'Pidgin',
-    hausa: 'Hausa',
-    yoruba: 'Yoruba',
-    igbo: 'Igbo',
-    offlineAlert: 'Network dey slow. Tap make you transfer with USSD (*945#)',
-    ussdTriggered: 'Dey open Wema Bank USSD Dialer (*945*Amount*Acc%23)...',
-  },
-  Hausa: {
-    goodMorning: 'Ina kwana',
-    cloudSynced: '☁ An Sync Da Cloud',
-    todayProfit: 'Ribar Yau',
-    cashInHand: 'Kudi A Hannu',
-    fromYesterday: 'tsakanin jiya',
-    walletBalance: 'Asusu Wema Bank',
-    availableCredit: 'Bashin Wema Bank Amsoshi',
-    withdrawNow: 'Cire Yanzu',
-    quickActions: 'Ayyuka Masu Sauri',
-    seeAll: 'Duba Duka',
-    logVoice: 'Yi Magana',
-    scanReceipt: 'Duba Risiti',
-    coopLedger: 'Littafin Adashi',
-    sendMoney: 'Tura Kudi',
-    salesReceipt: 'Risitin Ciniki',
-    aiParsed: 'AI Ya Fara Karanta',
-    item: 'Kayan',
-    qty: 'Yawa',
-    price: 'Farashi',
-    amount: 'Jimla',
-    total: 'Duka',
-    confirmSave: 'Tabbatar Da Ajiye',
-    editSpeakAgain: 'Sake Magana',
-    trustScoreTitle: 'Makin Dogaro Da Ingancin Kasuwanci',
-    voiceIntentCaptured: 'An Karbi Magana',
-    transferTo: 'Aika Kudi',
-    transferDetails: 'Bayanin Turawa',
-    recipient: 'Wanda Aka Aikawa',
-    account: 'Asusu',
-    verifyPin: 'Shigar Da Lamba 4',
-    authorizeTransfer: 'Tabbatar Turawa',
-    languagePref: 'Yaren Da Kake So',
-    english: 'Turanci',
-    pidgin: 'Pidgin',
-    hausa: 'Hausa',
-    yoruba: 'Yoruba',
-    igbo: 'Igbo',
-    offlineAlert: 'Hanyar sadarwa tana da hankali. Matsa don turawa ta USSD (*945#)',
-    ussdTriggered: 'Budewa Wema Bank USSD Dialer (*945*Amount*Acc%23)...',
-  },
-  Yoruba: {
-    goodMorning: 'E kaaro',
-    cloudSynced: '☁ Ti Sync Si Cloud',
-    todayProfit: 'Ere Ti Loni',
-    cashInHand: 'Owo Loni Lowo',
-    fromYesterday: 'ju ti ana lo',
-    walletBalance: 'Akaunti Wema Bank',
-    availableCredit: 'Owo Inlajiy Wema Bank',
-    withdrawNow: 'Yayo Nisisiyi',
-    quickActions: 'Ise Kiakia',
-    seeAll: 'Wo Gbogbo Re',
-    logVoice: 'Soro Si AI',
-    scanReceipt: 'Scan Risiti',
-    coopLedger: 'Iwe Esusu',
-    sendMoney: 'Ranshe Owo',
-    salesReceipt: 'Risiti Oja',
-    aiParsed: 'AI Ti Soro Re',
-    item: 'Oja',
-    qty: 'Iye',
-    price: 'Iye Owo',
-    amount: 'Owo',
-    total: 'Apapojupo',
-    confirmSave: 'Fohunsisi & Ti Fi Pamora',
-    editSpeakAgain: 'Tun Soro Si A',
-    trustScoreTitle: 'Ami Agbara Ati Igbe Kudi Re',
-    voiceIntentCaptured: 'A Ti Gbo Ohun Re',
-    transferTo: 'Gbese Owo',
-    transferDetails: 'Ekun Rere Owo',
-    recipient: 'Eni Ti O N Ranshe Si',
-    account: 'Akaunti',
-    verifyPin: 'Tebomi Lamba PIN 4',
-    authorizeTransfer: 'Fohunsisi Transfer',
-    languagePref: 'Ede Ti O Fe',
-    english: 'Gesi',
-    pidgin: 'Pidgin',
-    hausa: 'Hausa',
-    yoruba: 'Yoruba',
-    igbo: 'Igbo',
-    offlineAlert: 'Network n fe slow. Tẹ lati fi owo ranṣẹ pẹlu USSD (*945#)',
-    ussdTriggered: 'N ṣii Wema Bank USSD Dialer (*945*Amount*Acc%23)...',
-  },
-  Igbo: {
-    goodMorning: 'Ututu oma',
-    cloudSynced: '☁ E meela Sync Cloud',
-    todayProfit: 'Uru Nke Taa',
-    cashInHand: 'Ego Dị N’Aka',
-    fromYesterday: 'karia nke unahụ',
-    walletBalance: 'Akaụntụ Wema Bank',
-    availableCredit: 'Ego Mbazinye Wema Bank',
-    withdrawNow: 'Fụpụ Ego Yaa',
-    quickActions: 'Ihe Omume Ngwa Ngwa',
-    seeAll: 'Zụọ Ha Niile',
-    logVoice: 'Kwuo Okwu',
-    scanReceipt: 'Nyochaa Risiti',
-    coopLedger: 'Akwụkwọ Isusu',
-    sendMoney: 'Ziga Ego',
-    salesReceipt: 'Risiti Ahịa',
-    aiParsed: 'AI Agụọla Ya',
-    item: 'Ihe Ahịa',
-    qty: 'Onụọgụgụ',
-    price: 'Ọnụahịa',
-    amount: 'Ego',
-    total: 'Mkpokọta',
-    confirmSave: 'Kwenye Pikọta',
-    editSpeakAgain: 'Kwugharịa Okwu',
-    trustScoreTitle: 'Mkpụrụ Nkwenye Atụkwasị Obi Na Ahịa',
-    voiceIntentCaptured: 'Enwetala Ohere Okwu',
-    transferTo: 'Ziga Ego',
-    transferDetails: 'Nkọwa Nziga Ego',
-    recipient: 'Onye Na-anata Ego',
-    account: 'Akaụntụ',
-    verifyPin: 'Tinye Lamba 4 PIN',
-    authorizeTransfer: 'Kwenye Nziga Ego',
-    languagePref: 'Asụsụ Ị Chọrọ',
-    english: 'Bekee',
-    pidgin: 'Pidgin',
-    hausa: 'Hausa',
-    yoruba: 'Yoruba',
-    igbo: 'Igbo',
-    offlineAlert: 'Netwọk na-egbu oge. Pịa ka zipụ ego site na USSD (*945#)',
-    ussdTriggered: 'Na-emeghe Wema Bank USSD Dialer (*945*Amount*Acc%23)...',
-  },
+  EN,
+  Pidgin,
+  Hausa,
+  Yoruba,
+  Igbo,
 };
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
-export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [language, setLanguage] = useState<Language>('EN');
+function interpolate(text: string, params?: Record<string, string>): string {
+  if (!params) return text;
+  return text.replace(/\{(\w+)\}/g, (_, key) => params[key] ?? `{${key}}`);
+}
 
-  const t = (key: string): string => {
-    return translations[language][key] || key;
-  };
+export function LanguageProvider({ children }: { children: ReactNode }) {
+  const [language, setLanguageState] = useState<Language>('EN');
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      const saved = await getItem(STORAGE_KEY);
+      if (saved === 'EN' || saved === 'Pidgin' || saved === 'Hausa' || saved === 'Yoruba' || saved === 'Igbo') {
+        setLanguageState(saved);
+      }
+      setReady(true);
+    })();
+  }, []);
+
+  const setLanguage = useCallback(async (lang: Language) => {
+    setLanguageState(lang);
+    await setItem(STORAGE_KEY, lang);
+  }, []);
+
+  const t = useCallback(
+    (key: string, params?: Record<string, string>): string => {
+      const dict = translations[language];
+      const fallback = translations.EN[key];
+      const resolved = dict[key] ?? fallback ?? key;
+      return interpolate(resolved, params);
+    },
+    [language],
+  );
+
+  if (!ready) return null;
 
   return (
     <LanguageContext.Provider value={{ language, setLanguage, t }}>

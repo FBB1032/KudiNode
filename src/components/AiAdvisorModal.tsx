@@ -38,10 +38,10 @@ const INITIAL_MESSAGES: Message[] = [
 ];
 
 const QUICK_PROMPTS = [
-  'How do I increase my Wema credit line?',
-  'Analyse my daily sales profit trend',
-  'When is my next Co-op Esusu payout?',
-  'How much should I reinvest in stock?',
+  { key: 'components.prompt1', query: 'How do I increase my Wema credit line?' },
+  { key: 'components.prompt2', query: 'Analyse my daily sales profit trend' },
+  { key: 'components.prompt3', query: 'When is my next Co-op Esusu payout?' },
+  { key: 'components.prompt4', query: 'How much should I reinvest in stock?' },
 ];
 
 export function AiAdvisorModal({ visible, onClose }: Props) {
@@ -168,9 +168,9 @@ export function AiAdvisorModal({ visible, onClose }: Props) {
       handleSend("How do I increase my Wema credit limit?");
     } else {
       Alert.alert(
-        "Voice Coming Soon",
-        "Real voice-to-chat dictation is wired through the backend AI — speak your query or type it directly below. Full in-app speech recognition will land in the next update!",
-        [{ text: "Got it" }],
+        t("components.voiceComingSoon"),
+        t("components.voiceComingSoonMsg"),
+        [{ text: t("components.gotIt") }],
       );
     }
   };
@@ -193,9 +193,9 @@ export function AiAdvisorModal({ visible, onClose }: Props) {
                 <View style={styles.onlineDot} />
               </View>
               <View>
-                <Text style={styles.botTitle}>KudiBot AI Advisor</Text>
+                <Text style={styles.botTitle}>{t('components.botTitle')}</Text>
                 <Text style={styles.botSub}>
-                  Financial & Market Trade Intelligence ({language})
+                  {t('components.botSub', { language })}
                 </Text>
               </View>
             </View>
@@ -211,12 +211,12 @@ export function AiAdvisorModal({ visible, onClose }: Props) {
                 <TouchableOpacity
                   key={idx}
                   style={styles.promptChip}
-                  onPress={() => handleSend(p)}
+                  onPress={() => handleSend(p.query)}
                   activeOpacity={0.75}
                   disabled={requestInFlight}
                 >
                   <Icon name="sparkles" size={12} color={colors.primaryMid} />
-                  <Text style={styles.promptText}>{p}</Text>
+                  <Text style={styles.promptText}>{t(p.key)}</Text>
                 </TouchableOpacity>
               ))}
             </ScrollView>
@@ -271,7 +271,7 @@ export function AiAdvisorModal({ visible, onClose }: Props) {
                 </View>
                 <View style={[styles.bubble, styles.bubbleBot, { paddingVertical: 10 }]}>
                   <Text style={{ fontSize: 12, color: colors.textMuted, fontStyle: 'italic' }}>
-                    KudiBot is analyzing...
+                    {t('components.kudibotAnalyzing')}
                   </Text>
                 </View>
               </View>
@@ -302,10 +302,10 @@ export function AiAdvisorModal({ visible, onClose }: Props) {
               onChangeText={setInputText}
               placeholder={
                 requestInFlight
-                  ? "KudiBot is typing..."
+                  ? t("components.kudibotTyping")
                   : isListening
-                  ? "Listening... Speak financial query"
-                  : "Ask KudiBot financial advice..."
+                  ? t("components.listening")
+                  : t("components.askKudibot")
               }
               placeholderTextColor={colors.textMuted}
               onSubmitEditing={() => handleSend()}
