@@ -7,7 +7,7 @@
 
 ## Team Members
 
-- **ABDULMUHAIMIN SIYAKA(TEAM LEAD)** 08144733943
+- **ABDULMUHAIMIN SIYAKA (TEAM LEAD)** 08144733943
 - **FAUSIAT SIYAKA** 07061101500
 - **FAHD Badamasi** 07049963476
 - **YAHAYA ABUBAKAR ADEBAYO** 08077048651
@@ -15,10 +15,11 @@
 ---
 
 ##  Live Demo
-- **Admin Dashboard:** https://kudinode-admin.vercel.app/
+- **Admin Dashboard:** https://kudinode-admin.vercel.app/ (Alternative: https://kudinode.vercel.app/)
 - **Backend API:** https://kudinode.onrender.com
-- **Recorded Demo:** MOBILE DEMO = https://www.loom.com/share/3f71d6329cd0439d93a882309708cf81
-                      Admin panel demo: https://www.loom.com/share/58414d7194d6490f9c4b98680d899192
+- **Recorded Demo:**
+  - **Mobile App Presentation Video:** https://www.loom.com/share/e5f4028b610749d28616dadc9db76521
+  - **Admin Panel Presentation Video:** https://www.loom.com/share/66d71a3e8c1449399bd0b1d13ceff61b
 
 ### 🔐 Admin Demo Accounts (Role-Based Access Control)
 
@@ -33,7 +34,6 @@ All accounts use the same password: `KudiNode@2026!`
 | **Compliance Officer** | Taiwo Balogun | `demo.compliance@kudinode.ng` | `KudiNode@2026!` | Dashboard, Merchants, Reports, Audit Log |
 
 > Each role sees only the modules permitted for their access level. The **Super Admin** has an additional **Audit Trail** tab in every module showing immutable logs of all system operations.
-
 ---
 
 ##  The Problem
