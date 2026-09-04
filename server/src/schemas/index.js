@@ -5,10 +5,15 @@ const phone = z
   .trim()
   .regex(/^(\+?234|0)?[0-9]{10}$/, "Invalid Nigerian phone number");
 
-const elevenDigits = z
+// Optional numeric identifier: either omitted/empty, or exactly 11 digits.
+const optionalElevenDigits = z
   .string()
   .trim()
-  .regex(/^\d{11}$/, "Must be exactly 11 digits");
+  .refine((v) => v === "" || /^\d{11}$/.test(v), {
+    message: "Must be exactly 11 digits",
+  })
+  .optional()
+  .transform((v) => (v ? v : undefined));
 
 const pin = z
   .string()
@@ -46,10 +51,10 @@ export const adminLoginSchema = z.object({
 /** PUT /profile — merchant fills / updates KYC profile data */
 export const profileSchema = z.object({
   full_name: z.string().trim().min(2).max(120).optional(),
-  phone: phone.optional(),
+  phone,
   preferred_language: z.string().trim().optional(),
-  bvn: elevenDigits.optional(),
-  nin: elevenDigits.optional(),
+  bvn: optionalElevenDigits,
+  nin: optionalElevenDigits,
   trade_name: z.string().trim().max(160).optional(),
   market_cluster: z.string().trim().max(160).optional(),
   commodity_type: z.string().trim().max(160).optional(),
@@ -57,8 +62,11 @@ export const profileSchema = z.object({
   wema_account_number: z
     .string()
     .trim()
-    .regex(/^\d{10}$/, "Account number must be 10 digits")
-    .optional(),
+    .refine((v) => v === "" || /^\d{10}$/.test(v), {
+      message: "Account number must be 10 digits",
+    })
+    .optional()
+    .transform((v) => (v ? v : undefined)),
   wema_account_name: z.string().trim().max(160).optional(),
   region: z.string().trim().max(80).optional(),
 });

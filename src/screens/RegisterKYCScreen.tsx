@@ -151,12 +151,14 @@ export function RegisterKYCScreen() {
           setAccountCreated(true);
         }
 
-        // Persist personal identity data to the profile.
+        // Persist personal identity data to the profile. The server
+        // normalizes the phone, so the stored value stays canonical and
+        // matches the login lookup after approval.
         await updateProfile({
           full_name: fullName.trim(),
-          phone,
-          bvn,
-          nin,
+          phone: phone.trim(),
+          ...(bvn.trim() ? { bvn: bvn.trim() } : {}),
+          ...(nin.trim() ? { nin: nin.trim() } : {}),
           preferred_language: selectedLang,
         } as any);
         setCurrentStep(2);

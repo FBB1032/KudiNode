@@ -1,6 +1,7 @@
 import { supabaseAdmin } from "../config/supabase.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { badRequest, notFound } from "../utils/AppError.js";
+import { normalizePhone } from "../utils/credentials.js";
 
 /**
  * GET /profile — returns the authenticated user's profile + their documents.
@@ -30,6 +31,10 @@ export const getMyProfile = asyncHandler(async (req, res) => {
  */
 export const updateMyProfile = asyncHandler(async (req, res) => {
   const patch = { ...req.body };
+
+  // Always store the sign-in identifier in canonical 234XXXXXXXXXX form so
+  // the login lookup (which resolves any input format to this form) matches.
+  if (patch.phone) patch.phone = normalizePhone(patch.phone);
 
   // If the user is editing after rejection, re-queue for review.
   const { data: current } = await supabaseAdmin

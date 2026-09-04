@@ -3,7 +3,7 @@ import { env } from "../config/env.js";
 import { createClient } from "@supabase/supabase-js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { badRequest, forbidden, unauthorized } from "../utils/AppError.js";
-import { normalizePhone } from "../utils/credentials.js";
+import { normalizePhone, phoneLookupCandidates } from "../utils/credentials.js";
 import { getPermissionsForRole, getResourcesForRole } from "../config/permissions.js";
 import { auditLog } from "../utils/audit.js";
 
@@ -51,13 +51,14 @@ export const signup = asyncHandler(async (req, res) => {
 
   const normalizedPhone = normalizePhone(phone);
 
-  // Guard against a phone already tied to another merchant.
+  // Guard against a phone already tied to another merchant — check every
+  // format it may be stored under (canonical, 0-prefixed, unprefixed).
   const { data: existing } = await supabaseAdmin
     .from("profiles")
     .select("id")
-    .eq("phone", normalizedPhone)
-    .maybeSingle();
-  if (existing) {
+    .in("phone", phoneLookupCandidates(phone))
+    .limit(1);
+  if (existing && existing.length > 0) {
     throw badRequest("An account with this phone number already exists");
   }
 
@@ -117,39 +118,30 @@ export const signup = asyncHandler(async (req, res) => {
  */
 export const login = asyncHandler(async (req, res) => {
   const { phone, password } = req.body;
-  const normalizedPhone = normalizePhone(phone);
 
-  // Try to find profile by phone - check multiple formats for compatibility
+  // The profile's stored phone may be in any of several formats (legacy rows,
+  // KYC-screen writes). Match whichever one this sign-in phone resolves to.
   let profile = null;
   let pErr = null;
 
-  // Try normalized format first (234XXXXXXXXXX)
-  const result1 = await supabaseAdmin
+  const candidates = phoneLookupCandidates(phone);
+  const { data: matches, error: qErr } = await supabaseAdmin
     .from("profiles")
     .select(
-      "id, email, approval_status, rejection_reason, role, full_name, kyc_tier, phone",
+      "id, email, approval_status, rejection_reason, role, full_name, kyc_tier, phone, created_at",
     )
-    .eq("phone", normalizedPhone)
-    .maybeSingle();
+    .in("phone", candidates)
+    .limit(2);
 
-  if (result1.data) {
-    profile = result1.data;
-  } else {
-    // Try without 234 prefix (10 digits)
-    const phoneWithout234 = normalizedPhone.replace(/^234/, "");
-    const result2 = await supabaseAdmin
-      .from("profiles")
-      .select(
-        "id, email, approval_status, rejection_reason, role, full_name, kyc_tier, phone",
-      )
-      .eq("phone", phoneWithout234)
-      .maybeSingle();
-
-    if (result2.data) {
-      profile = result2.data;
-    } else {
-      pErr = result2.error;
-    }
+  pErr = qErr;
+  if (matches && matches.length === 1) profile = matches[0];
+  else if (matches && matches.length > 1) {
+    // Multiple rows can only happen if the same phone was stored under
+    // different formats; prefer the canonical format, else the newest row.
+    const canonical = normalizePhone(phone);
+    profile =
+      matches.find((m) => m.phone === canonical) ||
+      matches.sort((a, b) => (a.created_at < b.created_at ? 1 : -1))[0];
   }
 
   if (pErr || !profile || !profile.email) {
