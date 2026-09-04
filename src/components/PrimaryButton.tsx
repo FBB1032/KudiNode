@@ -11,12 +11,15 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, spacing, radius, typography, shadows } from '../theme/theme';
 import { Ionicons } from './Icon';
+import { useReduceMotion } from '../hooks/useReduceMotion';
+import { useLanguage } from '../context/LanguageContext';
 
 interface PrimaryButtonProps extends TouchableOpacityProps {
   title: string;
   icon?: React.ReactNode;
   showArrow?: boolean;
   loading?: boolean;
+  loadingText?: string;
   disabled?: boolean;
   variant?: 'purple' | 'green';
   fullWidth?: boolean;
@@ -28,12 +31,15 @@ export function PrimaryButton({
   icon,
   showArrow = false,
   loading = false,
+  loadingText,
   disabled = false,
   variant = 'purple',
   fullWidth = true,
   style,
   ...rest
 }: PrimaryButtonProps) {
+  const reduceMotion = useReduceMotion();
+  const { t } = useLanguage();
   const isGreen = variant === 'green';
   const gradColors: [string, string] = isGreen
     ? ['#10B981', '#059669']
@@ -50,6 +56,7 @@ export function PrimaryButton({
       ]}
       disabled={disabled || loading}
       activeOpacity={0.88}
+      accessibilityState={{ disabled: disabled || loading, busy: loading }}
       {...rest}
     >
       <LinearGradient
@@ -59,7 +66,17 @@ export function PrimaryButton({
         style={styles.gradient}
       >
         {loading ? (
-          <ActivityIndicator color={colors.white} size="small" />
+          <View style={styles.content}>
+            {reduceMotion ? null : (
+              <ActivityIndicator color={colors.white} size="small" />
+            )}
+            <Text
+              style={[styles.text, styles.loadingText]}
+              accessibilityLiveRegion="polite"
+            >
+              {loadingText || t('common.loading')}
+            </Text>
+          </View>
         ) : (
           <View style={styles.content}>
             {icon && <View style={styles.iconLeft}>{icon}</View>}
@@ -112,6 +129,9 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
   },
   arrow: {
+    marginLeft: spacing.sm,
+  },
+  loadingText: {
     marginLeft: spacing.sm,
   },
 });

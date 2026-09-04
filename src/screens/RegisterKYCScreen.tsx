@@ -12,6 +12,7 @@ import {
   Modal,
   ActivityIndicator,
   StatusBar,
+  InteractionManager,
 } from "react-native";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import { LinearGradient } from "expo-linear-gradient";
@@ -122,8 +123,34 @@ export function RegisterKYCScreen() {
     VOTER_CARD: "id_voter_card",
   };
 
+  // Resolves once navigation & layout animations have flushed — i.e. the next
+  // step's screen has fully loaded (REQ-2 of the loading UX spec).
+  const afterScreenLoaded = () =>
+    new Promise<void>((resolve) =>
+      InteractionManager.runAfterInteractions(() => resolve()),
+    );
+
+  // Anti-flicker (REQ-6): once shown, the loading animation stays visible for
+  // at least 400 ms so a fast response never flashes a one-frame spinner.
+  const BUSY_MIN_MS = 400;
+  const busyStartedAt = React.useRef(0);
+
+  const beginBusy = () => {
+    busyStartedAt.current = Date.now();
+    setBusy(true);
+  };
+
+  const finishBusy = async () => {
+    const remaining = BUSY_MIN_MS - (Date.now() - busyStartedAt.current);
+    if (remaining > 0) {
+      await new Promise((r) => setTimeout(r, remaining));
+    }
+    setBusy(false);
+  };
+
   // Step 1 → creates the (pending) account, then saves personal details.
   const handleNextStep = async () => {
+    if (busy || verifying) return;
     setFormError(null);
 
     if (currentStep === 1) {
@@ -138,7 +165,7 @@ export function RegisterKYCScreen() {
         );
         return;
       }
-      setBusy(true);
+      beginBusy();
       try {
         if (!accountCreated) {
           await register({
@@ -162,16 +189,18 @@ export function RegisterKYCScreen() {
           preferred_language: selectedLang,
         } as any);
         setCurrentStep(2);
+        // Hold the spinner until the Step 2 card has fully rendered.
+        await afterScreenLoaded();
       } catch (e: any) {
         setFormError(e?.message || "Could not create your account.");
       } finally {
-        setBusy(false);
+        await finishBusy();
       }
       return;
     }
 
     if (currentStep === 2) {
-      setBusy(true);
+      beginBusy();
       try {
         await updateProfile({
           market_cluster: marketCluster,
@@ -181,15 +210,19 @@ export function RegisterKYCScreen() {
           wema_account_name: wemaAccountName,
         } as any);
         setCurrentStep(3);
+        // Hold the spinner until the Step 3 card has fully rendered.
+        await afterScreenLoaded();
       } catch (e: any) {
         setFormError(e?.message || "Could not save your trade details.");
       } finally {
-        setBusy(false);
+        await finishBusy();
       }
       return;
     }
 
-    // Step 3 → submit for admin review.
+    // Step 3 → submit for admin review. The full-screen verifying modal (A5)
+    // is the loading animation here; it blocks every control and cannot be
+    // dismissed, so the wizard button needs no separate busy flag.
     if (!idCaptured || !selfieCaptured) {
       setFormError(
         t("register.captureRequired"),
@@ -199,15 +232,16 @@ export function RegisterKYCScreen() {
     setVerifying(true);
     try {
       await submitForReview();
-      setVerifying(false);
       setCompleted(true);
     } catch (e: any) {
-      setVerifying(false);
       setFormError(e?.message || "Submission failed. Please try again.");
+    } finally {
+      setVerifying(false);
     }
   };
 
   const handlePrevStep = () => {
+    if (busy) return;
     if (currentStep > 1) {
       setCurrentStep((prev) => (prev - 1) as Step);
     } else {
@@ -216,12 +250,22 @@ export function RegisterKYCScreen() {
   };
 
   // After submission the merchant is pending — send them to Login, not the app.
-  const handleCompleteKYC = () => {
-    setCompleted(false);
-    navigation.reset({
-      index: 0,
-      routes: [{ name: "Login" }],
-    });
+  // The success modal stays mounted through the transition (REQ-2): it only
+  // unmounts when the Login screen has fully loaded, so the user never sees a
+  // blank frame between here and the login form.
+  const handleCompleteKYC = async () => {
+    if (busy) return;
+    beginBusy();
+    try {
+      navigation.reset({
+        index: 0,
+        routes: [{ name: "Login" }],
+      });
+      await afterScreenLoaded();
+    } finally {
+      await finishBusy();
+      setCompleted(false);
+    }
   };
 
   const openCamera = async (mode: "SELFIE" | "DOC_ID" | "DOC_LEDGER") => {
@@ -233,10 +277,13 @@ export function RegisterKYCScreen() {
   };
 
   // Capture the photo, upload it to the backend (→ Supabase Storage), and mark
-  // the corresponding artifact as captured.
+  // the corresponding artifact as captured. The in-modal spinner + disabled
+  // close/shutter (REQ-1/REQ-3) stay visible for the whole upload.
   const handleCaptureFromCamera = async () => {
+    if (busy) return;
     const mode = cameraMode;
     if (!mode) return;
+    beginBusy();
     try {
       const photo = await cameraRef.current?.takePictureAsync({ quality: 0.6 });
       if (!photo?.uri) throw new Error("Could not capture photo");
@@ -248,7 +295,6 @@ export function RegisterKYCScreen() {
             ? "ledger"
             : ID_DOC_TYPE[idType];
 
-      setBusy(true);
       await uploadDocument(photo.uri, docType);
 
       if (mode === "SELFIE") setSelfieCaptured(true);
@@ -257,7 +303,7 @@ export function RegisterKYCScreen() {
     } catch (e: any) {
       setFormError(e?.message || "Upload failed. Please retry the capture.");
     } finally {
-      setBusy(false);
+      await finishBusy();
       setCameraMode(null);
     }
   };
@@ -287,6 +333,7 @@ export function RegisterKYCScreen() {
         <TouchableOpacity
           style={styles.backBtn}
           onPress={handlePrevStep}
+          disabled={busy}
           activeOpacity={0.8}
         >
         <Icon name="arrow-back" size={20} color={colors.white} />
@@ -725,7 +772,11 @@ export function RegisterKYCScreen() {
           <View style={styles.actionRow}>
             {currentStep > 1 && (
               <View style={{ flex: 1, marginRight: spacing.md }}>
-                <SecondaryButton title={t("register.back")} onPress={handlePrevStep} />
+                <SecondaryButton
+                  title={t("register.back")}
+                  onPress={handlePrevStep}
+                  disabled={busy}
+                />
               </View>
             )}
             <View style={{ flex: 1 }}>
@@ -733,6 +784,15 @@ export function RegisterKYCScreen() {
                 title={currentStep === 3 ? t("register.submit") : t("register.continue")}
                 showArrow={currentStep !== 3}
                 onPress={handleNextStep}
+                loading={busy || verifying}
+                disabled={busy || verifying}
+                loadingText={
+                  currentStep === 1
+                    ? t(accountCreated ? "register.savingProfile" : "register.creatingAccount")
+                    : currentStep === 2
+                      ? t("register.savingTrade")
+                      : t("common.processing")
+                }
               />
             </View>
           </View>
@@ -763,6 +823,7 @@ export function RegisterKYCScreen() {
             <TouchableOpacity
               style={styles.cameraCloseBtn}
               onPress={() => setCameraMode(null)}
+              disabled={busy}
               activeOpacity={0.8}
             >
               <Icon name="close" size={24} color={colors.white} />
@@ -802,14 +863,19 @@ export function RegisterKYCScreen() {
             <TouchableOpacity
               style={styles.shutterBtn}
               onPress={handleCaptureFromCamera}
+              disabled={busy}
               activeOpacity={0.85}
             >
               <View style={styles.shutterBtnOuter}>
-                <View style={styles.shutterBtnInner} />
+                {busy ? (
+                  <ActivityIndicator size="small" color={colors.white} />
+                ) : (
+                  <View style={styles.shutterBtnInner} />
+                )}
               </View>
             </TouchableOpacity>
             <Text style={styles.shutterCaption}>
-              {t("register.tapShutter")}
+              {busy ? t("register.uploadingDocument") : t("register.tapShutter")}
             </Text>
           </View>
         </View>
@@ -820,7 +886,11 @@ export function RegisterKYCScreen() {
         <View style={styles.modalOverlay}>
           {verifying ? (
             <View style={styles.modalCard}>
-              <ActivityIndicator size="large" color={colors.primaryMid} />
+              <ActivityIndicator
+                size="large"
+                color={colors.primaryMid}
+                accessibilityLiveRegion="polite"
+              />
               <Text style={styles.verifyingTitle}>
                 {t("register.verifyingTitle")}
               </Text>
@@ -871,6 +941,9 @@ export function RegisterKYCScreen() {
                   <Icon name="arrow-forward" size={18} color={colors.white} />
                 }
                 onPress={handleCompleteKYC}
+                loading={busy}
+                disabled={busy}
+                loadingText={t("common.loading")}
               />
             </View>
           )}

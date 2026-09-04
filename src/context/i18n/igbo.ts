@@ -621,6 +621,10 @@ export const Igbo: Record<string, string> = {
   "register.verifyingTitle": "Na-ejikọ na Igbe Aja Ụkpụrụ...",
   "register.verifyingSub":
     "Na-eme BVN / NIN ndụ ndakọrịta & na-eweta akaụntụ mmezi Wema Bank (< 60s)",
+  "register.creatingAccount": "Na-emepụta akaụntụ gị…",
+  "register.savingProfile": "Na-echekwa nkọwa gị…",
+  "register.savingTrade": "Na-echekwa nkọwa azụmahịa…",
+  "register.uploadingDocument": "Na-ebuli elu…",
   "register.submitted": "KYC Enyefela!",
   "register.submittedSub":
     "Enyefela nkọwa na akwụkwọ gị maka nyocha. Onye nchịkwa ga-akwado akaụntụ gị n oge na-adịghị anya — ị ga-enwe ike ịbanye ozugbo akwadoro gị.",
