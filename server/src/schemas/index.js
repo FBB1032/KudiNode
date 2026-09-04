@@ -51,7 +51,7 @@ export const adminLoginSchema = z.object({
 /** PUT /profile — merchant fills / updates KYC profile data */
 export const profileSchema = z.object({
   full_name: z.string().trim().min(2).max(120).optional(),
-  phone,
+  phone: phone.optional(),
   preferred_language: z.string().trim().optional(),
   bvn: optionalElevenDigits,
   nin: optionalElevenDigits,

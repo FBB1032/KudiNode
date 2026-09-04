@@ -402,6 +402,15 @@ export function RegisterKYCScreen() {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
+          {/* Form error banner — visible on every step, not just Step 1,
+              so a failed step-2/3 save is never silent. */}
+          {formError && (
+            <View style={styles.errorBanner}>
+              <Icon name="alert-circle" size={16} color="#D97706" />
+              <Text style={styles.errorText}>{formError}</Text>
+            </View>
+          )}
+
           {/* STEP 1: Personal Details */}
           {currentStep === 1 && (
             <View style={[styles.card, shadows.card]}>
@@ -414,13 +423,6 @@ export function RegisterKYCScreen() {
                   <Text style={styles.cardSub}>{t('register.personalSub')}</Text>
                 </View>
               </View>
-
-              {formError && (
-                <View style={styles.errorBanner}>
-                  <Icon name="alert-circle" size={16} color="#D97706" />
-                  <Text style={styles.errorText}>{formError}</Text>
-                </View>
-              )}
 
               <FloatingLabelInput
                 label={t("register.email")}
