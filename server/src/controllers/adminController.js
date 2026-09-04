@@ -130,17 +130,82 @@ export const approveUser = asyncHandler(async (req, res) => {
   res.json({ ...result, message: "User approved. They can now sign in." });
 });
 
-/** POST /admin/users/:id/reject  { reason } */
+/**
+ * POST /admin/users/:id/reject  { reason }
+ * Permanently deletes the rejected merchant and ALL associated data:
+ *   - kyc_documents rows (cascade deletes with the profile)
+ *   - uploaded files in Supabase Storage
+ *   - the auth.users entry (via deleteUser cascade)
+ *   - domain rows (loans, risk_flags) cascade or null-out via FK rules
+ * The rejection is recorded in admin_actions + admin_audit_log first so
+ * the audit trail survives the deletion.
+ */
 export const rejectUser = asyncHandler(async (req, res) => {
-  const result = await setStatus(
-    req.user.id,
-    req.params.id,
-    "rejected",
-    req.body.reason,
+  const adminId = req.user.id;
+  const userId = req.params.id;
+  const reason = req.body?.reason || "Rejected by admin";
+
+  // 1. Confirm the merchant exists (and is a merchant, not admin staff).
+  const { data: profile, error: pErr } = await supabaseAdmin
+    .from("profiles")
+    .select("id, role, full_name, email, phone")
+    .eq("id", userId)
+    .single();
+  if (pErr || !profile) throw notFound("User not found");
+  if (profile.role !== "merchant") {
+    throw badRequest("Only merchant accounts can be rejected");
+  }
+
+  // 2. Write the audit records BEFORE deleting, so the trail persists.
+  await supabaseAdmin.from("admin_actions").insert({
+    admin_id: adminId,
+    target_user: userId,
+    action: "rejected",
+    reason,
+  });
+  await auditLog(
+    adminId,
+    "reject_merchant",
+    "merchant",
+    userId,
+    {
+      reason,
+      deleted: true,
+      full_name: profile.full_name,
+      email: profile.email,
+      phone: profile.phone,
+    },
+    req.ip,
   );
+
+  // 3. Delete uploaded files from Supabase Storage (private buckets).
+  const { data: docs } = await supabaseAdmin
+    .from("kyc_documents")
+    .select("bucket, storage_path")
+    .eq("user_id", userId);
+  if (docs && docs.length > 0) {
+    const byBucket = {};
+    for (const d of docs) {
+      (byBucket[d.bucket] = byBucket[d.bucket] || []).push(d.storage_path);
+    }
+    await Promise.all(
+      Object.entries(byBucket).map(([bucket, paths]) =>
+        supabaseAdmin.storage.from(bucket).remove(paths).catch(() => {}),
+      ),
+    );
+  }
+
+  // 4. Delete the auth user — cascades to profiles, kyc_documents, loans
+  //    (on delete cascade) and nulls risk_flags.merchant_id (set null).
+  const { error: delErr } =
+    await supabaseAdmin.auth.admin.deleteUser(userId);
+  if (delErr) throw badRequest(`Could not delete the account: ${delErr.message}`);
+
   res.json({
-    ...result,
-    message: "User rejected. A notice has been recorded.",
+    id: userId,
+    deleted: true,
+    message:
+      "Merchant rejected. The account and all associated details have been permanently deleted.",
   });
 });
 

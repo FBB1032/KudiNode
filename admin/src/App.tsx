@@ -69,9 +69,13 @@ function AppShell() {
 }
 
 function AuthenticatedApp() {
-  // Always start unauthenticated — clear any persisted session on load
-  adminToken.clear();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  // Session lives in localStorage (kn_admin_token + kn_admin_user) and is
+  // cleared by the explicit logout handler. Never wipe it during render —
+  // clearing here would erase the token saved by login before any screen
+  // can attach it to a request ("missing bearer token" on every screen).
+  const [isAuthenticated, setIsAuthenticated] = useState(
+    () => !!adminToken.get() && !!localStorage.getItem("kn_admin_user"),
+  );
 
   if (!isAuthenticated) {
     return (

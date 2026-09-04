@@ -451,8 +451,8 @@ export default function MerchantsScreen() {
     }
   };
 
-  // Action: Confirm & Send Rejection — persists the rejection + reason so the
-  // merchant is blocked at login and shown the reason.
+  // Action: Confirm & Send Rejection — the backend permanently deletes the
+  // merchant and all associated details (audit trail retained).
   const handleConfirmRejection = async () => {
     if (!selectedMerchant) return;
     const finalReason = rejectionNotes.trim()
@@ -462,18 +462,15 @@ export default function MerchantsScreen() {
     setActionBusy(true);
     try {
       await rejectUser(selectedMerchant.id, finalReason);
+      // The merchant no longer exists — drop them from the visible list.
       setMerchants((prev) =>
-        prev.map((m) =>
-          m.id === selectedMerchant.id
-            ? { ...m, status: "Rejected", rejectionReason: finalReason }
-            : m,
-        ),
+        prev.filter((m) => m.id !== selectedMerchant.id),
       );
       setShowRejectForm(false);
       setSelectedMerchant(null);
       setRejectionNotes("");
       triggerToast(
-        "Rejection recorded — the merchant is blocked from sign in.",
+        "Merchant rejected — account and all associated details permanently deleted.",
       );
     } catch (e: any) {
       triggerToast(e?.message || "Rejection failed.");

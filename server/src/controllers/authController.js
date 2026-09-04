@@ -78,14 +78,36 @@ export const signup = asyncHandler(async (req, res) => {
 
   const userId = data.user.id;
 
-  // Seed extra profile fields the trigger doesn't set.
-  await supabaseAdmin
-    .from("profiles")
-    .update({
-      phone: normalizedPhone,
-      ...(preferred_language ? { preferred_language } : {}),
-    })
-    .eq("id", userId);
+  // Seed extra profile fields the trigger doesn't set. Retry briefly: the
+  // handle_new_user trigger row-insert may land a moment after createUser
+  // resolves, which would make this update match zero rows.
+  let phonePersisted = false;
+  for (let attempt = 0; attempt < 5 && !phonePersisted; attempt++) {
+    const { data: updated, error: updErr } = await supabaseAdmin
+      .from("profiles")
+      .update({
+        phone: normalizedPhone,
+        email,
+        ...(preferred_language ? { preferred_language } : {}),
+      })
+      .eq("id", userId)
+      .select("id, phone")
+      .single();
+
+    if (updErr || !updated) {
+      await new Promise((r) => setTimeout(r, 150));
+      continue;
+    }
+    phonePersisted = updated.phone === normalizedPhone;
+  }
+  if (!phonePersisted) {
+    // The account would be unreachable by phone login — remove it so the
+    // merchant can retry instead of being silently stuck.
+    await supabaseAdmin.auth.admin.deleteUser(userId).catch(() => {});
+    throw badRequest(
+      "Could not save your phone number. Please try registering again.",
+    );
+  }
 
   // Issue a session so the (still pending) merchant can complete their KYC:
   // fill their profile and upload documents. The approval gate is enforced
