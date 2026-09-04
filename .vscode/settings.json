@@ -13,5 +13,7 @@
     "**/node_modules": true,
     "**/.expo": true,
     "**/dist": true
-  }
+  },
+  "css.lint.unknownAtRules": "ignore",
+  "java.compile.nullAnalysis.mode": "automatic"
 }
