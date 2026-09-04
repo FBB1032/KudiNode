@@ -4,6 +4,13 @@
     ".expo",
     "dist"
   ],
+  "java.import.exclusions": [
+    "**/node_modules/**",
+    "**/.expo/**",
+    "**/dist/**"
+  ],
+  "java.import.gradle.enabled": false,
+  "java.autobuild.enabled": false,
   "files.watcherExclude": {
     "**/node_modules/**": true,
     "**/.expo/**": true,
@@ -14,6 +21,5 @@
     "**/.expo": true,
     "**/dist": true
   },
-  "css.lint.unknownAtRules": "ignore",
-  "java.compile.nullAnalysis.mode": "automatic"
+  "css.lint.unknownAtRules": "ignore"
 }
