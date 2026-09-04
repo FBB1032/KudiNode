@@ -91,7 +91,11 @@ export const createAdminUser = asyncHandler(async (req, res) => {
     "create_admin",
     "admin_user",
     user.id,
-    { role, email, target_full_name: full_name },
+    {
+      target_name: full_name,
+      role,
+      email,
+    },
     req.ip,
   );
 
@@ -154,7 +158,11 @@ export const updateAdminRole = asyncHandler(async (req, res) => {
     "update_admin_role",
     "admin_user",
     id,
-    { from: target.role, to: role },
+    {
+      target_name: target.full_name,
+      from_role: target.role,
+      to_role: role,
+    },
     req.ip,
   );
 
@@ -211,11 +219,69 @@ export const deleteAdminUser = asyncHandler(async (req, res) => {
     "deactivate_admin",
     "admin_user",
     id,
-    { target_full_name: target.full_name, target_email: target.email },
+    {
+      target_name: target.full_name,
+      target_email: target.email,
+    },
     req.ip,
   );
 
   res.json({ message: "Admin account deactivated.", id });
+});
+
+/**
+ * POST /admin/admins/:id/reactivate — restore a deactivated admin account.
+ * Super Admin only. Cannot reactivate yourself (you are active by design).
+ */
+export const reactivateAdminUser = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  if (id === req.user.id) {
+    throw forbidden("Your account is already active");
+  }
+
+  const { data: target, error } = await supabaseAdmin
+    .from("admin_users")
+    .select("*")
+    .eq("id", id)
+    .single();
+  if (error || !target) throw notFound("Admin user not found");
+
+  if (target.is_active) {
+    throw badRequest("This admin account is already active");
+  }
+
+  const { data, error: updErr } = await supabaseAdmin
+    .from("admin_users")
+    .update({ is_active: true })
+    .eq("id", id)
+    .select()
+    .single();
+  if (updErr) throw badRequest(updErr.message);
+
+  await auditLog(
+    req.user.id,
+    "reactivate_admin",
+    "admin_user",
+    id,
+    {
+      target_full_name: target.full_name,
+      target_email: target.email,
+      role: target.role,
+    },
+    req.ip,
+  );
+
+  res.json({
+    user: {
+      id: data.id,
+      role: data.role,
+      full_name: data.full_name,
+      email: data.email,
+      is_active: data.is_active,
+    },
+    message: `${target.full_name} has been reactivated and can sign in again.`,
+  });
 });
 
 /**

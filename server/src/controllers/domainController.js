@@ -31,11 +31,18 @@ export const createLoan = asyncHandler(async (req, res) => {
   const { data, error } = await supabaseAdmin
     .from("loans")
     .insert({ merchant_id, purpose, amount, created_by: req.user.id, status: "new" })
-    .select()
+    .select("*, merchant:merchant_id(full_name, trade_name)")
     .single();
   if (error) throw badRequest(error.message);
 
-  await auditLog(req.user.id, "create_loan", "loan", data.id, { merchant_id, amount }, req.ip);
+  await auditLog(
+    req.user.id,
+    "create_loan",
+    "loan",
+    data.id,
+    { target_name: data.merchant?.full_name || "Unknown merchant", amount },
+    req.ip,
+  );
   res.status(201).json({ loan: data });
 });
 
@@ -48,11 +55,21 @@ export const updateLoan = asyncHandler(async (req, res) => {
     .from("loans")
     .update({ status })
     .eq("id", id)
-    .select()
+    .select("*, merchant:merchant_id(full_name, trade_name)")
     .single();
   if (error || !data) throw notFound("Loan not found");
 
-  await auditLog(req.user.id, "update_loan", "loan", id, { status }, req.ip);
+  await auditLog(
+    req.user.id,
+    "update_loan",
+    "loan",
+    id,
+    {
+      target_name: data.merchant?.full_name || "Unknown merchant",
+      status,
+    },
+    req.ip,
+  );
   res.json({ loan: data });
 });
 
@@ -84,7 +101,14 @@ export const createCoopGroup = asyncHandler(async (req, res) => {
     .single();
   if (error) throw badRequest(error.message);
 
-  await auditLog(req.user.id, "create_coop_group", "coop_group", data.id, { name }, req.ip);
+  await auditLog(
+    req.user.id,
+    "create_coop_group",
+    "coop_group",
+    data.id,
+    { target_name: name },
+    req.ip,
+  );
   res.status(201).json({ group: data });
 });
 
@@ -107,7 +131,14 @@ export const updateCoopGroup = asyncHandler(async (req, res) => {
     .single();
   if (error || !data) throw notFound("Co-op group not found");
 
-  await auditLog(req.user.id, "update_coop_group", "coop_group", id, patch, req.ip);
+  await auditLog(
+    req.user.id,
+    "update_coop_group",
+    "coop_group",
+    id,
+    { target_name: data.name, changes: patch },
+    req.ip,
+  );
   res.json({ group: data });
 });
 
@@ -136,11 +167,21 @@ export const createRiskFlag = asyncHandler(async (req, res) => {
   const { data, error } = await supabaseAdmin
     .from("risk_flags")
     .insert({ merchant_id, level, reason, created_by: req.user.id })
-    .select()
+    .select("*, merchant:merchant_id(full_name, trade_name)")
     .single();
   if (error) throw badRequest(error.message);
 
-  await auditLog(req.user.id, "create_risk_flag", "risk_flag", data.id, { merchant_id, level }, req.ip);
+  await auditLog(
+    req.user.id,
+    "create_risk_flag",
+    "risk_flag",
+    data.id,
+    {
+      target_name: data.merchant?.full_name || "Unknown merchant",
+      level,
+    },
+    req.ip,
+  );
   res.status(201).json({ flag: data });
 });
 
@@ -155,11 +196,21 @@ export const updateRiskFlag = asyncHandler(async (req, res) => {
     .from("risk_flags")
     .update(patch)
     .eq("id", id)
-    .select()
+    .select("*, merchant:merchant_id(full_name, trade_name)")
     .single();
   if (error || !data) throw notFound("Risk flag not found");
 
-  await auditLog(req.user.id, "update_risk_flag", "risk_flag", id, patch, req.ip);
+  await auditLog(
+    req.user.id,
+    "update_risk_flag",
+    "risk_flag",
+    id,
+    {
+      target_name: data.merchant?.full_name || "Unknown merchant",
+      changes: patch,
+    },
+    req.ip,
+  );
   res.json({ flag: data });
 });
 
@@ -176,7 +227,14 @@ export const exportReport = asyncHandler(async (req, res) => {
 
   if (error) throw badRequest(error.message);
 
-  await auditLog(req.user.id, "export_report", "report", null, { format, count: merchants?.length }, req.ip);
+  await auditLog(
+    req.user.id,
+    "export_report",
+    "report",
+    null,
+    { format, merchant_count: merchants?.length || 0 },
+    req.ip,
+  );
 
   if (format === "csv") {
     const headers = ["ID", "Full Name", "Phone", "Email", "Trade Name", "Region", "KYC Tier", "Approval Status", "Trust Score", "Created At"];

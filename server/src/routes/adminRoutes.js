@@ -12,6 +12,7 @@ import {
   createAdminUser,
   updateAdminRole,
   deleteAdminUser,
+  reactivateAdminUser,
   getAuditLog,
 } from "../controllers/adminUserController.js";
 import {
@@ -87,6 +88,12 @@ router.put(
   requirePermission("admin_users", "edit"),
   validateBody(updateAdminRoleSchema),
   updateAdminRole,
+);
+// Super Admin reactivates a deactivated admin account.
+router.post(
+  "/admins/:id/reactivate",
+  requirePermission("admin_users", "edit"),
+  reactivateAdminUser,
 );
 router.delete(
   "/admins/:id",

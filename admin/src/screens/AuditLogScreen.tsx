@@ -8,6 +8,7 @@ const ACTION_COLORS: Record<string, string> = {
   create_admin: 'badge-purple',
   update_admin_role: 'badge-warning',
   deactivate_admin: 'badge-danger',
+  reactivate_admin: 'badge-success',
   approve_merchant: 'badge-success',
   reject_merchant: 'badge-danger',
   suspend_merchant: 'badge-warning',
@@ -23,6 +24,81 @@ const ACTION_COLORS: Record<string, string> = {
 
 function actionLabel(a: string) {
   return a.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+}
+
+// Human-readable sentence for each action, e.g. "Approved merchant: Amina Bello".
+const ACTION_PHRASES: Record<string, string> = {
+  admin_login: 'Signed in to the admin console',
+  create_admin: 'Created admin',
+  update_admin_role: 'Changed role for admin',
+  deactivate_admin: 'Deactivated admin',
+  reactivate_admin: 'Reactivated admin',
+  approve_merchant: 'Approved merchant',
+  reject_merchant: 'Rejected & deleted merchant',
+  suspend_merchant: 'Suspended merchant',
+  create_loan: 'Created loan for merchant',
+  update_loan: 'Updated loan for merchant',
+  create_coop_group: 'Created co-op group',
+  update_coop_group: 'Updated co-op group',
+  create_risk_flag: 'Flagged merchant',
+  update_risk_flag: 'Updated risk flag for merchant',
+  export_report: 'Exported report',
+  update_settings: 'Updated system settings',
+}
+
+/**
+ * Renders the audit entry description as clear, concise English.
+ * Pattern: "<Verb phrase>: [target name]" plus a small trailing context
+ * (amount/status/role change/reason) when available.
+ */
+function describeEntry(e: AuditLogEntry): string {
+  const d = (e.details || {}) as Record<string, any>
+  const phrase = ACTION_PHRASES[e.action]
+  const name =
+    d.target_name ||
+    d.target_full_name ||
+    d.full_name ||
+    (e.action === 'admin_login' ? e.admin?.full_name : null)
+  const parts: string[] = []
+
+  if (phrase) {
+    parts.push(name ? `${phrase}: ${name}` : phrase)
+  } else if (name) {
+    parts.push(`${actionLabel(e.action)}: ${name}`)
+  }
+
+  // Trailing context, most informative first.
+  if (e.action === 'admin_login') {
+    // no extra context needed
+  } else if (e.action === 'update_admin_role' && d.from_role && d.to_role) {
+    parts.push(`(${labelRole(d.from_role)} → ${labelRole(d.to_role)})`)
+  } else if (d.to_role) {
+    parts.push(`(role: ${labelRole(d.to_role)})`)
+  } else if (d.role && e.action === 'create_admin') {
+    parts.push(`(role: ${labelRole(d.role)})`)
+  } else if (typeof d.amount === 'number') {
+    parts.push(`(₦${d.amount.toLocaleString()})`)
+  } else if (d.status) {
+    parts.push(`(status: ${d.status})`)
+  } else if (d.level) {
+    parts.push(`(level: ${d.level})`)
+  } else if (d.reason) {
+    parts.push(`(reason: ${d.reason})`)
+  } else if (d.updated_keys?.length) {
+    parts.push(`(${d.updated_keys.join(', ')})`)
+  } else if (d.format) {
+    parts.push(`(${d.format})`)
+  }
+
+  if (parts.length === 0) return '—'
+  return parts.join(' ')
+}
+
+function labelRole(r: string) {
+  return r
+    .split('_')
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ')
 }
 
 const c = { hidden: {}, show: { transition: { staggerChildren: 0.04 } } }
@@ -58,7 +134,8 @@ export default function AuditLogScreen() {
     ? entries.filter((e) =>
         (e.admin?.full_name || '').toLowerCase().includes(search.toLowerCase()) ||
         (e.admin?.email || '').toLowerCase().includes(search.toLowerCase()) ||
-        e.action.toLowerCase().includes(search.toLowerCase()))
+        e.action.toLowerCase().includes(search.toLowerCase()) ||
+        describeEntry(e).toLowerCase().includes(search.toLowerCase()))
     : entries
 
   return (
@@ -122,10 +199,8 @@ export default function AuditLogScreen() {
                       <span className={`badge ${ACTION_COLORS[e.action] ?? 'badge-slate'}`}>{actionLabel(e.action)}</span>
                     </td>
                     <td className="table-cell">
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 max-w-[220px] truncate">
-                        {e.action === 'admin_login' || !Object.keys(e.details || {}).length
-                          ? '—'
-                          : JSON.stringify(e.details)}
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 max-w-[320px] truncate" title={describeEntry(e)}>
+                        {describeEntry(e)}
                       </p>
                     </td>
                     <td className="table-cell text-[11px] text-slate-400 whitespace-nowrap">

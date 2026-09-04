@@ -51,7 +51,6 @@ export const updateSystemSettings = asyncHandler(async (req, res) => {
     { updated_keys: Object.keys(config) },
     req.ip,
   );
-
   const updated = await loadConfig();
   res.json({ config: updated, message: "System configuration updated." });
 });

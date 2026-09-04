@@ -87,7 +87,7 @@ export const getUserDossier = asyncHandler(async (req, res) => {
 });
 
 /** Shared helper to change status + write an audit record. */
-async function setStatus(adminId, userId, status, reason = null) {
+async function setStatus(adminId, userId, status, reason = null, ip = null) {
   const patch = {
     approval_status: status,
     rejection_reason: status === "rejected" ? reason : null,
@@ -100,7 +100,7 @@ async function setStatus(adminId, userId, status, reason = null) {
     .from("profiles")
     .update(patch)
     .eq("id", userId)
-    .select("id, approval_status, rejection_reason, kyc_tier")
+    .select("id, approval_status, rejection_reason, kyc_tier, full_name")
     .single();
 
   if (error) throw badRequest(error.message);
@@ -118,7 +118,11 @@ async function setStatus(adminId, userId, status, reason = null) {
     `${status}_merchant`,
     "merchant",
     userId,
-    { rejection_reason: reason || null },
+    {
+      target_name: data.full_name || "Unknown merchant",
+      rejection_reason: reason || null,
+    },
+    ip,
   );
 
   return data;
@@ -126,7 +130,13 @@ async function setStatus(adminId, userId, status, reason = null) {
 
 /** POST /admin/users/:id/approve */
 export const approveUser = asyncHandler(async (req, res) => {
-  const result = await setStatus(req.user.id, req.params.id, "approved");
+  const result = await setStatus(
+    req.user.id,
+    req.params.id,
+    "approved",
+    null,
+    req.ip,
+  );
   res.json({ ...result, message: "User approved. They can now sign in." });
 });
 
@@ -169,9 +179,9 @@ export const rejectUser = asyncHandler(async (req, res) => {
     "merchant",
     userId,
     {
+      target_name: profile.full_name || "Unknown merchant",
       reason,
       deleted: true,
-      full_name: profile.full_name,
       email: profile.email,
       phone: profile.phone,
     },
@@ -216,6 +226,7 @@ export const suspendUser = asyncHandler(async (req, res) => {
     req.params.id,
     "suspended",
     req.body?.reason || null,
+    req.ip,
   );
   res.json({ ...result, message: "User suspended." });
 });

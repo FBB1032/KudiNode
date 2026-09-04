@@ -288,6 +288,13 @@ export function deleteAdminUser(id: string) {
   });
 }
 
+export function reactivateAdminUser(id: string) {
+  return request<{ user: AdminStaffUser; message: string }>(
+    `/admin/admins/${id}/reactivate`,
+    { method: "POST" },
+  );
+}
+
 // ── Audit Log ────────────────────────────────────────────
 
 export function getAuditLog(params: {

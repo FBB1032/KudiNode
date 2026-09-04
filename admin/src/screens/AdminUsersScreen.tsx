@@ -2,13 +2,14 @@ import React, { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Plus, MoreHorizontal, Check, X, Loader2, Shield, UserPlus,
-  Ban, RefreshCw, KeyRound,
+  Ban, RefreshCw, KeyRound, RotateCcw,
 } from 'lucide-react'
 import {
   listAdminUsers,
   createAdminUser,
   updateAdminRole,
   deleteAdminUser,
+  reactivateAdminUser,
   AdminStaffUser,
   AdminRole,
 } from '../services/api'
@@ -116,6 +117,24 @@ export default function AdminUsersScreen() {
       load()
     } catch (e: any) {
       triggerToast(e?.message || 'Failed to deactivate.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  // Super Admin restores a previously deactivated admin account.
+  const handleReactivate = async (u: AdminStaffUser) => {
+    if (u.id === me?.id) {
+      triggerToast('Your account is already active.')
+      return
+    }
+    setBusy(true)
+    try {
+      await reactivateAdminUser(u.id)
+      triggerToast(`${u.full_name} reactivated — they can sign in again.`)
+      load()
+    } catch (e: any) {
+      triggerToast(e?.message || 'Failed to reactivate.')
     } finally {
       setBusy(false)
     }
@@ -235,9 +254,15 @@ export default function AdminUsersScreen() {
                       </td>
                       <td className="table-cell">
                         {canDelete && !isSelf && (
-                          <button onClick={() => handleDeactivate(u)} className="btn-icon p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30" title="Deactivate account">
-                            <Ban size={14} />
-                          </button>
+                          u.is_active ? (
+                            <button onClick={() => handleDeactivate(u)} className="btn-icon p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30" title="Deactivate account">
+                              <Ban size={14} />
+                            </button>
+                          ) : (
+                            <button onClick={() => handleReactivate(u)} className="btn-icon p-1.5 text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/30" title="Reactivate account">
+                              <RotateCcw size={14} />
+                            </button>
+                          )
                         )}
                       </td>
                     </tr>
