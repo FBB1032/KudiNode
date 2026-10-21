@@ -287,21 +287,29 @@ async function callGeminiJson({ prompt, systemPrompt = "You are a helpful AI ass
   return parsed;
 }
 
-async function callVisionJson({ prompt, systemPrompt, image }) {
-  if (!env.openrouterApiKey) {
-    throw badRequest(
-      "Missing OPENROUTER_API_KEY on backend. Add it to server/.env first.",
-    );
-  }
+// Prefix used for every provider-side failure. The mobile app matches on this
+// string to show "AI Service Unavailable" instead of telling the merchant to
+// retake the photo (which cannot fix a backend problem).
+const AI_UNAVAILABLE_PREFIX = "AI features are temporarily unavailable.";
 
-  if (!image?.base64) {
-    throw badRequest("No image data provided for vision analysis");
-  }
+// OpenRouter reports a dead/paid-gated model in several ways depending on the
+// provider behind it. Only these should trigger a failover attempt.
+const VISION_MODEL_UNAVAILABLE_PATTERN =
+  /unavailable for free|no endpoints found|not a valid model|model not found|invalid model|no image input modality|does not support image|unsupported model/i;
 
-  const url = `${OPENROUTER_API_BASE}/chat/completions`;
+function isVisionModelUnavailable(status, bodyText) {
+  if (status === 404) return true;
+  if (status !== 400 && status !== 403 && status !== 422) return false;
+  return VISION_MODEL_UNAVAILABLE_PATTERN.test(String(bodyText || ""));
+}
 
+// Remembers the last model that actually worked so a stale env slug only costs
+// one wasted request per process instead of one per scan.
+let cachedVisionModel = null;
+
+async function requestVisionCompletion({ model, prompt, systemPrompt, image }) {
   const body = {
-    model: env.openrouterVisionModel,
+    model,
     messages: [
       { role: "system", content: systemPrompt },
       {
@@ -320,7 +328,7 @@ async function callVisionJson({ prompt, systemPrompt, image }) {
     temperature: 0.1,
   };
 
-  const response = await fetch(url, {
+  const response = await fetch(`${OPENROUTER_API_BASE}/chat/completions`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -331,27 +339,82 @@ async function callVisionJson({ prompt, systemPrompt, image }) {
     body: JSON.stringify(body),
   });
 
-  const rawText = await response.text();
-  if (!response.ok) {
+  return {
+    model,
+    status: response.status,
+    ok: response.ok,
+    rawText: await response.text(),
+  };
+}
+
+async function callVisionJson({ prompt, systemPrompt, image }) {
+  if (!env.openrouterApiKey) {
     throw badRequest(
-      `OpenRouter API request failed (${response.status}): ${rawText.slice(0, 300)}`,
+      `${AI_UNAVAILABLE_PREFIX} Missing OPENROUTER_API_KEY on backend. Add it to server/.env first.`,
     );
   }
 
-  let data;
-  try {
-    data = JSON.parse(rawText);
-  } catch {
-    throw badRequest("OpenRouter API returned non-JSON output");
+  if (!image?.base64) {
+    throw badRequest("No image data provided for vision analysis");
   }
 
-  const outputText = data?.choices?.[0]?.message?.content?.trim?.() || "";
-  const parsed = tryParseJson(outputText);
-  if (!parsed) {
-    throw badRequest("OpenRouter output was not valid JSON");
+  const candidates = [
+    ...new Set(
+      [
+        cachedVisionModel,
+        env.openrouterVisionModel,
+        ...env.openrouterVisionFallbackModels,
+      ].filter(Boolean),
+    ),
+  ];
+
+  const failures = [];
+
+  for (const model of candidates) {
+    const result = await requestVisionCompletion({
+      model,
+      prompt,
+      systemPrompt,
+      image,
+    });
+
+    if (result.ok) {
+      let data;
+      try {
+        data = JSON.parse(result.rawText);
+      } catch {
+        throw badRequest("OpenRouter API returned non-JSON output");
+      }
+
+      const outputText =
+        data?.choices?.[0]?.message?.content?.trim?.() || "";
+      const parsed = tryParseJson(outputText);
+      if (!parsed) {
+        throw badRequest("OpenRouter output was not valid JSON");
+      }
+
+      cachedVisionModel = model;
+      return parsed;
+    }
+
+    if (!isVisionModelUnavailable(result.status, result.rawText)) {
+      throw badRequest(
+        `${AI_UNAVAILABLE_PREFIX} OpenRouter API request failed (${result.status}): ${result.rawText.slice(0, 300)}`,
+      );
+    }
+
+    cachedVisionModel = null;
+    failures.push(`${model} (${result.status})`);
+    // eslint-disable-next-line no-console
+    console.warn(
+      `[ai] Vision model unavailable: ${model} (${result.status}). Trying next fallback.`,
+    );
   }
 
-  return parsed;
+  throw badRequest(
+    `${AI_UNAVAILABLE_PREFIX} No receipt-scan model was usable: ${failures.join(", ")}. ` +
+      `Update OPENROUTER_VISION_MODEL to a model listed for image input at https://openrouter.ai/models.`,
+  );
 }
 
 async function transcribeWithGroqWhisper(audioFile, languageHint) {

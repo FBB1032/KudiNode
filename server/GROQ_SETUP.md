@@ -44,7 +44,8 @@ GROQ_WHISPER_MODEL=whisper-large-v3-turbo
 ### For Receipt Scanning (OpenRouter free vision):
 ```env
 OPENROUTER_API_KEY=your_openrouter_key
-OPENROUTER_VISION_MODEL=minimax/minimax-m3:free
+OPENROUTER_VISION_MODEL=minimax/minimax-m3.1-flash:free
+OPENROUTER_VISION_FALLBACK_MODELS=nvidia/nemotron-3.5-super-vl:free,google/gemma-4-31b-it:free
 ```
 
 ## 🧪 Test It
@@ -91,7 +92,9 @@ Receipt scanning now runs on OpenRouter free vision models:
   ```bash
   curl -H "Authorization: Bearer YOUR_KEY" https://openrouter.ai/api/v1/models | jq '.data[] | select(.id | contains(":free")) | select(.architecture.input_modalities | index("image")) | .id'
   ```
-- Current working default: `minimax/minimax-m3:free`
+- Current working default: `minimax/minimax-m3.1-flash:free`
+- If that model is retired, the server automatically fails over through
+  `OPENROUTER_VISION_FALLBACK_MODELS` (comma-separated) instead of failing the scan.
 
 ## 🎉 Ready to Go!
 

@@ -39,8 +39,18 @@ export const env = {
   geminiModel: process.env.GEMINI_MODEL || "gemini-2.0-flash",
 
   openrouterApiKey: process.env.OPENROUTER_API_KEY || "",
+  // OpenRouter retires free models (or moves them to paid) without notice,
+  // which breaks receipt scanning. Keep a short list of known-good free vision
+  // models so the scan path can fail over instead of dying on a stale slug.
   openrouterVisionModel:
-    process.env.OPENROUTER_VISION_MODEL || "minimax/minimax-m3:free",
+    process.env.OPENROUTER_VISION_MODEL || "minimax/minimax-m3.1-flash:free",
+  openrouterVisionFallbackModels: (
+    process.env.OPENROUTER_VISION_FALLBACK_MODELS ||
+    "nvidia/nemotron-3.5-super-vl:free,google/gemma-4-31b-it:free"
+  )
+    .split(",")
+    .map((model) => model.trim())
+    .filter(Boolean),
 
   fastWhisperUrl: process.env.FAST_WHISPER_URL || "",
   fastWhisperApiKey: process.env.FAST_WHISPER_API_KEY || "",
